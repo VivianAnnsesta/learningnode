@@ -1,0 +1,22 @@
+{
+  "title": "Duplicate key skeleton",
+  "status": "draft",
+  "stages": [
+    {
+      "key": "shared",
+      "title": "基础",
+      "goal": "建立基础。",
+      "coreTopics": ["x"],
+      "prerequisiteStageTitles": [],
+      "prerequisiteStageKeys": []
+    },
+    {
+      "key": "shared",
+      "title": "核心",
+      "goal": "掌握核心。",
+      "coreTopics": ["y"],
+      "prerequisiteStageTitles": [],
+      "prerequisiteStageKeys": []
+    }
+  ]
+}

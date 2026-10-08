@@ -1,0 +1,109 @@
+{
+  "domain": {
+    "name": "TypeScript 工程化",
+    "description": "会写 JavaScript，能写简单 React 组件，但类型经常报错看不懂。",
+    "currentLevel": "熟悉 JavaScript 与基础 React，未系统学过类型系统。",
+    "goal": "能用 TypeScript 写出类型安全、可维护的中型前端应用。",
+    "scope": "类型系统、泛型、React 类型、异步与错误处理、工程配置。",
+    "excludedScope": "编译器源码实现与高级类型体操。",
+    "depth": "能在项目中独立设计类型与接口。",
+    "outputType": "项目",
+    "outputTarget": "一个带类型约束的小型前端应用。",
+    "taskBrief": "围绕 TypeScript 建立类型优先的学习路线。"
+  },
+  "research": {
+    "taskBriefSnapshot": "围绕 TypeScript 建立类型优先的学习路线。",
+    "globalExplanation": {
+      "theorySkeleton": "从 JavaScript 值与类型的关系切入，建立静态类型与结构化类型心智模型，再进入函数与泛型，最后落到 React 组件类型与异步数据流；先泛型后组件类型，否则 props 类型会反复返工。",
+      "sourceBasis": "采用 TypeScript 官方 Handbook 与 React TypeScript Cheatsheet 作为主干，前者讲清类型机制，后者贴近组件实践。",
+      "optimizationRationale": "先修顺序以“类型机制→泛型→组件类型”为准，匹配用户“类型安全前端应用”目标，认知负荷通过小项目逐步加大。",
+      "risksAndValidation": "需诊断用户对联合类型、泛型约束和异步类型的真实掌握，避免只抄类型注解。"
+    },
+    "sources": [
+      {
+        "url": "https://www.typescriptlang.org/docs/handbook/intro.html",
+        "title": "TypeScript Handbook",
+        "reason": "官方手册，系统覆盖类型、泛型与工程配置。"
+      },
+      {
+        "url": "https://react-typescript-cheatsheet.netlify.app/",
+        "title": "React TypeScript Cheatsheet",
+        "reason": "聚焦 React 组件与 hooks 的实用类型模式。"
+      }
+    ],
+    "keyTradeoffs": [
+      "以官方手册保证机制准确，以 Cheatsheet 保证落地可用。",
+      "用小型前端应用作为统一验收，而非孤立做类型练习。"
+    ]
+  },
+  "critique": [
+    {
+      "report": {
+        "summary": "先修链正确，类型机制先于组件类型；来源具体可达且与目标匹配；产出可用项目检验；建议在泛型处补充一个真实业务约束示例以降低负荷。",
+        "significantIssues": false,
+        "dimensions": [
+          { "key": "prerequisiteCorrectness", "score": 5, "note": "泛型先于组件类型，无倒置。" },
+          { "key": "goalMatch", "score": 5, "note": "直接服务类型安全前端应用。" },
+          { "key": "cognitiveLoad", "score": 4, "note": "泛型处可用业务示例缓冲。" },
+          { "key": "sourceQuality", "score": 5, "note": "官方手册与 Cheatsheet 具体互补。" },
+          { "key": "checkability", "score": 5, "note": "小型应用可直接验收。" }
+        ]
+      },
+      "draft": {
+        "taskBriefSnapshot": "围绕 TypeScript 建立类型优先的学习路线。",
+        "globalExplanation": {
+          "theorySkeleton": "从 JavaScript 值与类型的关系切入，建立静态类型与结构化类型心智模型，再进入函数与泛型（以一个真实业务约束示例贯穿），最后落到 React 组件类型与异步数据流。",
+          "sourceBasis": "采用 TypeScript 官方 Handbook 与 React TypeScript Cheatsheet 作为主干，前者讲清类型机制，后者贴近组件实践。",
+          "optimizationRationale": "先修顺序以“类型机制→泛型→组件类型”为准，匹配用户“类型安全前端应用”目标，认知负荷通过小项目逐步加大。",
+          "risksAndValidation": "需诊断用户对联合类型、泛型约束和异步类型的真实掌握，避免只抄类型注解。"
+        },
+        "sources": [
+          {
+            "url": "https://www.typescriptlang.org/docs/handbook/intro.html",
+            "title": "TypeScript Handbook",
+            "reason": "官方手册，系统覆盖类型、泛型与工程配置。"
+          },
+          {
+            "url": "https://react-typescript-cheatsheet.netlify.app/",
+            "title": "React TypeScript Cheatsheet",
+            "reason": "聚焦 React 组件与 hooks 的实用类型模式。"
+          }
+        ],
+        "keyTradeoffs": [
+          "以官方手册保证机制准确，以 Cheatsheet 保证落地可用。",
+          "用小型前端应用作为统一验收，而非孤立做类型练习。"
+        ]
+      }
+    }
+  ],
+  "grounding": {
+    "https://www.typescriptlang.org/docs/handbook/intro.html": {
+      "ok": true,
+      "status": 200,
+      "title": "TypeScript: Documentation - Intro to the TS Handbook",
+      "excerpt": "Welcome to TypeScript. This handbook is designed to help you write TypeScript code."
+    },
+    "https://react-typescript-cheatsheet.netlify.app/": {
+      "ok": true,
+      "status": 200,
+      "title": "React TypeScript Cheatsheets",
+      "excerpt": "Cheatsheets for experienced React developers getting started with TypeScript."
+    }
+  },
+  "expected": {
+    "researchGatePassed": true,
+    "researchMissing": [],
+    "finalGatePassed": true,
+    "finalMissing": [],
+    "qualityReportSignificantIssues": false,
+    "qualityReportDimensionKeys": [
+      "prerequisiteCorrectness",
+      "goalMatch",
+      "cognitiveLoad",
+      "sourceQuality",
+      "checkability"
+    ],
+    "groundedOkCount": 2,
+    "groundedFailCount": 0
+  }
+}

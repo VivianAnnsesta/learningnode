@@ -1,0 +1,109 @@
+{
+  "domain": {
+    "name": "英语语法体系",
+    "description": "已能写简单句，但长难句分析和议论文语法经常出错。",
+    "currentLevel": "能写简单句，熟悉基础时态。",
+    "goal": "能独立分析长难句并写出语法正确的议论文。",
+    "scope": "句法结构、时态、从句、非谓语动词。",
+    "excludedScope": "词汇记忆与口语流利度训练。",
+    "depth": "达到能向他人讲解的水平。",
+    "outputType": "讲解笔记",
+    "outputTarget": "一份可复用的长难句分析模板。",
+    "taskBrief": "围绕英语语法建立先修清晰、可检验的学习路线。"
+  },
+  "research": {
+    "taskBriefSnapshot": "围绕英语语法建立先修清晰、可检验的学习路线。",
+    "globalExplanation": {
+      "theorySkeleton": "从句子基本成分（主谓宾）出发，先建立时态与一致关系，再进入从句与非谓语动词；从句按“修饰对象”分类，非谓语按“动作与主语关系”分类，逆序学习会让长难句分析失去支点。",
+      "sourceBasis": "采用 Purdue OWL 的语法分册与 BBC Learning English 中级课程作为主干来源，二者都按句法模块拆分，便于对照。",
+      "optimizationRationale": "先修顺序优先保证从句与非谓语不倒置，再匹配用户“长难句分析”目标，认知负荷通过分模块逐步加大。",
+      "risksAndValidation": "需通过诊断确认用户在时态一致与非谓语选择上的具体误区，不能直接假设已掌握。"
+    },
+    "sources": [
+      {
+        "url": "https://owl.purdue.edu/owl/general_writing/grammar/index.html",
+        "title": "Purdue OWL Grammar",
+        "reason": "权威英语语法分册，按模块覆盖句法、时态与从句。"
+      },
+      {
+        "url": "https://www.bbc.co.uk/learningenglish/course/intermediate",
+        "title": "BBC Learning English Intermediate",
+        "reason": "中级课程提供从句与非谓语的渐进练习。"
+      }
+    ],
+    "keyTradeoffs": [
+      "优先句法骨架而非词汇堆砌，避免把语法学成词条列表。",
+      "用长难句分析作为统一验收，而非分散做语法题。"
+    ]
+  },
+  "critique": [
+    {
+      "report": {
+        "summary": "先修链正确，来源具体可达，目标匹配良好；认知负荷通过分模块控制，产出可用长难句模板检验。",
+        "significantIssues": false,
+        "dimensions": [
+          { "key": "prerequisiteCorrectness", "score": 5, "note": "从句与非谓语顺序正确，无倒置风险。" },
+          { "key": "goalMatch", "score": 5, "note": "直接服务长难句分析与议论文写作目标。" },
+          { "key": "cognitiveLoad", "score": 4, "note": "分模块渐进，但非谓语可再拆分。" },
+          { "key": "sourceQuality", "score": 5, "note": "两个来源具体且与句法模块对应。" },
+          { "key": "checkability", "score": 5, "note": "长难句分析模板可直接检验。" }
+        ]
+      },
+      "draft": {
+        "taskBriefSnapshot": "围绕英语语法建立先修清晰、可检验的学习路线。",
+        "globalExplanation": {
+          "theorySkeleton": "从句子基本成分（主谓宾）出发，先建立时态与一致关系，再进入从句与非谓语动词；从句按“修饰对象”分类，非谓语按“动作与主语关系”分类，逆序学习会让长难句分析失去支点。",
+          "sourceBasis": "采用 Purdue OWL 的语法分册与 BBC Learning English 中级课程作为主干来源，二者都按句法模块拆分，便于对照。",
+          "optimizationRationale": "先修顺序优先保证从句与非谓语不倒置，再匹配用户“长难句分析”目标，认知负荷通过分模块逐步加大。",
+          "risksAndValidation": "需通过诊断确认用户在时态一致与非谓语选择上的具体误区，不能直接假设已掌握。"
+        },
+        "sources": [
+          {
+            "url": "https://owl.purdue.edu/owl/general_writing/grammar/index.html",
+            "title": "Purdue OWL Grammar",
+            "reason": "权威英语语法分册，按模块覆盖句法、时态与从句。"
+          },
+          {
+            "url": "https://www.bbc.co.uk/learningenglish/course/intermediate",
+            "title": "BBC Learning English Intermediate",
+            "reason": "中级课程提供从句与非谓语的渐进练习。"
+          }
+        ],
+        "keyTradeoffs": [
+          "优先句法骨架而非词汇堆砌，避免把语法学成词条列表。",
+          "用长难句分析作为统一验收，而非分散做语法题。"
+        ]
+      }
+    }
+  ],
+  "grounding": {
+    "https://owl.purdue.edu/owl/general_writing/grammar/index.html": {
+      "ok": true,
+      "status": 200,
+      "title": "Grammar // Purdue Writing Lab",
+      "excerpt": "These OWL resources contain grammar exercises about adjectives, adverbs, appositives, articles, count and noncount nouns, and more."
+    },
+    "https://www.bbc.co.uk/learningenglish/course/intermediate": {
+      "ok": true,
+      "status": 200,
+      "title": "Intermediate English - BBC Learning English",
+      "excerpt": "Improve your English with our free intermediate online course. Watch videos, listen to audio and complete interactive lessons."
+    }
+  },
+  "expected": {
+    "researchGatePassed": true,
+    "researchMissing": [],
+    "finalGatePassed": true,
+    "finalMissing": [],
+    "qualityReportSignificantIssues": false,
+    "qualityReportDimensionKeys": [
+      "prerequisiteCorrectness",
+      "goalMatch",
+      "cognitiveLoad",
+      "sourceQuality",
+      "checkability"
+    ],
+    "groundedOkCount": 2,
+    "groundedFailCount": 0
+  }
+}

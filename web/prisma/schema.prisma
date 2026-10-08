@@ -1,0 +1,486 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model DiagnosticSession {
+  id        String               @id @default(cuid())
+  domainId  String
+  title     String
+  status    String               @default("draft")
+  summary   String?
+  domain    Domain               @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  questions DiagnosticQuestion[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([domainId])
+}
+
+model DiagnosticQuestion {
+  id             String             @id @default(cuid())
+  sessionId      String
+  learningNodeId String?
+  prompt         String
+  questionType   String             @default("concept")
+  expectedAnswer String?
+  orderIndex     Int
+  session        DiagnosticSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  learningNode   LearningNode?      @relation(fields: [learningNodeId], references: [id], onDelete: SetNull)
+  answers        DiagnosticAnswer[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([sessionId, orderIndex])
+  @@index([sessionId])
+  @@index([learningNodeId])
+}
+
+model DiagnosticAnswer {
+  id         String             @id @default(cuid())
+  questionId String
+  response   String
+  assessment String?
+  result     String             @default("unreviewed")
+  question   DiagnosticQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime           @default(now())
+
+  @@index([questionId])
+}
+
+model AiCallLog {
+  id            String       @id @default(cuid())
+  canvasId      String?
+  domainId      String?
+  taskType      String
+  provider      String
+  model         String?
+  status        String       @default("success")
+  inputSummary  String?
+  outputSummary String?
+  errorMessage  String?
+  latencyMs     Int?
+  providerRequestId String?
+  researchSourcesJson String?
+  promptVersion String?
+  runId         String?
+  attempt       Int?
+  retryOfLogId  String?
+  retryReason   String?
+  failureStage  String?
+  requestMessagesJson String?
+  rawOutput     String?
+  providerResponseJson String?
+  parsedOutputJson String?
+  validatedOutputJson String?
+  validationIssuesJson String?
+  finishedAt    DateTime?
+  domain        Domain?      @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+
+  @@index([canvasId])
+  @@index([domainId])
+  @@index([taskType])
+  @@index([status])
+  @@index([runId, attempt])
+}
+
+model SemanticCoreVersion {
+  id             String             @id @default(cuid())
+  knowledgePointId String?
+  version        Int
+  statement      String
+  revisionReason String?
+  sourceReviewId String?
+  knowledgePoint KnowledgePoint?    @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+  sourceReview   CoreReviewSession? @relation(fields: [sourceReviewId], references: [id], onDelete: SetNull)
+  createdAt      DateTime           @default(now())
+
+  @@index([knowledgePointId, version])
+  @@index([sourceReviewId])
+}
+
+model CoreReviewSession {
+  id                    String                @id @default(cuid())
+  knowledgePointId      String?
+  userRecall            String
+  oldSampleExplanations String?
+  transferExplanations  String?
+  aiFeedback            String?
+  result                String?
+  knowledgePoint        KnowledgePoint?       @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+  transferChallenges    TransferChallenge[]
+  createdVersions       SemanticCoreVersion[]
+  createdAt             DateTime              @default(now())
+
+  @@index([knowledgePointId])
+}
+
+model TransferChallenge {
+  id              String            @id @default(cuid())
+  reviewSessionId String
+  prompt          String
+  userExplanation String
+  aiAssessment    String?
+  passed          Boolean           @default(false)
+  reviewSession   CoreReviewSession @relation(fields: [reviewSessionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime          @default(now())
+
+  @@index([reviewSessionId])
+}
+
+model Domain {
+  id                String               @id @default(cuid())
+  legacyCanvasId    String?              @unique
+  name              String
+  description       String?
+  currentLevel      String?
+  goal              String?
+  scope             String?
+  excludedScope     String?
+  depth             String?
+  outputType        String?
+  outputTarget      String?
+  taskBrief         String?
+  entryGuideJson    String?
+  learningGoalsJson String?
+  taskBriefConfirmedAt DateTime?
+  courseDesignDraft String?
+  roadmapDraftJson  String?
+  roadmapDraftCourseDesignAiCallLogId String?
+  mapRevision       Int                  @default(0)
+  roadmapTitle      String?
+  roadmapStatus     String               @default("draft")
+  courseDesignStatus String             @default("none")
+  courseDesignRepairCount Int           @default(0)
+  courseDesignConfirmedAt DateTime?
+  courseDesignAiCallLogId String?
+  status            String               @default("active")
+  units             Unit[]
+  learningNodes     LearningNode[]
+  knowledgePoints   KnowledgePoint[]
+  graphNodes        KnowledgeGraphNode[]
+  graphEdges        KnowledgeGraphEdge[]
+  diagnosticSessions DiagnosticSession[]
+  progressRecords   LearningProgress[]
+  routeSuggestions  RouteSuggestion[]
+  aiCallLogs        AiCallLog[]
+  mapDraftQualityReviews MapDraftQualityReview[]
+  teachingSessions   NodeTeachingSession[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+}
+
+model Unit {
+  id            String         @id @default(cuid())
+  domainId      String
+  mapKey        String?
+  title         String
+  goal          String?
+  rationale     String?
+  moduleDirectionsJson String?
+  planningBlueprintJson String?
+  teachingPlanJson String?
+  prerequisiteStageKeysJson String?
+  orderIndex    Int
+  status        String         @default("available")
+  domain        Domain         @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  learningNodes LearningNode[]
+  assessmentRecords UnitAssessmentRecord[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([domainId, orderIndex])
+  @@unique([domainId, mapKey])
+  @@index([domainId])
+}
+
+model LearningNode {
+  id                     String                   @id @default(cuid())
+  domainId               String
+  mapKey                  String?
+  unitId                 String?
+  moduleTitle            String?
+  moduleOrderIndex       Int?
+  title                  String
+  nodeType               String                   @default("knowledge")
+  status                 String                   @default("locked")
+  objective              String?
+  keyQuestion            String?
+  prerequisite           String?
+  commonMistake          String?
+  transferPrompt         String?
+  planningQuestionKey    String?
+  planningQuestionKeysJson String?
+  conceptJson            String?
+  orderIndex             Int
+  legacyRoadmapItemId    String?                  @unique
+  knowledgePointId       String?
+  domain                 Domain                   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  unit                   Unit?                    @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  knowledgePoint         KnowledgePoint?          @relation(fields: [knowledgePointId], references: [id], onDelete: SetNull)
+  dependencies           LearningNodeDependency[] @relation("LearningNodeDependencyNode")
+  dependents             LearningNodeDependency[] @relation("LearningNodeDependencyPrerequisite")
+  diagnosticQuestions    DiagnosticQuestion[]
+  progressRecords        LearningProgress[]
+  routeSuggestions       RouteSuggestion[]
+  teachingSessions       NodeTeachingSession[]
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+
+  @@index([domainId, orderIndex])
+  @@unique([domainId, mapKey])
+  @@index([unitId])
+  @@index([knowledgePointId])
+  @@index([domainId, planningQuestionKey])
+}
+
+model NodeTeachingSession {
+  id                String   @id @default(cuid())
+  domainId          String
+  nodeId            String
+  contextHash       String
+  lessonVersion     Int      @default(1)
+  status            String   @default("ready")
+  errorMessage      String?
+  generationToken   String?
+  requestId         String?
+  sourceRevision    Int      @default(0)
+  mapRevision       Int
+  contextJson       String
+  lessonJson        String
+  aiCallLogId       String
+  revision          Int      @default(0)
+  progressJson      String
+  summaryJson       String   @default("{}")
+  reviewJson        String?
+  aiCallLogIdsJson   String   @default("[]")
+  domain            Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  node              LearningNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  interactions      TeachingInteraction[]
+  segments          TeachingSegment[]
+  sources           TeachingSource[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([nodeId, contextHash, lessonVersion])
+  @@unique([nodeId, requestId])
+  @@index([domainId, nodeId, createdAt])
+}
+
+model TeachingInteraction {
+  id                String   @id @default(cuid())
+  sessionId         String
+  requestId         String
+  kind              String
+  exerciseKey       String
+  segmentId         String?
+  segmentKey        String?
+  stepKey           String?
+  materialVersion   Int?
+  input             String
+  assistance        Int
+  status            String   @default("pending")
+  responseJson      String?
+  errorMessage      String?
+  aiCallLogId       String?
+  session           NodeTeachingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  segment           TeachingSegment? @relation(fields: [segmentId], references: [id], onDelete: Restrict)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([sessionId, requestId])
+  @@index([sessionId, createdAt])
+}
+
+model TeachingSegment {
+  id              String @id @default(cuid())
+  sessionId       String
+  key             String
+  version         Int @default(1)
+  requestId       String
+  status          String @default("pending")
+  sourceRevision  Int @default(0)
+  materialJson    String?
+  sourceSnapshotJson String @default("[]")
+  reviewJson      String?
+  aiCallLogIdsJson String @default("[]")
+  errorMessage    String?
+  generationToken String?
+  session         NodeTeachingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  interactions    TeachingInteraction[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@unique([sessionId, key, version])
+  @@unique([sessionId, requestId])
+}
+
+model TeachingSource {
+  id              String @id @default(cuid())
+  sessionId       String
+  url             String
+  title           String
+  contentHash     String
+  fragmentsJson   String
+  limitation      String?
+  session         NodeTeachingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@unique([sessionId, url])
+}
+
+model MapDraftQualityReview {
+  id                        String   @id @default(cuid())
+  domainId                  String
+  scope                     String
+  stageKey                  String?
+  baseRevision              Int
+  draftHash                 String
+  courseDesignAiCallLogId   String
+  status                    String
+  availability              String   @default("available")
+  reportJson                String
+  aiCallLogIdsJson          String
+  resolutionJson            String?
+  domain                    Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  createdAt                 DateTime @default(now())
+
+  @@index([domainId, createdAt])
+  @@index([domainId, baseRevision])
+  @@index([draftHash])
+}
+
+model LearningNodeDependency {
+  id             String       @id @default(cuid())
+  nodeId         String
+  prerequisiteId String
+  node           LearningNode @relation("LearningNodeDependencyNode", fields: [nodeId], references: [id], onDelete: Cascade)
+  prerequisite   LearningNode @relation("LearningNodeDependencyPrerequisite", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@unique([nodeId, prerequisiteId])
+  @@index([prerequisiteId])
+}
+
+model UnitAssessmentRecord {
+  id                  String   @id @default(cuid())
+  unitId              String
+  readiness           String
+  recommendation      String
+  adjustmentReason    String
+  appliedRoadmapStatus String
+  flaggedItemsSummary String?
+  nextActionsSummary  String?
+  unit                Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  createdAt           DateTime @default(now())
+
+  @@index([unitId, createdAt])
+}
+
+model KnowledgePoint {
+  id              String               @id @default(cuid())
+  domainId        String
+  legacyWordId    String?              @unique
+  title           String
+  language        String?
+  sentenceSample  String?
+  coreEssence     String?
+  manualBranchesJson String?
+  userUnderstanding String?
+  masteryStatus   String               @default("available")
+  isIsland        Boolean              @default(false)
+  islandReason    String?
+  lastReviewedAt  DateTime?
+  nextReviewAt    DateTime?
+  reviewIntervalDays Int?
+  domain          Domain               @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  learningNodes   LearningNode[]
+  graphNodes      KnowledgeGraphNode[]
+  semanticCoreVersions SemanticCoreVersion[]
+  coreReviewSessions CoreReviewSession[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([domainId])
+}
+
+model KnowledgeGraphNode {
+  id               String               @id @default(cuid())
+  domainId         String
+  knowledgePointId String?
+  title            String
+  nodeType         String               @default("knowledge")
+  status           String               @default("candidate")
+  positionX        Float?
+  positionY        Float?
+  domain           Domain               @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  knowledgePoint   KnowledgePoint?      @relation(fields: [knowledgePointId], references: [id], onDelete: SetNull)
+  outgoingEdges    KnowledgeGraphEdge[]  @relation("KnowledgeGraphEdgeFrom")
+  incomingEdges    KnowledgeGraphEdge[]  @relation("KnowledgeGraphEdgeTo")
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([domainId])
+  @@index([knowledgePointId])
+}
+
+model KnowledgeGraphEdge {
+  id               String             @id @default(cuid())
+  domainId         String
+  fromNodeId       String
+  toNodeId         String
+  relationType     String
+  detail           String?
+  status           String             @default("candidate")
+  evidenceStrength String             @default("unknown")
+  userExplanation  String?
+  aiAssessment     String?
+  applicability    String?
+  misuseRisk       String?
+  legacyVariantsJson String?
+  domain           Domain             @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  fromNode         KnowledgeGraphNode  @relation("KnowledgeGraphEdgeFrom", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNode           KnowledgeGraphNode  @relation("KnowledgeGraphEdgeTo", fields: [toNodeId], references: [id], onDelete: Cascade)
+  createdAt        DateTime           @default(now())
+
+  @@index([domainId])
+  @@index([fromNodeId])
+  @@index([toNodeId])
+  @@unique([domainId, fromNodeId, toNodeId, relationType])
+}
+
+model LearningProgress {
+  id          String        @id @default(cuid())
+  domainId    String
+  nodeId      String?
+  status      String
+  reason      String?
+  domain      Domain        @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  node        LearningNode?  @relation(fields: [nodeId], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now())
+
+  @@index([domainId, createdAt])
+  @@index([nodeId])
+}
+
+model RouteSuggestion {
+  id           String        @id @default(cuid())
+  domainId     String
+  sourceNodeId String?
+  level        String
+  title        String
+  rationale    String
+  changesMap   Boolean       @default(false)
+  status       String        @default("candidate")
+  payload      String?
+  domain       Domain        @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  sourceNode   LearningNode? @relation(fields: [sourceNodeId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  acceptedAt   DateTime?
+
+  @@index([domainId, status])
+  @@index([sourceNodeId])
+}

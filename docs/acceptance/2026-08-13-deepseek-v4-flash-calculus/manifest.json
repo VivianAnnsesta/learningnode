@@ -1,0 +1,172 @@
+{
+  "generatedAt": "2026-08-13T07:04:38.224Z",
+  "input": {
+    "domain": {
+      "name": "e2e-live-ai-roadmap-acceptance-1786604419321",
+      "description": "学习者学过高中函数和基础代数，但高数知识零散。",
+      "currentLevel": "能做基础代数运算，尚不能解释极限、导数和积分的概念边界。",
+      "goal": "形成可用于考研复习和题型迁移的高等数学知识路线。",
+      "scope": "函数与极限、连续、导数与微分、中值定理、积分、级数和常见应用。",
+      "excludedScope": "实变函数、复分析、泛函分析。",
+      "depth": "考研数学一所需的概念理解、方法选择、边界辨析和综合应用。",
+      "outputType": "学习路线图",
+      "outputTarget": "一份可逐阶段展开、可检查覆盖的高数复习路线。",
+      "taskBrief": "为准备工科研究生入学考试的学习者规划高等数学路线，覆盖函数与极限、连续、导数与微分、积分及其应用；排除实变函数和泛函分析。"
+    },
+    "courseDesign": {
+      "taskBriefSnapshot": "为准备工科研究生入学考试的学习者规划高等数学路线，覆盖函数与极限、连续、导数与微分、积分及其应用；排除实变函数和泛函分析。",
+      "globalExplanation": {
+        "theorySkeleton": "以函数语言和极限为基础，经过连续与微分学进入积分学，再连接级数和综合应用；每一阶段同时处理概念、方法选择条件、典型边界与迁移。",
+        "sourceBasis": "以 MIT 单变量微积分课程和同济大学高等数学课程结构作为顺序与覆盖参考。",
+        "optimizationRationale": "先修依赖优先；将公式操练放在概念与适用条件之后，避免把章节标题压缩成少量复合问题。",
+        "risksAndValidation": "重点检查极限定义、定理条件、方法选择与反例边界是否被过度合并。"
+      },
+      "sources": [
+        {
+          "url": "https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/",
+          "title": "MIT OpenCourseWare 18.01SC Single Variable Calculus",
+          "reason": "提供单变量微积分的完整主题顺序、讲义和问题集。"
+        },
+        {
+          "url": "https://www.icourse163.org/course/TONGJI-53004",
+          "title": "同济大学 高等数学",
+          "reason": "与中文工科高数和考研语境相近，可核对章节覆盖。"
+        }
+      ],
+      "keyTradeoffs": [
+        "不以固定问题数量作为质量指标。",
+        "保留逐 Stage 展开，不在骨架阶段生成全部 Learning Node。"
+      ],
+      "qualityGate": {
+        "passed": true,
+        "missing": []
+      }
+    }
+  },
+  "isolation": "Playwright temporary SQLite; deleted after the run.",
+  "runs": [
+    {
+      "run": 1,
+      "elapsedMs": 91726,
+      "stageCount": 13,
+      "qualityStatus": "passed",
+      "providerCalls": [
+        {
+          "id": "cmsr662uj0004ui3ods3ptux8",
+          "taskType": "roadmap_skeleton_generation",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "status": "success",
+          "latencyMs": 41093,
+          "providerRequestId": null,
+          "promptVersion": "roadmap-skeleton-generation-v2",
+          "createdAt": "2026-08-13T07:01:03.596Z"
+        },
+        {
+          "id": "cmsr66e780006ui3o3skzbzyw",
+          "taskType": "roadmap_skeleton_critique",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "status": "success",
+          "latencyMs": 14707,
+          "providerRequestId": null,
+          "promptVersion": "roadmap-skeleton-review-v2",
+          "createdAt": "2026-08-13T07:01:18.308Z"
+        },
+        {
+          "id": "cmsr674xv0008ui3oe7ap7au0",
+          "taskType": "roadmap_skeleton_repair",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "status": "success",
+          "latencyMs": 34648,
+          "providerRequestId": null,
+          "promptVersion": "roadmap-skeleton-repair-v2",
+          "createdAt": "2026-08-13T07:01:52.963Z"
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "elapsedMs": 85039,
+      "stageCount": 13,
+      "qualityStatus": "passed",
+      "providerCalls": [
+        {
+          "id": "cmsr67y7y000cui3oh061t529",
+          "taskType": "roadmap_skeleton_generation",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "status": "success",
+          "latencyMs": 37645,
+          "providerRequestId": null,
+          "promptVersion": "roadmap-skeleton-generation-v2",
+          "createdAt": "2026-08-13T07:02:30.910Z"
+        },
+        {
+          "id": "cmsr688da000eui3ob67d10sl",
+          "taskType": "roadmap_skeleton_critique",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "status": "success",
+          "latencyMs": 13146,
+          "providerRequestId": null,
+          "promptVersion": "roadmap-skeleton-review-v2",
+          "createdAt": "2026-08-13T07:02:44.062Z"
+        },
+        {
+          "id": "cmsr68yp7000gui3ovutf72wz",
+          "taskType": "roadmap_skeleton_repair",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "status": "success",
+          "latencyMs": 34119,
+          "providerRequestId": null,
+          "promptVersion": "roadmap-skeleton-repair-v2",
+          "createdAt": "2026-08-13T07:03:18.187Z"
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "elapsedMs": 79788,
+      "stageCount": 9,
+      "qualityStatus": "passed",
+      "providerCalls": [
+        {
+          "id": "cmsr69nf7000kui3ohkznbr8c",
+          "taskType": "roadmap_skeleton_generation",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "status": "success",
+          "latencyMs": 31816,
+          "providerRequestId": null,
+          "promptVersion": "roadmap-skeleton-generation-v2",
+          "createdAt": "2026-08-13T07:03:50.227Z"
+        },
+        {
+          "id": "cmsr69zwu000mui3owsgd6zyy",
+          "taskType": "roadmap_skeleton_critique",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "status": "success",
+          "latencyMs": 16181,
+          "providerRequestId": null,
+          "promptVersion": "roadmap-skeleton-review-v2",
+          "createdAt": "2026-08-13T07:04:06.414Z"
+        },
+        {
+          "id": "cmsr6aocx000oui3o99a7uwtd",
+          "taskType": "roadmap_skeleton_repair",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "status": "success",
+          "latencyMs": 31678,
+          "providerRequestId": null,
+          "promptVersion": "roadmap-skeleton-repair-v2",
+          "createdAt": "2026-08-13T07:04:38.097Z"
+        }
+      ]
+    }
+  ]
+}

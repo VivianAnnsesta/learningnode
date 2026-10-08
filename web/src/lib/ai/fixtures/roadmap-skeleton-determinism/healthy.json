@@ -1,0 +1,30 @@
+{
+  "title": "Healthy roadmap skeleton",
+  "status": "draft",
+  "stages": [
+    {
+      "key": "foundation",
+      "title": "基础",
+      "goal": "建立核心对象与最小可运行闭环。",
+      "coreTopics": ["对象", "定义", "基本问题"],
+      "prerequisiteStageTitles": [],
+      "prerequisiteStageKeys": []
+    },
+    {
+      "key": "core",
+      "title": "核心",
+      "goal": "掌握核心抽象与实现方法。",
+      "coreTopics": ["抽象", "方法", "模式"],
+      "prerequisiteStageTitles": ["基础"],
+      "prerequisiteStageKeys": ["foundation"]
+    },
+    {
+      "key": "output",
+      "title": "输出",
+      "goal": "项目化应用与沉淀。",
+      "coreTopics": ["应用", "复盘", "迁移"],
+      "prerequisiteStageTitles": ["核心"],
+      "prerequisiteStageKeys": ["core"]
+    }
+  ]
+}

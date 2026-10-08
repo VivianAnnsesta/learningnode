@@ -1,0 +1,109 @@
+{
+  "domain": {
+    "name": "线性代数",
+    "description": "学过矩阵乘法，但对特征值、秩和线性方程组解结构不理解。",
+    "currentLevel": "会做矩阵加减乘，不会求特征值和判断解的存在性。",
+    "goal": "理解向量空间、线性变换与特征值，并能解释几何意义。",
+    "scope": "向量空间、线性变换、秩、特征值与特征向量、对角化。",
+    "excludedScope": "数值计算库的实现细节与大规模稀疏矩阵优化。",
+    "depth": "能独立推导关键结论并解释几何直觉。",
+    "outputType": "推导笔记",
+    "outputTarget": "一份覆盖核心定理与反例的思维导图。",
+    "taskBrief": "围绕线性代数建立从具体到抽象的先修链。"
+  },
+  "research": {
+    "taskBriefSnapshot": "围绕线性代数建立从具体到抽象的先修链。",
+    "globalExplanation": {
+      "theorySkeleton": "从线性方程组与矩阵出发，建立向量空间与子空间，再用线性变换统一矩阵与几何，最后进入特征值与对角化；跳过向量空间直接讲特征值会让人无法解释“为何可对角化”。",
+      "sourceBasis": "采用 MIT OpenCourseWare 18.06 线性代数课程大纲与 3Blue1Brown 的 Essence of Linear Algebra 作为直观补充。",
+      "optimizationRationale": "先修顺序以抽象程度递增为准，先空间后变换再特征值，匹配用户“解释几何意义”的目标。",
+      "risksAndValidation": "需诊断用户对“秩—解结构”和“特征值存在性”的理解，避免只记公式。"
+    },
+    "sources": [
+      {
+        "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/",
+        "title": "MIT 18.06 Linear Algebra",
+        "reason": "权威课程大纲，先修顺序与抽象递进清晰。"
+      },
+      {
+        "url": "https://www.3blue1brown.com/lessons/essence-of-linear-algebra",
+        "title": "Essence of Linear Algebra",
+        "reason": "提供几何直觉，补足公式背后的空间图景。"
+      }
+    ],
+    "keyTradeoffs": [
+      "以 MIT 课程保证严谨，以 3Blue1Brown 补足直觉，避免纯计算训练。",
+      "用“秩—解结构”作为贯通主线，而非孤立记忆定理。"
+    ]
+  },
+  "critique": [
+    {
+      "report": {
+        "summary": "先修链从具体到抽象，来源权威且可达；目标匹配良好，产出可用思维导图检验；认知负荷在特征值处略陡，建议补充一个低维反例。",
+        "significantIssues": false,
+        "dimensions": [
+          { "key": "prerequisiteCorrectness", "score": 5, "note": "空间→变换→特征值顺序正确。" },
+          { "key": "goalMatch", "score": 5, "note": "直接服务几何意义理解目标。" },
+          { "key": "cognitiveLoad", "score": 4, "note": "特征值处负荷略陡，需反例缓冲。" },
+          { "key": "sourceQuality", "score": 5, "note": "MIT 与 3Blue1Brown 具体且互补。" },
+          { "key": "checkability", "score": 5, "note": "推导笔记与思维导图可检验。" }
+        ]
+      },
+      "draft": {
+        "taskBriefSnapshot": "围绕线性代数建立从具体到抽象的先修链。",
+        "globalExplanation": {
+          "theorySkeleton": "从线性方程组与矩阵出发，建立向量空间与子空间，再用线性变换统一矩阵与几何，最后进入特征值与对角化；在特征值前补充一个二维反例（剪切变换不可对角化）以缓冲负荷。",
+          "sourceBasis": "采用 MIT OpenCourseWare 18.06 线性代数课程大纲与 3Blue1Brown 的 Essence of Linear Algebra 作为直观补充。",
+          "optimizationRationale": "先修顺序以抽象程度递增为准，先空间后变换再特征值，匹配用户“解释几何意义”的目标。",
+          "risksAndValidation": "需诊断用户对“秩—解结构”和“特征值存在性”的理解，避免只记公式。"
+        },
+        "sources": [
+          {
+            "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/",
+            "title": "MIT 18.06 Linear Algebra",
+            "reason": "权威课程大纲，先修顺序与抽象递进清晰。"
+          },
+          {
+            "url": "https://www.3blue1brown.com/lessons/essence-of-linear-algebra",
+            "title": "Essence of Linear Algebra",
+            "reason": "提供几何直觉，补足公式背后的空间图景。"
+          }
+        ],
+        "keyTradeoffs": [
+          "以 MIT 课程保证严谨，以 3Blue1Brown 补足直觉，避免纯计算训练。",
+          "用“秩—解结构”作为贯通主线，而非孤立记忆定理。"
+        ]
+      }
+    }
+  ],
+  "grounding": {
+    "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/": {
+      "ok": true,
+      "status": 200,
+      "title": "Linear Algebra | Mathematics | MIT OpenCourseWare",
+      "excerpt": "This course covers matrix theory and linear algebra, emphasizing topics useful in other disciplines such as physics, economics, and engineering."
+    },
+    "https://www.3blue1brown.com/lessons/essence-of-linear-algebra": {
+      "ok": true,
+      "status": 200,
+      "title": "Essence of linear algebra - 3Blue1Brown",
+      "excerpt": "A geometric understanding of matrices, determinants, eigen-stuffs and more."
+    }
+  },
+  "expected": {
+    "researchGatePassed": true,
+    "researchMissing": [],
+    "finalGatePassed": true,
+    "finalMissing": [],
+    "qualityReportSignificantIssues": false,
+    "qualityReportDimensionKeys": [
+      "prerequisiteCorrectness",
+      "goalMatch",
+      "cognitiveLoad",
+      "sourceQuality",
+      "checkability"
+    ],
+    "groundedOkCount": 2,
+    "groundedFailCount": 0
+  }
+}

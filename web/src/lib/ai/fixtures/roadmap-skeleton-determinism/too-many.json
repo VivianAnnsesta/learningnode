@@ -1,0 +1,24 @@
+{
+  "title": "Too many stages skeleton",
+  "status": "draft",
+  "stages": [
+    { "key": "s01", "title": "S1", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s02", "title": "S2", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s03", "title": "S3", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s04", "title": "S4", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s05", "title": "S5", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s06", "title": "S6", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s07", "title": "S7", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s08", "title": "S8", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s09", "title": "S9", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s10", "title": "S10", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s11", "title": "S11", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s12", "title": "S12", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s13", "title": "S13", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s14", "title": "S14", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s15", "title": "S15", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s16", "title": "S16", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s17", "title": "S17", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] },
+    { "key": "s18", "title": "S18", "goal": "g", "coreTopics": ["t"], "prerequisiteStageTitles": [], "prerequisiteStageKeys": [] }
+  ]
+}

@@ -1,0 +1,2062 @@
+{
+  "run": 1,
+  "elapsedMs": 91726,
+  "generatedAt": "2026-08-13T07:01:53.168Z",
+  "providerCalls": [
+    {
+      "id": "cmsr662uj0004ui3ods3ptux8",
+      "taskType": "roadmap_skeleton_generation",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "status": "success",
+      "latencyMs": 41093,
+      "providerRequestId": null,
+      "promptVersion": "roadmap-skeleton-generation-v2",
+      "createdAt": "2026-08-13T07:01:03.596Z"
+    },
+    {
+      "id": "cmsr66e780006ui3o3skzbzyw",
+      "taskType": "roadmap_skeleton_critique",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "status": "success",
+      "latencyMs": 14707,
+      "providerRequestId": null,
+      "promptVersion": "roadmap-skeleton-review-v2",
+      "createdAt": "2026-08-13T07:01:18.308Z"
+    },
+    {
+      "id": "cmsr674xv0008ui3oe7ap7au0",
+      "taskType": "roadmap_skeleton_repair",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "status": "success",
+      "latencyMs": 34648,
+      "providerRequestId": null,
+      "promptVersion": "roadmap-skeleton-repair-v2",
+      "createdAt": "2026-08-13T07:01:52.963Z"
+    }
+  ],
+  "result": {
+    "skeleton": {
+      "title": "高等数学考研复习路线（骨架）",
+      "status": "draft",
+      "planningVersion": 2,
+      "stages": [
+        {
+          "key": "stage-functions-limits",
+          "title": "函数与极限",
+          "goal": "建立函数语言和极限的严格概念，掌握极限计算的基本方法，为连续性和微分学奠定基础。",
+          "coreTopics": [
+            "函数概念与性质",
+            "数列极限",
+            "函数极限",
+            "极限运算法则",
+            "两个重要极限",
+            "无穷小与无穷大"
+          ],
+          "prerequisiteStageTitles": [],
+          "prerequisiteStageKeys": [],
+          "moduleBlueprints": [
+            {
+              "key": "mod-func-basics",
+              "title": "函数基础与性质",
+              "goal": "能够准确描述函数的定义域、值域、单调性、奇偶性、周期性和有界性，并理解反函数与复合函数。",
+              "keyQuestions": [
+                {
+                  "key": "q-func-def-domain",
+                  "question": "如何确定一个函数的定义域和值域，并判断其基本性质？",
+                  "checkableOutcome": "能正确求出给定函数的定义域和值域，并判断其单调性、奇偶性、周期性和有界性。"
+                }
+              ]
+            },
+            {
+              "key": "mod-limit-concept",
+              "title": "极限的严格定义与性质",
+              "goal": "理解数列极限和函数极限的ε-N、ε-δ定义，掌握极限的唯一性、有界性、保号性等基本性质。",
+              "keyQuestions": [
+                {
+                  "key": "q-limit-def",
+                  "question": "如何用ε-N和ε-δ语言精确描述极限，并利用定义证明简单极限？",
+                  "checkableOutcome": "能写出极限定义的数学表述，并完成一个简单极限的ε-δ证明。"
+                },
+                {
+                  "key": "q-limit-uniqueness",
+                  "question": "如何证明极限的唯一性？",
+                  "checkableOutcome": "能陈述极限唯一性并给出证明思路。"
+                },
+                {
+                  "key": "q-limit-boundedness",
+                  "question": "如何证明收敛数列的有界性？",
+                  "checkableOutcome": "能陈述有界性定理并证明。"
+                },
+                {
+                  "key": "q-limit-sign-preservation",
+                  "question": "如何应用极限的保号性？",
+                  "checkableOutcome": "能陈述保号性并应用它解决相关问题。"
+                }
+              ]
+            },
+            {
+              "key": "mod-limit-computation",
+              "title": "极限计算方法",
+              "goal": "掌握极限的四则运算法则、复合函数极限、两个重要极限以及无穷小阶的比较，能熟练计算各类极限。",
+              "keyQuestions": [
+                {
+                  "key": "q-limit-methods",
+                  "question": "在计算极限时，如何根据函数形式选择合适的方法（如四则运算、重要极限、等价无穷小替换）？",
+                  "checkableOutcome": "能针对不同类型的极限题目，选择正确的方法并计算出结果。"
+                },
+                {
+                  "key": "q-infinitesimal-order",
+                  "question": "如何比较无穷小的阶，并利用等价无穷小替换简化极限计算？",
+                  "checkableOutcome": "能判断两个无穷小量的阶，并正确使用等价无穷小替换计算极限。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-continuity",
+          "title": "连续性与间断点",
+          "goal": "理解函数连续的概念，掌握间断点的分类，并应用闭区间上连续函数的性质解决相关问题。",
+          "coreTopics": [
+            "连续的定义",
+            "间断点分类",
+            "连续函数的运算",
+            "闭区间上连续函数的性质"
+          ],
+          "prerequisiteStageTitles": [
+            "函数与极限"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-functions-limits"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-continuity-def",
+              "title": "连续性与间断点",
+              "goal": "能够判断函数在某点的连续性，并分类间断点。",
+              "keyQuestions": [
+                {
+                  "key": "q-continuity-check",
+                  "question": "如何利用极限判断函数在某点是否连续？",
+                  "checkableOutcome": "能判断给定函数在指定点的连续性，并说明理由。"
+                },
+                {
+                  "key": "q-discontinuity-removable",
+                  "question": "什么是可去间断点？如何识别？",
+                  "checkableOutcome": "能识别可去间断点并说明理由。"
+                },
+                {
+                  "key": "q-discontinuity-jump",
+                  "question": "什么是跳跃间断点？如何识别？",
+                  "checkableOutcome": "能识别跳跃间断点并说明理由。"
+                },
+                {
+                  "key": "q-discontinuity-infinite",
+                  "question": "什么是无穷间断点？如何识别？",
+                  "checkableOutcome": "能识别无穷间断点并说明理由。"
+                }
+              ]
+            },
+            {
+              "key": "mod-continuity-properties",
+              "title": "闭区间上连续函数的性质",
+              "goal": "掌握最值定理、介值定理和零点定理，并能应用于证明方程根的存在性。",
+              "keyQuestions": [
+                {
+                  "key": "q-ivt-application",
+                  "question": "如何利用介值定理或零点定理证明方程在区间内有根？",
+                  "checkableOutcome": "能构造辅助函数并应用零点定理证明方程根的存在性。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-derivative-differential",
+          "title": "导数与微分",
+          "goal": "理解导数和微分的概念，掌握求导法则，能计算各类函数的导数，并理解导数的几何意义。",
+          "coreTopics": [
+            "导数的定义",
+            "求导法则",
+            "高阶导数",
+            "隐函数与参数方程求导",
+            "微分"
+          ],
+          "prerequisiteStageTitles": [
+            "函数与极限",
+            "连续性与间断点"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-functions-limits",
+            "stage-continuity"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-derivative-concept",
+              "title": "导数的概念与几何意义",
+              "goal": "理解导数的定义及其几何意义，能利用定义求导。",
+              "keyQuestions": [
+                {
+                  "key": "q-derivative-def-statement",
+                  "question": "导数的定义是什么？",
+                  "checkableOutcome": "能写出导数的极限定义。"
+                },
+                {
+                  "key": "q-derivative-def-compute",
+                  "question": "如何用定义求函数在某点的导数？",
+                  "checkableOutcome": "能利用定义计算简单函数的导数。"
+                },
+                {
+                  "key": "q-derivative-geometry-meaning",
+                  "question": "导数的几何意义是什么？",
+                  "checkableOutcome": "能解释导数的几何意义。"
+                },
+                {
+                  "key": "q-tangent-line",
+                  "question": "如何求曲线在某点的切线方程？",
+                  "checkableOutcome": "能求出给定曲线在指定点的切线方程。"
+                }
+              ]
+            },
+            {
+              "key": "mod-derivative-rules",
+              "title": "求导法则与高阶导数",
+              "goal": "掌握四则运算、复合函数、隐函数、参数方程的求导法则，并能计算高阶导数。",
+              "keyQuestions": [
+                {
+                  "key": "q-chain-rule",
+                  "question": "如何应用链式法则求复合函数的导数？",
+                  "checkableOutcome": "能正确计算复合函数的导数，并指出复合结构。"
+                },
+                {
+                  "key": "q-implicit-param",
+                  "question": "如何对隐函数和参数方程求导？",
+                  "checkableOutcome": "能对给定的隐函数或参数方程求出导数。"
+                },
+                {
+                  "key": "q-higher-order-compute",
+                  "question": "如何计算给定函数的高阶导数？",
+                  "checkableOutcome": "能计算常见函数的高阶导数。"
+                },
+                {
+                  "key": "q-higher-order-methods",
+                  "question": "计算高阶导数有哪些常用方法？",
+                  "checkableOutcome": "能列举并应用莱布尼茨公式等方法。"
+                }
+              ]
+            },
+            {
+              "key": "mod-differential",
+              "title": "微分及其应用",
+              "goal": "理解微分的概念，掌握微分与导数的关系，并能用于近似计算。",
+              "keyQuestions": [
+                {
+                  "key": "q-differential-def",
+                  "question": "微分的定义是什么？",
+                  "checkableOutcome": "能解释微分的定义。"
+                },
+                {
+                  "key": "q-differential-relation",
+                  "question": "微分与导数有何关系？",
+                  "checkableOutcome": "能阐述微分与导数的关系。"
+                },
+                {
+                  "key": "q-differential-approx",
+                  "question": "如何利用微分进行近似计算？",
+                  "checkableOutcome": "能利用微分近似计算函数值的改变量。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-mvt-applications",
+          "title": "微分中值定理与导数的应用",
+          "goal": "掌握罗尔定理、拉格朗日中值定理和柯西中值定理，并能利用导数研究函数的单调性、极值、凹凸性和渐近线。",
+          "coreTopics": [
+            "罗尔定理",
+            "拉格朗日中值定理",
+            "柯西中值定理",
+            "洛必达法则",
+            "函数单调性与极值",
+            "凹凸性与拐点",
+            "渐近线"
+          ],
+          "prerequisiteStageTitles": [
+            "导数与微分"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-derivative-differential"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-mvt",
+              "title": "微分中值定理",
+              "goal": "理解三大中值定理的条件和结论，并能应用于证明等式和不等式。",
+              "keyQuestions": [
+                {
+                  "key": "q-rolle-theorem",
+                  "question": "罗尔定理的条件和结论是什么？",
+                  "checkableOutcome": "能陈述罗尔定理并验证条件。"
+                },
+                {
+                  "key": "q-lagrange-theorem",
+                  "question": "拉格朗日中值定理的条件和结论是什么？",
+                  "checkableOutcome": "能陈述拉格朗日中值定理并验证条件。"
+                },
+                {
+                  "key": "q-cauchy-theorem",
+                  "question": "柯西中值定理的条件和结论是什么？",
+                  "checkableOutcome": "能陈述柯西中值定理并验证条件。"
+                },
+                {
+                  "key": "q-mvt-proof",
+                  "question": "如何利用中值定理证明等式或不等式？",
+                  "checkableOutcome": "能构造辅助函数并应用中值定理完成一个证明题。"
+                }
+              ]
+            },
+            {
+              "key": "mod-lhopital",
+              "title": "洛必达法则",
+              "goal": "掌握洛必达法则的使用条件，并能用于计算未定式极限。",
+              "keyQuestions": [
+                {
+                  "key": "q-lhopital-conditions-statement",
+                  "question": "洛必达法则的使用条件是什么？",
+                  "checkableOutcome": "能陈述洛必达法则的使用条件。"
+                },
+                {
+                  "key": "q-lhopital-when-not",
+                  "question": "何时不能使用洛必达法则？",
+                  "checkableOutcome": "能判断一个极限是否可用洛必达法则，并说明理由。"
+                },
+                {
+                  "key": "q-lhopital-compute",
+                  "question": "如何应用洛必达法则计算各种未定式的极限？",
+                  "checkableOutcome": "能正确使用洛必达法则计算至少三种未定式的极限。"
+                }
+              ]
+            },
+            {
+              "key": "mod-function-analysis",
+              "title": "函数性态研究",
+              "goal": "利用导数研究函数的单调性、极值、凹凸性和渐近线，并绘制函数图像。",
+              "keyQuestions": [
+                {
+                  "key": "q-monotonicity-extrema",
+                  "question": "如何利用导数判断函数的单调性和求极值？",
+                  "checkableOutcome": "能求出函数的单调区间和极值点。"
+                },
+                {
+                  "key": "q-concavity-asymptote",
+                  "question": "如何判断函数的凹凸性并求渐近线？",
+                  "checkableOutcome": "能求出函数的凹凸区间、拐点和渐近线。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-indefinite-integral",
+          "title": "不定积分",
+          "goal": "理解原函数与不定积分的概念，掌握换元积分法和分部积分法，能计算常见函数的不定积分。",
+          "coreTopics": [
+            "原函数与不定积分",
+            "基本积分公式",
+            "换元积分法",
+            "分部积分法",
+            "有理函数积分"
+          ],
+          "prerequisiteStageTitles": [
+            "导数与微分"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-derivative-differential"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-indef-concept",
+              "title": "不定积分的概念与基本公式",
+              "goal": "理解原函数和不定积分的定义，掌握基本积分公式。",
+              "keyQuestions": [
+                {
+                  "key": "q-antiderivative-def",
+                  "question": "什么是原函数？",
+                  "checkableOutcome": "能解释原函数的定义。"
+                },
+                {
+                  "key": "q-indef-relation",
+                  "question": "不定积分与原函数有何关系？",
+                  "checkableOutcome": "能阐述不定积分与原函数的关系。"
+                },
+                {
+                  "key": "q-basic-formulas-list",
+                  "question": "基本积分公式有哪些？",
+                  "checkableOutcome": "能列举基本积分公式。"
+                },
+                {
+                  "key": "q-basic-formulas-apply",
+                  "question": "如何应用基本积分公式计算简单不定积分？",
+                  "checkableOutcome": "能熟练运用基本积分公式计算简单不定积分。"
+                }
+              ]
+            },
+            {
+              "key": "mod-integration-methods",
+              "title": "换元积分法与分部积分法",
+              "goal": "掌握第一类换元法、第二类换元法和分部积分法，并能根据被积函数形式选择合适方法。",
+              "keyQuestions": [
+                {
+                  "key": "q-substitution",
+                  "question": "如何选择合适的换元来简化积分？",
+                  "checkableOutcome": "能对给定积分选择合适的换元并正确计算。"
+                },
+                {
+                  "key": "q-parts-formula",
+                  "question": "分部积分法的公式是什么？",
+                  "checkableOutcome": "能陈述分部积分公式。"
+                },
+                {
+                  "key": "q-parts-choice",
+                  "question": "如何选择u和dv？",
+                  "checkableOutcome": "能正确选择u和dv。"
+                }
+              ]
+            },
+            {
+              "key": "mod-rational-integral",
+              "title": "有理函数与三角函数的积分",
+              "goal": "掌握有理函数的部分分式分解和三角函数积分的常用技巧。",
+              "keyQuestions": [
+                {
+                  "key": "q-rational-integral",
+                  "question": "如何对有理函数进行部分分式分解并积分？",
+                  "checkableOutcome": "能对给定的有理函数进行分解并求出不定积分。"
+                },
+                {
+                  "key": "q-trig-integral",
+                  "question": "如何处理三角函数乘积的积分？",
+                  "checkableOutcome": "能利用三角恒等式或换元法计算常见三角函数积分。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-definite-integral",
+          "title": "定积分",
+          "goal": "理解定积分的概念和性质，掌握牛顿-莱布尼茨公式，能计算定积分并理解其几何意义。",
+          "coreTopics": [
+            "定积分的定义",
+            "定积分的性质",
+            "微积分基本定理",
+            "定积分的计算",
+            "反常积分"
+          ],
+          "prerequisiteStageTitles": [
+            "不定积分"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-indefinite-integral"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-definite-concept",
+              "title": "定积分的概念与性质",
+              "goal": "理解定积分的定义（黎曼和），掌握定积分的基本性质。",
+              "keyQuestions": [
+                {
+                  "key": "q-definite-def-statement",
+                  "question": "定积分的定义是什么？",
+                  "checkableOutcome": "能解释定积分的定义。"
+                },
+                {
+                  "key": "q-definite-def-compute",
+                  "question": "如何用定义计算简单定积分？",
+                  "checkableOutcome": "能利用定义计算一个简单定积分。"
+                },
+                {
+                  "key": "q-definite-properties-statement",
+                  "question": "定积分有哪些基本性质？",
+                  "checkableOutcome": "能陈述定积分的性质。"
+                },
+                {
+                  "key": "q-definite-properties-apply",
+                  "question": "如何利用定积分的性质简化计算？",
+                  "checkableOutcome": "能利用性质比较积分大小或简化计算。"
+                }
+              ]
+            },
+            {
+              "key": "mod-ftc",
+              "title": "微积分基本定理",
+              "goal": "理解牛顿-莱布尼茨公式，掌握变上限积分函数的导数。",
+              "keyQuestions": [
+                {
+                  "key": "q-ftc-statement",
+                  "question": "牛顿-莱布尼茨公式是什么？",
+                  "checkableOutcome": "能陈述牛顿-莱布尼茨公式。"
+                },
+                {
+                  "key": "q-ftc-apply",
+                  "question": "如何应用牛顿-莱布尼茨公式计算定积分？",
+                  "checkableOutcome": "能应用牛顿-莱布尼茨公式计算定积分。"
+                },
+                {
+                  "key": "q-variable-limit",
+                  "question": "如何求变上限积分函数的导数？",
+                  "checkableOutcome": "能正确求出变上限积分函数的导数。"
+                }
+              ]
+            },
+            {
+              "key": "mod-definite-computation",
+              "title": "定积分的计算方法",
+              "goal": "掌握定积分的换元法和分部积分法，以及对称区间上的积分技巧。",
+              "keyQuestions": [
+                {
+                  "key": "q-definite-substitution-diff",
+                  "question": "定积分的换元法与不定积分有何不同？",
+                  "checkableOutcome": "能比较两者的差异。"
+                },
+                {
+                  "key": "q-definite-substitution-apply",
+                  "question": "如何正确换元计算定积分？",
+                  "checkableOutcome": "能正确应用换元法计算定积分，并注意积分限的变化。"
+                },
+                {
+                  "key": "q-definite-parts",
+                  "question": "如何应用分部积分法计算定积分？",
+                  "checkableOutcome": "能应用分部积分法计算定积分。"
+                },
+                {
+                  "key": "q-symmetry",
+                  "question": "如何利用奇偶性和周期性简化定积分计算？",
+                  "checkableOutcome": "能利用函数的奇偶性或周期性简化定积分计算。"
+                }
+              ]
+            },
+            {
+              "key": "mod-improper-integral",
+              "title": "反常积分",
+              "goal": "理解反常积分的概念，掌握无穷限和瑕积分的敛散性判断与计算。",
+              "keyQuestions": [
+                {
+                  "key": "q-improper-types",
+                  "question": "反常积分有哪些类型？",
+                  "checkableOutcome": "能识别反常积分的类型。"
+                },
+                {
+                  "key": "q-improper-def",
+                  "question": "反常积分的定义是什么？",
+                  "checkableOutcome": "能写出反常积分的定义。"
+                },
+                {
+                  "key": "q-improper-convergence",
+                  "question": "如何判断反常积分的敛散性？",
+                  "checkableOutcome": "能判断给定反常积分的敛散性，并说明理由。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-integral-applications",
+          "title": "定积分的应用",
+          "goal": "掌握定积分在几何和物理中的应用，如面积、体积、弧长、功等。",
+          "coreTopics": [
+            "平面图形面积",
+            "旋转体体积",
+            "弧长",
+            "物理应用（功、压力）"
+          ],
+          "prerequisiteStageTitles": [
+            "定积分"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-definite-integral"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-geometric-apps",
+              "title": "定积分的几何应用",
+              "goal": "能利用定积分计算平面图形的面积、旋转体体积和曲线弧长。",
+              "keyQuestions": [
+                {
+                  "key": "q-area-volume",
+                  "question": "如何用定积分计算平面图形的面积和旋转体体积？",
+                  "checkableOutcome": "能正确建立积分表达式并计算面积或体积。"
+                },
+                {
+                  "key": "q-arc-length",
+                  "question": "如何计算平面曲线的弧长？",
+                  "checkableOutcome": "能计算给定曲线的弧长。"
+                }
+              ]
+            },
+            {
+              "key": "mod-physical-apps",
+              "title": "定积分的物理应用",
+              "goal": "能利用定积分解决变力做功、液体压力等物理问题。",
+              "keyQuestions": [
+                {
+                  "key": "q-work",
+                  "question": "如何用定积分计算变力所做的功？",
+                  "checkableOutcome": "能建立功的积分表达式并计算。"
+                },
+                {
+                  "key": "q-pressure",
+                  "question": "如何用定积分计算液体对垂直平面的压力？",
+                  "checkableOutcome": "能建立压力的积分表达式并计算。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-differential-equations",
+          "title": "微分方程",
+          "goal": "掌握一阶和高阶线性微分方程的解法，并能应用于简单建模。",
+          "coreTopics": [
+            "微分方程的基本概念",
+            "可分离变量方程",
+            "一阶线性方程",
+            "二阶常系数线性方程"
+          ],
+          "prerequisiteStageTitles": [
+            "不定积分",
+            "定积分"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-indefinite-integral",
+            "stage-definite-integral"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-ode-first-order",
+              "title": "一阶微分方程",
+              "goal": "掌握可分离变量方程和一阶线性方程的解法。",
+              "keyQuestions": [
+                {
+                  "key": "q-separable",
+                  "question": "如何识别并求解可分离变量方程？",
+                  "checkableOutcome": "能求解给定的可分离变量方程。"
+                },
+                {
+                  "key": "q-linear-first-formula",
+                  "question": "一阶线性微分方程的通解公式是什么？",
+                  "checkableOutcome": "能陈述通解公式。"
+                },
+                {
+                  "key": "q-linear-first-apply",
+                  "question": "如何应用通解公式求解一阶线性微分方程？",
+                  "checkableOutcome": "能利用公式求解一阶线性微分方程。"
+                }
+              ]
+            },
+            {
+              "key": "mod-ode-second-order",
+              "title": "二阶常系数线性微分方程",
+              "goal": "掌握齐次和非齐次方程的解法，理解特征方程和待定系数法。",
+              "keyQuestions": [
+                {
+                  "key": "q-characteristic",
+                  "question": "如何利用特征方程求解二阶常系数齐次线性方程？",
+                  "checkableOutcome": "能写出特征方程并求出通解。"
+                },
+                {
+                  "key": "q-particular-solution",
+                  "question": "如何用待定系数法求非齐次方程的特解？",
+                  "checkableOutcome": "能根据非齐次项的形式设定特解形式并求出特解。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-infinite-series",
+          "title": "无穷级数",
+          "goal": "理解数项级数和幂级数的概念，掌握敛散性判别法和幂级数的展开。",
+          "coreTopics": [
+            "常数项级数",
+            "正项级数判别法",
+            "交错级数",
+            "幂级数",
+            "函数的幂级数展开"
+          ],
+          "prerequisiteStageTitles": [
+            "定积分"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-definite-integral"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-numerical-series",
+              "title": "常数项级数的敛散性",
+              "goal": "掌握正项级数和交错级数的判别法。",
+              "keyQuestions": [
+                {
+                  "key": "q-positive-series-methods",
+                  "question": "正项级数有哪些常用判别法？",
+                  "checkableOutcome": "能陈述常用判别法。"
+                },
+                {
+                  "key": "q-positive-series-apply",
+                  "question": "如何选择判别法判断正项级数的敛散性？",
+                  "checkableOutcome": "能选择合适的判别法判断正项级数的敛散性。"
+                },
+                {
+                  "key": "q-alternating-series-statement",
+                  "question": "交错级数的莱布尼茨判别法是什么？",
+                  "checkableOutcome": "能陈述莱布尼茨判别法。"
+                },
+                {
+                  "key": "q-alternating-series-apply",
+                  "question": "如何应用莱布尼茨判别法判断交错级数的敛散性？",
+                  "checkableOutcome": "能应用莱布尼茨判别法判断交错级数的敛散性。"
+                }
+              ]
+            },
+            {
+              "key": "mod-power-series",
+              "title": "幂级数与函数展开",
+              "goal": "掌握幂级数的收敛半径和收敛域，能将函数展开为幂级数。",
+              "keyQuestions": [
+                {
+                  "key": "q-convergence-radius",
+                  "question": "如何求幂级数的收敛半径和收敛域？",
+                  "checkableOutcome": "能求出给定幂级数的收敛半径和收敛域。"
+                },
+                {
+                  "key": "q-taylor-expansion",
+                  "question": "如何将函数展开为泰勒级数或麦克劳林级数？",
+                  "checkableOutcome": "能将常见函数展开为幂级数，并确定收敛域。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-multivariable-calculus",
+          "title": "多元函数微积分",
+          "goal": "理解多元函数的概念，掌握偏导数、全微分、多元极值和重积分。",
+          "coreTopics": [
+            "多元函数极限与连续",
+            "偏导数与全微分",
+            "多元复合函数求导",
+            "多元函数极值",
+            "二重积分"
+          ],
+          "prerequisiteStageTitles": [
+            "导数与微分",
+            "微分中值定理与导数的应用",
+            "定积分"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-derivative-differential",
+            "stage-mvt-applications",
+            "stage-definite-integral"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-multivar-diff",
+              "title": "多元函数微分学",
+              "goal": "掌握偏导数、全微分的概念和计算，以及多元复合函数和隐函数的求导法则。",
+              "keyQuestions": [
+                {
+                  "key": "q-partial-derivative",
+                  "question": "如何计算多元函数的偏导数和全微分？",
+                  "checkableOutcome": "能计算给定多元函数的偏导数和全微分。"
+                },
+                {
+                  "key": "q-chain-rule-multi-statement",
+                  "question": "多元复合函数的链式法则是什么？",
+                  "checkableOutcome": "能陈述链式法则。"
+                },
+                {
+                  "key": "q-chain-rule-multi-apply",
+                  "question": "如何应用链式法则计算复合函数的偏导数？",
+                  "checkableOutcome": "能应用链式法则计算复合函数的偏导数。"
+                }
+              ]
+            },
+            {
+              "key": "mod-multivar-extrema",
+              "title": "多元函数极值",
+              "goal": "掌握多元函数极值的必要条件和充分条件，能求极值和条件极值。",
+              "keyQuestions": [
+                {
+                  "key": "q-extrema-multi",
+                  "question": "如何判断多元函数的极值？",
+                  "checkableOutcome": "能求出多元函数的极值点并判断极值。"
+                },
+                {
+                  "key": "q-lagrange",
+                  "question": "如何用拉格朗日乘数法求条件极值？",
+                  "checkableOutcome": "能应用拉格朗日乘数法求解条件极值问题。"
+                }
+              ]
+            },
+            {
+              "key": "mod-double-integral",
+              "title": "二重积分",
+              "goal": "理解二重积分的概念，掌握直角坐标和极坐标下的计算方法。",
+              "keyQuestions": [
+                {
+                  "key": "q-double-integral-compute",
+                  "question": "如何计算给定区域上的二重积分？",
+                  "checkableOutcome": "能正确计算给定区域上的二重积分。"
+                },
+                {
+                  "key": "q-integral-order",
+                  "question": "如何选择二重积分的积分次序？",
+                  "checkableOutcome": "能根据区域形状选择合适的积分次序。"
+                },
+                {
+                  "key": "q-polar-recognize",
+                  "question": "何时使用极坐标计算二重积分？",
+                  "checkableOutcome": "能识别适合极坐标的积分。"
+                },
+                {
+                  "key": "q-polar-convert",
+                  "question": "如何将直角坐标积分转换为极坐标并计算？",
+                  "checkableOutcome": "能正确转换并计算。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-vector-calculus",
+          "title": "向量代数与空间解析几何",
+          "goal": "掌握向量的运算，理解空间平面和直线的方程，以及曲面和曲线的方程。",
+          "coreTopics": [
+            "向量运算",
+            "平面方程",
+            "直线方程",
+            "曲面方程",
+            "曲线方程"
+          ],
+          "prerequisiteStageTitles": [
+            "函数与极限"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-functions-limits"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-vector-algebra",
+              "title": "向量代数",
+              "goal": "掌握向量的线性运算、数量积、向量积和混合积。",
+              "keyQuestions": [
+                {
+                  "key": "q-dot-product",
+                  "question": "如何计算向量的数量积？",
+                  "checkableOutcome": "能计算数量积。"
+                },
+                {
+                  "key": "q-cross-product",
+                  "question": "如何计算向量的向量积？",
+                  "checkableOutcome": "能计算向量积。"
+                },
+                {
+                  "key": "q-mixed-product",
+                  "question": "如何计算向量的混合积？",
+                  "checkableOutcome": "能计算混合积。"
+                },
+                {
+                  "key": "q-vector-geometric-meaning",
+                  "question": "这些向量运算有什么几何意义？",
+                  "checkableOutcome": "能解释数量积、向量积和混合积的几何意义。"
+                }
+              ]
+            },
+            {
+              "key": "mod-space-geometry",
+              "title": "空间平面与直线",
+              "goal": "掌握平面和直线的方程形式，并能求交点和夹角。",
+              "keyQuestions": [
+                {
+                  "key": "q-plane-line-equations-write",
+                  "question": "如何写出平面和直线的方程？",
+                  "checkableOutcome": "能根据条件写出平面或直线的方程。"
+                },
+                {
+                  "key": "q-plane-line-relations",
+                  "question": "如何判断平面和直线的位置关系？",
+                  "checkableOutcome": "能判断它们的位置关系。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-line-surface-integrals",
+          "title": "曲线积分与曲面积分",
+          "goal": "理解两类曲线积分和曲面积分的概念，掌握计算方法，并理解格林公式和高斯公式。",
+          "coreTopics": [
+            "第一类曲线积分",
+            "第二类曲线积分",
+            "格林公式",
+            "第一类曲面积分",
+            "第二类曲面积分",
+            "高斯公式"
+          ],
+          "prerequisiteStageTitles": [
+            "多元函数微积分",
+            "向量代数与空间解析几何",
+            "定积分的应用"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-multivariable-calculus",
+            "stage-vector-calculus",
+            "stage-integral-applications"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-line-integrals",
+              "title": "曲线积分",
+              "goal": "掌握两类曲线积分的计算，理解格林公式及其应用。",
+              "keyQuestions": [
+                {
+                  "key": "q-line-integral-compute",
+                  "question": "如何计算第一类和第二类曲线积分？",
+                  "checkableOutcome": "能计算给定曲线上的两类曲线积分。"
+                },
+                {
+                  "key": "q-green-theorem-statement",
+                  "question": "格林公式的条件和结论是什么？",
+                  "checkableOutcome": "能陈述格林公式的条件和结论。"
+                },
+                {
+                  "key": "q-green-theorem-apply",
+                  "question": "如何应用格林公式计算平面区域上的积分？",
+                  "checkableOutcome": "能应用格林公式计算平面区域上的积分。"
+                }
+              ]
+            },
+            {
+              "key": "mod-surface-integrals",
+              "title": "曲面积分",
+              "goal": "掌握两类曲面积分的计算，理解高斯公式。",
+              "keyQuestions": [
+                {
+                  "key": "q-surface-integral-compute",
+                  "question": "如何计算第一类和第二类曲面积分？",
+                  "checkableOutcome": "能计算给定曲面上的两类曲面积分。"
+                },
+                {
+                  "key": "q-gauss-theorem-statement",
+                  "question": "高斯公式的条件和结论是什么？",
+                  "checkableOutcome": "能陈述高斯公式的条件和结论。"
+                },
+                {
+                  "key": "q-gauss-theorem-apply",
+                  "question": "如何应用高斯公式计算闭曲面上的积分？",
+                  "checkableOutcome": "能应用高斯公式计算闭曲面上的积分。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "stage-comprehensive-review",
+          "title": "综合应用与题型迁移",
+          "goal": "整合各阶段知识，解决跨章节的综合问题，提升解题策略和迁移能力。",
+          "coreTopics": [
+            "综合题型",
+            "知识网络",
+            "解题策略",
+            "真题演练"
+          ],
+          "prerequisiteStageTitles": [
+            "函数与极限",
+            "连续性与间断点",
+            "导数与微分",
+            "微分中值定理与导数的应用",
+            "不定积分",
+            "定积分",
+            "定积分的应用",
+            "微分方程"
+          ],
+          "prerequisiteStageKeys": [
+            "stage-functions-limits",
+            "stage-continuity",
+            "stage-derivative-differential",
+            "stage-mvt-applications",
+            "stage-indefinite-integral",
+            "stage-definite-integral",
+            "stage-integral-applications",
+            "stage-differential-equations"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-integration",
+              "title": "知识整合与综合题",
+              "goal": "能够将不同章节的知识点联系起来，解决综合问题。",
+              "keyQuestions": [
+                {
+                  "key": "q-cross-chapter",
+                  "question": "如何识别综合题中涉及的知识点并建立解题思路？",
+                  "checkableOutcome": "能分析一道综合题，指出涉及的知识点，并给出解题步骤。"
+                }
+              ]
+            },
+            {
+              "key": "mod-strategy",
+              "title": "解题策略与迁移",
+              "goal": "掌握常见题型的解题策略，并能将方法迁移到新问题。",
+              "keyQuestions": [
+                {
+                  "key": "q-strategy",
+                  "question": "面对陌生题型，如何选择合适的数学工具？",
+                  "checkableOutcome": "能针对一个陌生问题，提出合理的解题策略并执行。"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "planningWarnings": [
+        {
+          "code": "compoundKeyQuestion",
+          "severity": "warning",
+          "stageKey": "stage-continuity",
+          "moduleKey": "mod-continuity-def",
+          "questionKey": "q-discontinuity-removable",
+          "message": "规划问题 \"什么是可去间断点？如何识别？\" 可能混合多个独立能力，需要 AI 复审。"
+        },
+        {
+          "code": "compoundKeyQuestion",
+          "severity": "warning",
+          "stageKey": "stage-continuity",
+          "moduleKey": "mod-continuity-def",
+          "questionKey": "q-discontinuity-jump",
+          "message": "规划问题 \"什么是跳跃间断点？如何识别？\" 可能混合多个独立能力，需要 AI 复审。"
+        },
+        {
+          "code": "compoundKeyQuestion",
+          "severity": "warning",
+          "stageKey": "stage-continuity",
+          "moduleKey": "mod-continuity-def",
+          "questionKey": "q-discontinuity-infinite",
+          "message": "规划问题 \"什么是无穷间断点？如何识别？\" 可能混合多个独立能力，需要 AI 复审。"
+        }
+      ]
+    },
+    "aiCallLogId": "cmsr662uj0004ui3ods3ptux8",
+    "aiCallLogIds": [
+      "cmsr662uj0004ui3ods3ptux8",
+      "cmsr66e780006ui3o3skzbzyw",
+      "cmsr674xv0008ui3oe7ap7au0"
+    ],
+    "qualityReport": {
+      "status": "passed",
+      "summary": "已根据独立评审修复所有阻塞性问题：拆分复合关键问题、补充前置条件、更新综合复习阶段的前置依赖。返回的草稿中不再存在阻塞性问题。",
+      "blockingIssues": [],
+      "warnings": [
+        {
+          "code": "densityBalance",
+          "targetKey": "stage-functions-limits",
+          "message": "函数与极限阶段包含三个模块，但极限计算模块可能内容过重，建议考虑拆分或调整。",
+          "suggestion": "可考虑将极限计算拆分为基本方法和技巧两个模块，但非必须。"
+        },
+        {
+          "code": "densityBalance",
+          "targetKey": "stage-derivative-differential",
+          "message": "导数与微分阶段包含三个模块，但求导法则模块可能内容过多，建议考虑拆分。",
+          "suggestion": "可考虑将求导法则拆分为基本法则和特殊函数求导两个模块，但非必须。"
+        },
+        {
+          "code": "densityBalance",
+          "targetKey": "stage-definite-integral",
+          "message": "定积分阶段包含四个模块，但计算方法和反常积分可能内容较多，建议考虑拆分。",
+          "suggestion": "可考虑将定积分计算拆分为换元法和分部积分法两个模块，但非必须。"
+        },
+        {
+          "code": "alternativeOrdering",
+          "targetKey": "stage-vector-calculus",
+          "message": "向量代数与空间解析几何被安排在多元函数微积分之后，但有些教材将其放在多元函数之前，因为向量是多元函数的基础。",
+          "suggestion": "可考虑将向量代数与空间解析几何提前到多元函数微积分之前，但非必须。"
+        }
+      ]
+    },
+    "repairAttempts": 1,
+    "source": "ai",
+    "reviewAvailability": "available",
+    "draft": {
+      "planningVersion": 2,
+      "title": "高等数学考研复习路线（骨架）",
+      "status": "draft",
+      "baseRevision": 0,
+      "stages": [
+        {
+          "key": "stage-functions-limits",
+          "title": "函数与极限",
+          "goal": "建立函数语言和极限的严格概念，掌握极限计算的基本方法，为连续性和微分学奠定基础。",
+          "status": "planned",
+          "moduleDirections": [
+            "函数概念与性质",
+            "数列极限",
+            "函数极限",
+            "极限运算法则",
+            "两个重要极限",
+            "无穷小与无穷大"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-func-basics",
+              "title": "函数基础与性质",
+              "goal": "能够准确描述函数的定义域、值域、单调性、奇偶性、周期性和有界性，并理解反函数与复合函数。",
+              "keyQuestions": [
+                {
+                  "key": "q-func-def-domain",
+                  "question": "如何确定一个函数的定义域和值域，并判断其基本性质？",
+                  "checkableOutcome": "能正确求出给定函数的定义域和值域，并判断其单调性、奇偶性、周期性和有界性。"
+                }
+              ]
+            },
+            {
+              "key": "mod-limit-concept",
+              "title": "极限的严格定义与性质",
+              "goal": "理解数列极限和函数极限的ε-N、ε-δ定义，掌握极限的唯一性、有界性、保号性等基本性质。",
+              "keyQuestions": [
+                {
+                  "key": "q-limit-def",
+                  "question": "如何用ε-N和ε-δ语言精确描述极限，并利用定义证明简单极限？",
+                  "checkableOutcome": "能写出极限定义的数学表述，并完成一个简单极限的ε-δ证明。"
+                },
+                {
+                  "key": "q-limit-uniqueness",
+                  "question": "如何证明极限的唯一性？",
+                  "checkableOutcome": "能陈述极限唯一性并给出证明思路。"
+                },
+                {
+                  "key": "q-limit-boundedness",
+                  "question": "如何证明收敛数列的有界性？",
+                  "checkableOutcome": "能陈述有界性定理并证明。"
+                },
+                {
+                  "key": "q-limit-sign-preservation",
+                  "question": "如何应用极限的保号性？",
+                  "checkableOutcome": "能陈述保号性并应用它解决相关问题。"
+                }
+              ]
+            },
+            {
+              "key": "mod-limit-computation",
+              "title": "极限计算方法",
+              "goal": "掌握极限的四则运算法则、复合函数极限、两个重要极限以及无穷小阶的比较，能熟练计算各类极限。",
+              "keyQuestions": [
+                {
+                  "key": "q-limit-methods",
+                  "question": "在计算极限时，如何根据函数形式选择合适的方法（如四则运算、重要极限、等价无穷小替换）？",
+                  "checkableOutcome": "能针对不同类型的极限题目，选择正确的方法并计算出结果。"
+                },
+                {
+                  "key": "q-infinitesimal-order",
+                  "question": "如何比较无穷小的阶，并利用等价无穷小替换简化极限计算？",
+                  "checkableOutcome": "能判断两个无穷小量的阶，并正确使用等价无穷小替换计算极限。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [],
+          "modules": []
+        },
+        {
+          "key": "stage-continuity",
+          "title": "连续性与间断点",
+          "goal": "理解函数连续的概念，掌握间断点的分类，并应用闭区间上连续函数的性质解决相关问题。",
+          "status": "planned",
+          "moduleDirections": [
+            "连续的定义",
+            "间断点分类",
+            "连续函数的运算",
+            "闭区间上连续函数的性质"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-continuity-def",
+              "title": "连续性与间断点",
+              "goal": "能够判断函数在某点的连续性，并分类间断点。",
+              "keyQuestions": [
+                {
+                  "key": "q-continuity-check",
+                  "question": "如何利用极限判断函数在某点是否连续？",
+                  "checkableOutcome": "能判断给定函数在指定点的连续性，并说明理由。"
+                },
+                {
+                  "key": "q-discontinuity-removable",
+                  "question": "什么是可去间断点？如何识别？",
+                  "checkableOutcome": "能识别可去间断点并说明理由。"
+                },
+                {
+                  "key": "q-discontinuity-jump",
+                  "question": "什么是跳跃间断点？如何识别？",
+                  "checkableOutcome": "能识别跳跃间断点并说明理由。"
+                },
+                {
+                  "key": "q-discontinuity-infinite",
+                  "question": "什么是无穷间断点？如何识别？",
+                  "checkableOutcome": "能识别无穷间断点并说明理由。"
+                }
+              ]
+            },
+            {
+              "key": "mod-continuity-properties",
+              "title": "闭区间上连续函数的性质",
+              "goal": "掌握最值定理、介值定理和零点定理，并能应用于证明方程根的存在性。",
+              "keyQuestions": [
+                {
+                  "key": "q-ivt-application",
+                  "question": "如何利用介值定理或零点定理证明方程在区间内有根？",
+                  "checkableOutcome": "能构造辅助函数并应用零点定理证明方程根的存在性。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-functions-limits"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-derivative-differential",
+          "title": "导数与微分",
+          "goal": "理解导数和微分的概念，掌握求导法则，能计算各类函数的导数，并理解导数的几何意义。",
+          "status": "planned",
+          "moduleDirections": [
+            "导数的定义",
+            "求导法则",
+            "高阶导数",
+            "隐函数与参数方程求导",
+            "微分"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-derivative-concept",
+              "title": "导数的概念与几何意义",
+              "goal": "理解导数的定义及其几何意义，能利用定义求导。",
+              "keyQuestions": [
+                {
+                  "key": "q-derivative-def-statement",
+                  "question": "导数的定义是什么？",
+                  "checkableOutcome": "能写出导数的极限定义。"
+                },
+                {
+                  "key": "q-derivative-def-compute",
+                  "question": "如何用定义求函数在某点的导数？",
+                  "checkableOutcome": "能利用定义计算简单函数的导数。"
+                },
+                {
+                  "key": "q-derivative-geometry-meaning",
+                  "question": "导数的几何意义是什么？",
+                  "checkableOutcome": "能解释导数的几何意义。"
+                },
+                {
+                  "key": "q-tangent-line",
+                  "question": "如何求曲线在某点的切线方程？",
+                  "checkableOutcome": "能求出给定曲线在指定点的切线方程。"
+                }
+              ]
+            },
+            {
+              "key": "mod-derivative-rules",
+              "title": "求导法则与高阶导数",
+              "goal": "掌握四则运算、复合函数、隐函数、参数方程的求导法则，并能计算高阶导数。",
+              "keyQuestions": [
+                {
+                  "key": "q-chain-rule",
+                  "question": "如何应用链式法则求复合函数的导数？",
+                  "checkableOutcome": "能正确计算复合函数的导数，并指出复合结构。"
+                },
+                {
+                  "key": "q-implicit-param",
+                  "question": "如何对隐函数和参数方程求导？",
+                  "checkableOutcome": "能对给定的隐函数或参数方程求出导数。"
+                },
+                {
+                  "key": "q-higher-order-compute",
+                  "question": "如何计算给定函数的高阶导数？",
+                  "checkableOutcome": "能计算常见函数的高阶导数。"
+                },
+                {
+                  "key": "q-higher-order-methods",
+                  "question": "计算高阶导数有哪些常用方法？",
+                  "checkableOutcome": "能列举并应用莱布尼茨公式等方法。"
+                }
+              ]
+            },
+            {
+              "key": "mod-differential",
+              "title": "微分及其应用",
+              "goal": "理解微分的概念，掌握微分与导数的关系，并能用于近似计算。",
+              "keyQuestions": [
+                {
+                  "key": "q-differential-def",
+                  "question": "微分的定义是什么？",
+                  "checkableOutcome": "能解释微分的定义。"
+                },
+                {
+                  "key": "q-differential-relation",
+                  "question": "微分与导数有何关系？",
+                  "checkableOutcome": "能阐述微分与导数的关系。"
+                },
+                {
+                  "key": "q-differential-approx",
+                  "question": "如何利用微分进行近似计算？",
+                  "checkableOutcome": "能利用微分近似计算函数值的改变量。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-functions-limits",
+            "stage-continuity"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-mvt-applications",
+          "title": "微分中值定理与导数的应用",
+          "goal": "掌握罗尔定理、拉格朗日中值定理和柯西中值定理，并能利用导数研究函数的单调性、极值、凹凸性和渐近线。",
+          "status": "planned",
+          "moduleDirections": [
+            "罗尔定理",
+            "拉格朗日中值定理",
+            "柯西中值定理",
+            "洛必达法则",
+            "函数单调性与极值",
+            "凹凸性与拐点",
+            "渐近线"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-mvt",
+              "title": "微分中值定理",
+              "goal": "理解三大中值定理的条件和结论，并能应用于证明等式和不等式。",
+              "keyQuestions": [
+                {
+                  "key": "q-rolle-theorem",
+                  "question": "罗尔定理的条件和结论是什么？",
+                  "checkableOutcome": "能陈述罗尔定理并验证条件。"
+                },
+                {
+                  "key": "q-lagrange-theorem",
+                  "question": "拉格朗日中值定理的条件和结论是什么？",
+                  "checkableOutcome": "能陈述拉格朗日中值定理并验证条件。"
+                },
+                {
+                  "key": "q-cauchy-theorem",
+                  "question": "柯西中值定理的条件和结论是什么？",
+                  "checkableOutcome": "能陈述柯西中值定理并验证条件。"
+                },
+                {
+                  "key": "q-mvt-proof",
+                  "question": "如何利用中值定理证明等式或不等式？",
+                  "checkableOutcome": "能构造辅助函数并应用中值定理完成一个证明题。"
+                }
+              ]
+            },
+            {
+              "key": "mod-lhopital",
+              "title": "洛必达法则",
+              "goal": "掌握洛必达法则的使用条件，并能用于计算未定式极限。",
+              "keyQuestions": [
+                {
+                  "key": "q-lhopital-conditions-statement",
+                  "question": "洛必达法则的使用条件是什么？",
+                  "checkableOutcome": "能陈述洛必达法则的使用条件。"
+                },
+                {
+                  "key": "q-lhopital-when-not",
+                  "question": "何时不能使用洛必达法则？",
+                  "checkableOutcome": "能判断一个极限是否可用洛必达法则，并说明理由。"
+                },
+                {
+                  "key": "q-lhopital-compute",
+                  "question": "如何应用洛必达法则计算各种未定式的极限？",
+                  "checkableOutcome": "能正确使用洛必达法则计算至少三种未定式的极限。"
+                }
+              ]
+            },
+            {
+              "key": "mod-function-analysis",
+              "title": "函数性态研究",
+              "goal": "利用导数研究函数的单调性、极值、凹凸性和渐近线，并绘制函数图像。",
+              "keyQuestions": [
+                {
+                  "key": "q-monotonicity-extrema",
+                  "question": "如何利用导数判断函数的单调性和求极值？",
+                  "checkableOutcome": "能求出函数的单调区间和极值点。"
+                },
+                {
+                  "key": "q-concavity-asymptote",
+                  "question": "如何判断函数的凹凸性并求渐近线？",
+                  "checkableOutcome": "能求出函数的凹凸区间、拐点和渐近线。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-derivative-differential"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-indefinite-integral",
+          "title": "不定积分",
+          "goal": "理解原函数与不定积分的概念，掌握换元积分法和分部积分法，能计算常见函数的不定积分。",
+          "status": "planned",
+          "moduleDirections": [
+            "原函数与不定积分",
+            "基本积分公式",
+            "换元积分法",
+            "分部积分法",
+            "有理函数积分"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-indef-concept",
+              "title": "不定积分的概念与基本公式",
+              "goal": "理解原函数和不定积分的定义，掌握基本积分公式。",
+              "keyQuestions": [
+                {
+                  "key": "q-antiderivative-def",
+                  "question": "什么是原函数？",
+                  "checkableOutcome": "能解释原函数的定义。"
+                },
+                {
+                  "key": "q-indef-relation",
+                  "question": "不定积分与原函数有何关系？",
+                  "checkableOutcome": "能阐述不定积分与原函数的关系。"
+                },
+                {
+                  "key": "q-basic-formulas-list",
+                  "question": "基本积分公式有哪些？",
+                  "checkableOutcome": "能列举基本积分公式。"
+                },
+                {
+                  "key": "q-basic-formulas-apply",
+                  "question": "如何应用基本积分公式计算简单不定积分？",
+                  "checkableOutcome": "能熟练运用基本积分公式计算简单不定积分。"
+                }
+              ]
+            },
+            {
+              "key": "mod-integration-methods",
+              "title": "换元积分法与分部积分法",
+              "goal": "掌握第一类换元法、第二类换元法和分部积分法，并能根据被积函数形式选择合适方法。",
+              "keyQuestions": [
+                {
+                  "key": "q-substitution",
+                  "question": "如何选择合适的换元来简化积分？",
+                  "checkableOutcome": "能对给定积分选择合适的换元并正确计算。"
+                },
+                {
+                  "key": "q-parts-formula",
+                  "question": "分部积分法的公式是什么？",
+                  "checkableOutcome": "能陈述分部积分公式。"
+                },
+                {
+                  "key": "q-parts-choice",
+                  "question": "如何选择u和dv？",
+                  "checkableOutcome": "能正确选择u和dv。"
+                }
+              ]
+            },
+            {
+              "key": "mod-rational-integral",
+              "title": "有理函数与三角函数的积分",
+              "goal": "掌握有理函数的部分分式分解和三角函数积分的常用技巧。",
+              "keyQuestions": [
+                {
+                  "key": "q-rational-integral",
+                  "question": "如何对有理函数进行部分分式分解并积分？",
+                  "checkableOutcome": "能对给定的有理函数进行分解并求出不定积分。"
+                },
+                {
+                  "key": "q-trig-integral",
+                  "question": "如何处理三角函数乘积的积分？",
+                  "checkableOutcome": "能利用三角恒等式或换元法计算常见三角函数积分。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-derivative-differential"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-definite-integral",
+          "title": "定积分",
+          "goal": "理解定积分的概念和性质，掌握牛顿-莱布尼茨公式，能计算定积分并理解其几何意义。",
+          "status": "planned",
+          "moduleDirections": [
+            "定积分的定义",
+            "定积分的性质",
+            "微积分基本定理",
+            "定积分的计算",
+            "反常积分"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-definite-concept",
+              "title": "定积分的概念与性质",
+              "goal": "理解定积分的定义（黎曼和），掌握定积分的基本性质。",
+              "keyQuestions": [
+                {
+                  "key": "q-definite-def-statement",
+                  "question": "定积分的定义是什么？",
+                  "checkableOutcome": "能解释定积分的定义。"
+                },
+                {
+                  "key": "q-definite-def-compute",
+                  "question": "如何用定义计算简单定积分？",
+                  "checkableOutcome": "能利用定义计算一个简单定积分。"
+                },
+                {
+                  "key": "q-definite-properties-statement",
+                  "question": "定积分有哪些基本性质？",
+                  "checkableOutcome": "能陈述定积分的性质。"
+                },
+                {
+                  "key": "q-definite-properties-apply",
+                  "question": "如何利用定积分的性质简化计算？",
+                  "checkableOutcome": "能利用性质比较积分大小或简化计算。"
+                }
+              ]
+            },
+            {
+              "key": "mod-ftc",
+              "title": "微积分基本定理",
+              "goal": "理解牛顿-莱布尼茨公式，掌握变上限积分函数的导数。",
+              "keyQuestions": [
+                {
+                  "key": "q-ftc-statement",
+                  "question": "牛顿-莱布尼茨公式是什么？",
+                  "checkableOutcome": "能陈述牛顿-莱布尼茨公式。"
+                },
+                {
+                  "key": "q-ftc-apply",
+                  "question": "如何应用牛顿-莱布尼茨公式计算定积分？",
+                  "checkableOutcome": "能应用牛顿-莱布尼茨公式计算定积分。"
+                },
+                {
+                  "key": "q-variable-limit",
+                  "question": "如何求变上限积分函数的导数？",
+                  "checkableOutcome": "能正确求出变上限积分函数的导数。"
+                }
+              ]
+            },
+            {
+              "key": "mod-definite-computation",
+              "title": "定积分的计算方法",
+              "goal": "掌握定积分的换元法和分部积分法，以及对称区间上的积分技巧。",
+              "keyQuestions": [
+                {
+                  "key": "q-definite-substitution-diff",
+                  "question": "定积分的换元法与不定积分有何不同？",
+                  "checkableOutcome": "能比较两者的差异。"
+                },
+                {
+                  "key": "q-definite-substitution-apply",
+                  "question": "如何正确换元计算定积分？",
+                  "checkableOutcome": "能正确应用换元法计算定积分，并注意积分限的变化。"
+                },
+                {
+                  "key": "q-definite-parts",
+                  "question": "如何应用分部积分法计算定积分？",
+                  "checkableOutcome": "能应用分部积分法计算定积分。"
+                },
+                {
+                  "key": "q-symmetry",
+                  "question": "如何利用奇偶性和周期性简化定积分计算？",
+                  "checkableOutcome": "能利用函数的奇偶性或周期性简化定积分计算。"
+                }
+              ]
+            },
+            {
+              "key": "mod-improper-integral",
+              "title": "反常积分",
+              "goal": "理解反常积分的概念，掌握无穷限和瑕积分的敛散性判断与计算。",
+              "keyQuestions": [
+                {
+                  "key": "q-improper-types",
+                  "question": "反常积分有哪些类型？",
+                  "checkableOutcome": "能识别反常积分的类型。"
+                },
+                {
+                  "key": "q-improper-def",
+                  "question": "反常积分的定义是什么？",
+                  "checkableOutcome": "能写出反常积分的定义。"
+                },
+                {
+                  "key": "q-improper-convergence",
+                  "question": "如何判断反常积分的敛散性？",
+                  "checkableOutcome": "能判断给定反常积分的敛散性，并说明理由。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-indefinite-integral"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-integral-applications",
+          "title": "定积分的应用",
+          "goal": "掌握定积分在几何和物理中的应用，如面积、体积、弧长、功等。",
+          "status": "planned",
+          "moduleDirections": [
+            "平面图形面积",
+            "旋转体体积",
+            "弧长",
+            "物理应用（功、压力）"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-geometric-apps",
+              "title": "定积分的几何应用",
+              "goal": "能利用定积分计算平面图形的面积、旋转体体积和曲线弧长。",
+              "keyQuestions": [
+                {
+                  "key": "q-area-volume",
+                  "question": "如何用定积分计算平面图形的面积和旋转体体积？",
+                  "checkableOutcome": "能正确建立积分表达式并计算面积或体积。"
+                },
+                {
+                  "key": "q-arc-length",
+                  "question": "如何计算平面曲线的弧长？",
+                  "checkableOutcome": "能计算给定曲线的弧长。"
+                }
+              ]
+            },
+            {
+              "key": "mod-physical-apps",
+              "title": "定积分的物理应用",
+              "goal": "能利用定积分解决变力做功、液体压力等物理问题。",
+              "keyQuestions": [
+                {
+                  "key": "q-work",
+                  "question": "如何用定积分计算变力所做的功？",
+                  "checkableOutcome": "能建立功的积分表达式并计算。"
+                },
+                {
+                  "key": "q-pressure",
+                  "question": "如何用定积分计算液体对垂直平面的压力？",
+                  "checkableOutcome": "能建立压力的积分表达式并计算。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-definite-integral"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-differential-equations",
+          "title": "微分方程",
+          "goal": "掌握一阶和高阶线性微分方程的解法，并能应用于简单建模。",
+          "status": "planned",
+          "moduleDirections": [
+            "微分方程的基本概念",
+            "可分离变量方程",
+            "一阶线性方程",
+            "二阶常系数线性方程"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-ode-first-order",
+              "title": "一阶微分方程",
+              "goal": "掌握可分离变量方程和一阶线性方程的解法。",
+              "keyQuestions": [
+                {
+                  "key": "q-separable",
+                  "question": "如何识别并求解可分离变量方程？",
+                  "checkableOutcome": "能求解给定的可分离变量方程。"
+                },
+                {
+                  "key": "q-linear-first-formula",
+                  "question": "一阶线性微分方程的通解公式是什么？",
+                  "checkableOutcome": "能陈述通解公式。"
+                },
+                {
+                  "key": "q-linear-first-apply",
+                  "question": "如何应用通解公式求解一阶线性微分方程？",
+                  "checkableOutcome": "能利用公式求解一阶线性微分方程。"
+                }
+              ]
+            },
+            {
+              "key": "mod-ode-second-order",
+              "title": "二阶常系数线性微分方程",
+              "goal": "掌握齐次和非齐次方程的解法，理解特征方程和待定系数法。",
+              "keyQuestions": [
+                {
+                  "key": "q-characteristic",
+                  "question": "如何利用特征方程求解二阶常系数齐次线性方程？",
+                  "checkableOutcome": "能写出特征方程并求出通解。"
+                },
+                {
+                  "key": "q-particular-solution",
+                  "question": "如何用待定系数法求非齐次方程的特解？",
+                  "checkableOutcome": "能根据非齐次项的形式设定特解形式并求出特解。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-indefinite-integral",
+            "stage-definite-integral"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-infinite-series",
+          "title": "无穷级数",
+          "goal": "理解数项级数和幂级数的概念，掌握敛散性判别法和幂级数的展开。",
+          "status": "planned",
+          "moduleDirections": [
+            "常数项级数",
+            "正项级数判别法",
+            "交错级数",
+            "幂级数",
+            "函数的幂级数展开"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-numerical-series",
+              "title": "常数项级数的敛散性",
+              "goal": "掌握正项级数和交错级数的判别法。",
+              "keyQuestions": [
+                {
+                  "key": "q-positive-series-methods",
+                  "question": "正项级数有哪些常用判别法？",
+                  "checkableOutcome": "能陈述常用判别法。"
+                },
+                {
+                  "key": "q-positive-series-apply",
+                  "question": "如何选择判别法判断正项级数的敛散性？",
+                  "checkableOutcome": "能选择合适的判别法判断正项级数的敛散性。"
+                },
+                {
+                  "key": "q-alternating-series-statement",
+                  "question": "交错级数的莱布尼茨判别法是什么？",
+                  "checkableOutcome": "能陈述莱布尼茨判别法。"
+                },
+                {
+                  "key": "q-alternating-series-apply",
+                  "question": "如何应用莱布尼茨判别法判断交错级数的敛散性？",
+                  "checkableOutcome": "能应用莱布尼茨判别法判断交错级数的敛散性。"
+                }
+              ]
+            },
+            {
+              "key": "mod-power-series",
+              "title": "幂级数与函数展开",
+              "goal": "掌握幂级数的收敛半径和收敛域，能将函数展开为幂级数。",
+              "keyQuestions": [
+                {
+                  "key": "q-convergence-radius",
+                  "question": "如何求幂级数的收敛半径和收敛域？",
+                  "checkableOutcome": "能求出给定幂级数的收敛半径和收敛域。"
+                },
+                {
+                  "key": "q-taylor-expansion",
+                  "question": "如何将函数展开为泰勒级数或麦克劳林级数？",
+                  "checkableOutcome": "能将常见函数展开为幂级数，并确定收敛域。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-definite-integral"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-multivariable-calculus",
+          "title": "多元函数微积分",
+          "goal": "理解多元函数的概念，掌握偏导数、全微分、多元极值和重积分。",
+          "status": "planned",
+          "moduleDirections": [
+            "多元函数极限与连续",
+            "偏导数与全微分",
+            "多元复合函数求导",
+            "多元函数极值",
+            "二重积分"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-multivar-diff",
+              "title": "多元函数微分学",
+              "goal": "掌握偏导数、全微分的概念和计算，以及多元复合函数和隐函数的求导法则。",
+              "keyQuestions": [
+                {
+                  "key": "q-partial-derivative",
+                  "question": "如何计算多元函数的偏导数和全微分？",
+                  "checkableOutcome": "能计算给定多元函数的偏导数和全微分。"
+                },
+                {
+                  "key": "q-chain-rule-multi-statement",
+                  "question": "多元复合函数的链式法则是什么？",
+                  "checkableOutcome": "能陈述链式法则。"
+                },
+                {
+                  "key": "q-chain-rule-multi-apply",
+                  "question": "如何应用链式法则计算复合函数的偏导数？",
+                  "checkableOutcome": "能应用链式法则计算复合函数的偏导数。"
+                }
+              ]
+            },
+            {
+              "key": "mod-multivar-extrema",
+              "title": "多元函数极值",
+              "goal": "掌握多元函数极值的必要条件和充分条件，能求极值和条件极值。",
+              "keyQuestions": [
+                {
+                  "key": "q-extrema-multi",
+                  "question": "如何判断多元函数的极值？",
+                  "checkableOutcome": "能求出多元函数的极值点并判断极值。"
+                },
+                {
+                  "key": "q-lagrange",
+                  "question": "如何用拉格朗日乘数法求条件极值？",
+                  "checkableOutcome": "能应用拉格朗日乘数法求解条件极值问题。"
+                }
+              ]
+            },
+            {
+              "key": "mod-double-integral",
+              "title": "二重积分",
+              "goal": "理解二重积分的概念，掌握直角坐标和极坐标下的计算方法。",
+              "keyQuestions": [
+                {
+                  "key": "q-double-integral-compute",
+                  "question": "如何计算给定区域上的二重积分？",
+                  "checkableOutcome": "能正确计算给定区域上的二重积分。"
+                },
+                {
+                  "key": "q-integral-order",
+                  "question": "如何选择二重积分的积分次序？",
+                  "checkableOutcome": "能根据区域形状选择合适的积分次序。"
+                },
+                {
+                  "key": "q-polar-recognize",
+                  "question": "何时使用极坐标计算二重积分？",
+                  "checkableOutcome": "能识别适合极坐标的积分。"
+                },
+                {
+                  "key": "q-polar-convert",
+                  "question": "如何将直角坐标积分转换为极坐标并计算？",
+                  "checkableOutcome": "能正确转换并计算。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-derivative-differential",
+            "stage-mvt-applications",
+            "stage-definite-integral"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-vector-calculus",
+          "title": "向量代数与空间解析几何",
+          "goal": "掌握向量的运算，理解空间平面和直线的方程，以及曲面和曲线的方程。",
+          "status": "planned",
+          "moduleDirections": [
+            "向量运算",
+            "平面方程",
+            "直线方程",
+            "曲面方程",
+            "曲线方程"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-vector-algebra",
+              "title": "向量代数",
+              "goal": "掌握向量的线性运算、数量积、向量积和混合积。",
+              "keyQuestions": [
+                {
+                  "key": "q-dot-product",
+                  "question": "如何计算向量的数量积？",
+                  "checkableOutcome": "能计算数量积。"
+                },
+                {
+                  "key": "q-cross-product",
+                  "question": "如何计算向量的向量积？",
+                  "checkableOutcome": "能计算向量积。"
+                },
+                {
+                  "key": "q-mixed-product",
+                  "question": "如何计算向量的混合积？",
+                  "checkableOutcome": "能计算混合积。"
+                },
+                {
+                  "key": "q-vector-geometric-meaning",
+                  "question": "这些向量运算有什么几何意义？",
+                  "checkableOutcome": "能解释数量积、向量积和混合积的几何意义。"
+                }
+              ]
+            },
+            {
+              "key": "mod-space-geometry",
+              "title": "空间平面与直线",
+              "goal": "掌握平面和直线的方程形式，并能求交点和夹角。",
+              "keyQuestions": [
+                {
+                  "key": "q-plane-line-equations-write",
+                  "question": "如何写出平面和直线的方程？",
+                  "checkableOutcome": "能根据条件写出平面或直线的方程。"
+                },
+                {
+                  "key": "q-plane-line-relations",
+                  "question": "如何判断平面和直线的位置关系？",
+                  "checkableOutcome": "能判断它们的位置关系。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-functions-limits"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-line-surface-integrals",
+          "title": "曲线积分与曲面积分",
+          "goal": "理解两类曲线积分和曲面积分的概念，掌握计算方法，并理解格林公式和高斯公式。",
+          "status": "planned",
+          "moduleDirections": [
+            "第一类曲线积分",
+            "第二类曲线积分",
+            "格林公式",
+            "第一类曲面积分",
+            "第二类曲面积分",
+            "高斯公式"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-line-integrals",
+              "title": "曲线积分",
+              "goal": "掌握两类曲线积分的计算，理解格林公式及其应用。",
+              "keyQuestions": [
+                {
+                  "key": "q-line-integral-compute",
+                  "question": "如何计算第一类和第二类曲线积分？",
+                  "checkableOutcome": "能计算给定曲线上的两类曲线积分。"
+                },
+                {
+                  "key": "q-green-theorem-statement",
+                  "question": "格林公式的条件和结论是什么？",
+                  "checkableOutcome": "能陈述格林公式的条件和结论。"
+                },
+                {
+                  "key": "q-green-theorem-apply",
+                  "question": "如何应用格林公式计算平面区域上的积分？",
+                  "checkableOutcome": "能应用格林公式计算平面区域上的积分。"
+                }
+              ]
+            },
+            {
+              "key": "mod-surface-integrals",
+              "title": "曲面积分",
+              "goal": "掌握两类曲面积分的计算，理解高斯公式。",
+              "keyQuestions": [
+                {
+                  "key": "q-surface-integral-compute",
+                  "question": "如何计算第一类和第二类曲面积分？",
+                  "checkableOutcome": "能计算给定曲面上的两类曲面积分。"
+                },
+                {
+                  "key": "q-gauss-theorem-statement",
+                  "question": "高斯公式的条件和结论是什么？",
+                  "checkableOutcome": "能陈述高斯公式的条件和结论。"
+                },
+                {
+                  "key": "q-gauss-theorem-apply",
+                  "question": "如何应用高斯公式计算闭曲面上的积分？",
+                  "checkableOutcome": "能应用高斯公式计算闭曲面上的积分。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-multivariable-calculus",
+            "stage-vector-calculus",
+            "stage-integral-applications"
+          ],
+          "modules": []
+        },
+        {
+          "key": "stage-comprehensive-review",
+          "title": "综合应用与题型迁移",
+          "goal": "整合各阶段知识，解决跨章节的综合问题，提升解题策略和迁移能力。",
+          "status": "planned",
+          "moduleDirections": [
+            "综合题型",
+            "知识网络",
+            "解题策略",
+            "真题演练"
+          ],
+          "moduleBlueprints": [
+            {
+              "key": "mod-integration",
+              "title": "知识整合与综合题",
+              "goal": "能够将不同章节的知识点联系起来，解决综合问题。",
+              "keyQuestions": [
+                {
+                  "key": "q-cross-chapter",
+                  "question": "如何识别综合题中涉及的知识点并建立解题思路？",
+                  "checkableOutcome": "能分析一道综合题，指出涉及的知识点，并给出解题步骤。"
+                }
+              ]
+            },
+            {
+              "key": "mod-strategy",
+              "title": "解题策略与迁移",
+              "goal": "掌握常见题型的解题策略，并能将方法迁移到新问题。",
+              "keyQuestions": [
+                {
+                  "key": "q-strategy",
+                  "question": "面对陌生题型，如何选择合适的数学工具？",
+                  "checkableOutcome": "能针对一个陌生问题，提出合理的解题策略并执行。"
+                }
+              ]
+            }
+          ],
+          "prerequisiteStageKeys": [
+            "stage-functions-limits",
+            "stage-continuity",
+            "stage-derivative-differential",
+            "stage-mvt-applications",
+            "stage-indefinite-integral",
+            "stage-definite-integral",
+            "stage-integral-applications",
+            "stage-differential-equations"
+          ],
+          "modules": []
+        }
+      ]
+    },
+    "mapRevision": 0,
+    "reviewState": "passed",
+    "qualityReview": {
+      "id": "cmsr674ym000aui3ozr5johui",
+      "availability": "available"
+    },
+    "courseDesignAiCallLogId": "cmsr6566p0001l3jyregol6t5"
+  }
+}

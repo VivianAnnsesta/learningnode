@@ -1,0 +1,21 @@
+* text=auto eol=lf
+
+*.css text working-tree-encoding=UTF-8
+*.html text working-tree-encoding=UTF-8
+*.js text working-tree-encoding=UTF-8
+*.json text working-tree-encoding=UTF-8
+*.md text working-tree-encoding=UTF-8
+*.mjs text working-tree-encoding=UTF-8
+*.prisma text working-tree-encoding=UTF-8
+*.ps1 text working-tree-encoding=UTF-8
+*.sql text working-tree-encoding=UTF-8
+*.ts text working-tree-encoding=UTF-8
+*.tsx text working-tree-encoding=UTF-8
+*.txt text working-tree-encoding=UTF-8
+*.yml text working-tree-encoding=UTF-8
+
+*.db binary
+*.docx binary
+*.ico binary
+*.png binary
+*.zip binary

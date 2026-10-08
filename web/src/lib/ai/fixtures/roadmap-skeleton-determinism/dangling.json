@@ -1,0 +1,22 @@
+{
+  "title": "Dangling prerequisite skeleton",
+  "status": "draft",
+  "stages": [
+    {
+      "key": "foundation",
+      "title": "基础",
+      "goal": "建立基础。",
+      "coreTopics": ["x"],
+      "prerequisiteStageTitles": [],
+      "prerequisiteStageKeys": []
+    },
+    {
+      "key": "core",
+      "title": "核心",
+      "goal": "掌握核心。",
+      "coreTopics": ["y"],
+      "prerequisiteStageTitles": ["不存在的阶段"],
+      "prerequisiteStageKeys": ["missing-key"]
+    }
+  ]
+}

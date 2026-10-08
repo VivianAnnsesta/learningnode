@@ -1,0 +1,193 @@
+// LEGACY MIGRATION-ONLY SCHEMA.
+// The application runtime, new migrations, seed generation, and packaging use
+// web/prisma/schema.prisma. Keep this file only as a reference for interpreting
+// pre-PRD user databases; do not generate a client or add product capability here.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Word {
+  id             String        @id @default(cuid())
+  text           String
+  language       String?
+  sentenceSample String?
+  positionX      Float?
+  positionY      Float?
+  canvasId       String
+  canvas         GraphCanvas   @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  coreEssences   CoreEssence[]
+  trees          InferenceTree[]
+  wordTags       WordTag[]
+  relationsFrom  WordRelation[] @relation("WordRelationFrom")
+  relationsTo    WordRelation[] @relation("WordRelationTo")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([text, language, canvasId])
+}
+
+model GraphCanvas {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  words       Word[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CoreEssence {
+  id             String                @id @default(cuid())
+  wordId         String
+  summary        String
+  rationale      String?
+  word           Word                  @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  versions       SemanticCoreVersion[]
+  reviewSessions CoreReviewSession[]
+  createdAt      DateTime              @default(now())
+}
+
+model SemanticCoreVersion {
+  id             String             @id @default(cuid())
+  coreId         String
+  version        Int
+  statement      String
+  revisionReason String?
+  sourceReviewId String?
+  core           CoreEssence        @relation(fields: [coreId], references: [id], onDelete: Cascade)
+  sourceReview   CoreReviewSession? @relation(fields: [sourceReviewId], references: [id], onDelete: SetNull)
+  createdAt      DateTime           @default(now())
+
+  @@unique([coreId, version])
+  @@index([coreId])
+  @@index([sourceReviewId])
+}
+
+model CoreReviewSession {
+  id                    String                @id @default(cuid())
+  coreId                String
+  userRecall            String
+  oldSampleExplanations String?
+  transferExplanations  String?
+  aiFeedback            String?
+  result                String?
+  core                  CoreEssence           @relation(fields: [coreId], references: [id], onDelete: Cascade)
+  transferChallenges    TransferChallenge[]
+  createdVersions       SemanticCoreVersion[]
+  createdAt             DateTime              @default(now())
+
+  @@index([coreId])
+}
+
+model TransferChallenge {
+  id              String            @id @default(cuid())
+  reviewSessionId String
+  prompt          String
+  userExplanation String
+  aiAssessment    String?
+  passed          Boolean           @default(false)
+  reviewSession   CoreReviewSession @relation(fields: [reviewSessionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime          @default(now())
+
+  @@index([reviewSessionId])
+}
+
+model InferenceTree {
+  id          String         @id @default(cuid())
+  wordId      String
+  name        String?
+  description String?
+  word        Word           @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  nodes       TreeNode[]
+  relations   NodeRelation[]
+  tags        TreeTag[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model TreeNode {
+  id        String       @id @default(cuid())
+  treeId    String
+  label     String
+  nodeType  String
+  content   String?
+  tree      InferenceTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  outgoing  NodeRelation[] @relation("NodeRelationFrom")
+  incoming  NodeRelation[] @relation("NodeRelationTo")
+  tags      NodeTag[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([treeId])
+}
+
+model NodeRelation {
+  id           String      @id @default(cuid())
+  treeId       String
+  fromNodeId   String
+  toNodeId     String
+  relationType String
+  detail       String?
+  tree         InferenceTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  fromNode     TreeNode     @relation("NodeRelationFrom", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNode       TreeNode     @relation("NodeRelationTo", fields: [toNodeId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+
+  @@index([treeId])
+  @@index([fromNodeId])
+  @@index([toNodeId])
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  wordTags WordTag[]
+  nodeTags NodeTag[]
+  treeTags TreeTag[]
+}
+
+model WordTag {
+  wordId String
+  tagId  String
+  word   Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([wordId, tagId])
+}
+
+model NodeTag {
+  nodeId String
+  tagId  String
+  node   TreeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  tag    Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([nodeId, tagId])
+}
+
+model TreeTag {
+  treeId String
+  tagId  String
+  tree   InferenceTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  tag    Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([treeId, tagId])
+}
+
+model WordRelation {
+  id           String   @id @default(cuid())
+  fromWordId   String
+  toWordId     String
+  relationType String
+  detail       String?
+  fromWord     Word     @relation("WordRelationFrom", fields: [fromWordId], references: [id], onDelete: Cascade)
+  toWord       Word     @relation("WordRelationTo", fields: [toWordId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@index([fromWordId])
+  @@index([toWordId])
+}

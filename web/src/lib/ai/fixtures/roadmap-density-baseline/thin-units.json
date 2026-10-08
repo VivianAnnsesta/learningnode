@@ -1,0 +1,55 @@
+{
+  "skeleton": {
+    "title": "薄单元路线骨架",
+    "status": "draft",
+    "planningVersion": 2,
+    "stages": [
+      {
+        "key": "limits",
+        "title": "极限与连续",
+        "goal": "建立极限与连续的可检验基础。",
+        "coreTopics": ["极限", "连续"],
+        "prerequisiteStageTitles": [],
+        "prerequisiteStageKeys": [],
+        "moduleBlueprints": [
+          {
+            "key": "limit-foundations",
+            "title": "极限基础",
+            "goal": "解释极限的定义，并会计算常见极限以及判断存在性",
+            "keyQuestions": [
+              {
+                "key": "limit-meaning",
+                "question": "极限的严格定义表达了什么？",
+                "checkableOutcome": "能用量词关系解释一个极限定义"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "stageExpansions": [
+    {
+      "stageKey": "limits",
+      "stage": {
+        "key": "limits",
+        "title": "极限与连续",
+        "modules": [
+          {
+            "title": "极限基础",
+            "items": [
+              { "key": "limit-node-1", "keyQuestion": "极限表达了什么？" },
+              { "key": "limit-node-2", "keyQuestion": "怎样判断极限存在？" }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "expected": {
+    "ok": true,
+    "needsAiReview": true,
+    "skeletonWarningCodes": ["thinModuleBlueprint"],
+    "expansionWarningCodes": ["thinStageExpansion"]
+  }
+}

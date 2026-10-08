@@ -1,0 +1,22 @@
+{
+  "title": "Duplicate title skeleton",
+  "status": "draft",
+  "stages": [
+    {
+      "key": "foundation",
+      "title": "基础",
+      "goal": "建立基础。",
+      "coreTopics": ["x"],
+      "prerequisiteStageTitles": [],
+      "prerequisiteStageKeys": []
+    },
+    {
+      "key": "core",
+      "title": "基础",
+      "goal": "掌握核心。",
+      "coreTopics": ["y"],
+      "prerequisiteStageTitles": [],
+      "prerequisiteStageKeys": []
+    }
+  ]
+}

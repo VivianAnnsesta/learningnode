@@ -1,0 +1,30 @@
+{
+  "title": "Cycle skeleton",
+  "status": "draft",
+  "stages": [
+    {
+      "key": "a",
+      "title": "A",
+      "goal": "阶段 A 目标。",
+      "coreTopics": ["a1"],
+      "prerequisiteStageTitles": ["C"],
+      "prerequisiteStageKeys": ["c"]
+    },
+    {
+      "key": "b",
+      "title": "B",
+      "goal": "阶段 B 目标。",
+      "coreTopics": ["b1"],
+      "prerequisiteStageTitles": ["A"],
+      "prerequisiteStageKeys": ["a"]
+    },
+    {
+      "key": "c",
+      "title": "C",
+      "goal": "阶段 C 目标。",
+      "coreTopics": ["c1"],
+      "prerequisiteStageTitles": ["B"],
+      "prerequisiteStageKeys": ["b"]
+    }
+  ]
+}

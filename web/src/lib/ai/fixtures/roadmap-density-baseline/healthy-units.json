@@ -1,0 +1,95 @@
+{
+  "skeleton": {
+    "title": "健康路线骨架",
+    "status": "draft",
+    "planningVersion": 2,
+    "stages": [
+      {
+        "key": "limits",
+        "title": "极限与连续",
+        "goal": "建立极限与连续的可检验基础。",
+        "coreTopics": ["极限", "连续"],
+        "prerequisiteStageTitles": [],
+        "prerequisiteStageKeys": [],
+        "moduleBlueprints": [
+          {
+            "key": "limit-definition",
+            "title": "极限定义",
+            "goal": "理解极限的严格定义",
+            "keyQuestions": [
+              {
+                "key": "limit-meaning",
+                "question": "极限的严格定义表达了什么？",
+                "checkableOutcome": "能用量词关系解释一个极限定义"
+              }
+            ]
+          },
+          {
+            "key": "limit-computation",
+            "title": "极限计算",
+            "goal": "掌握常见极限的求解方法",
+            "keyQuestions": [
+              {
+                "key": "limit-rules",
+                "question": "极限运算法则的条件是什么？",
+                "checkableOutcome": "能用法则计算一个极限"
+              },
+              {
+                "key": "limit-tools",
+                "question": "何时选择洛必达法则？",
+                "checkableOutcome": "能说明适用条件并给出一个例子"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "stageExpansions": [
+    {
+      "stageKey": "limits",
+      "stage": {
+        "key": "limits",
+        "title": "极限与连续",
+        "modules": [
+          {
+            "title": "极限定义",
+            "items": [
+              {
+                "key": "limit-meaning-node",
+                "keyQuestion": "极限的严格定义表达了什么？"
+              },
+              {
+                "key": "limit-quantifier-node",
+                "keyQuestion": "定义中的量词关系表达了什么？"
+              }
+            ]
+          },
+          {
+            "title": "极限计算",
+            "items": [
+              {
+                "key": "limit-rules-node",
+                "keyQuestion": "极限运算法则的条件是什么？"
+              },
+              {
+                "key": "limit-lhopital-node",
+                "keyQuestion": "洛必达法则的适用条件是什么？"
+              },
+              {
+                "key": "limit-equivalent-node",
+                "keyQuestion": "等价无穷小替换何时可用？"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "expected": {
+    "ok": true,
+    "needsAiReview": false,
+    "skeletonWarningCodes": [],
+    "expansionWarningCodes": []
+  }
+}

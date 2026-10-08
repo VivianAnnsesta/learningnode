@@ -1,0 +1,113 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "dev": "node scripts/run-web-dev.js",
+    "dev:electron": "node scripts/run-electron-dev.js",
+    "build": "next build",
+    "build:app": "node scripts/build-electron.js",
+    "clean:app": "powershell -NoProfile -Command \"Remove-Item -Recurse -Force dist\\\\win-unpacked, dist\\\\builder-effective-config.yaml, dist\\\\latest.yml, dist\\\\*.exe -ErrorAction SilentlyContinue\"",
+    "start": "node scripts/run-web-dev.js --production",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "encoding:check": "powershell -ExecutionPolicy Bypass -File ../tools/check-encoding-garbled.ps1",
+    "check:encoding": "node scripts/check-mojibake.js",
+    "verify:app": "npm run check:encoding && npm run lint && npm run typecheck && npm run test",
+    "test": "vitest run src",
+    "test:e2e": "node scripts/run-playwright-e2e.js",
+    "test:e2e:teaching": "node scripts/run-node-teaching-e2e.js",
+    "verify:electron-package": "node scripts/verify-electron-package.js",
+    "verify:electron-runtime": "node scripts/verify-electron-runtime.js",
+    "verify:electron-upgrade": "node scripts/verify-electron-runtime.js --upgrade-fixture prisma/fixtures/legacy-pre-removal.db",
+    "verify:electron-security": "node scripts/verify-electron-security.js",
+    "verify:migration-fidelity": "node scripts/verify-migration-fidelity.js",
+    "audit:release": "npm audit --audit-level=high",
+    "fixture:migration-legacy": "node scripts/create-legacy-migration-fixture.js",
+    "verify:ai-provider": "node scripts/verify-ai-provider.js",
+    "verify:ai-provider:lmstudio": "node scripts/verify-ai-provider.js --provider lmstudio",
+    "verify:ai-provider:openai": "node scripts/verify-ai-provider.js --ignore-settings --provider openai --base-url https://api.openai.com/v1",
+    "verify:ai-provider:qwen": "node scripts/verify-ai-provider.js --ignore-settings --provider qwen --base-url https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "verify:ai-provider:deepseek": "node scripts/verify-ai-provider.js --ignore-settings --provider deepseek --base-url https://api.deepseek.com",
+    "verify:course-quality": "vitest run src/lib/ai/courseQualityBaseline.test.ts",
+    "verify:roadmap-quality": "vitest run src/lib/ai/roadmapDensityBaseline.test.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "5.18.0",
+    "d3-force": "^3.0.0",
+    "next": "^15.5.23",
+    "pdfjs-dist": "^6.2.108",
+    "prisma": "5.18.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "reactflow": "^11.11.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/d3-force": "^3.0.10",
+    "@types/node": "^22.12.0",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "autoprefixer": "10.4.19",
+    "electron": "^41.10.3",
+    "electron-builder": "^26.15.3",
+    "eslint": "8.57.0",
+    "eslint-config-next": "^15.5.23",
+    "postcss": "^8.5.26",
+    "tailwindcss": "3.4.7",
+    "typescript": "5.5.4",
+    "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.26",
+      "sharp": "0.35.0"
+    },
+    "js-yaml": "4.3.1",
+    "electron": {
+      "@electron/get": {
+        "undici": "7.29.0"
+      }
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": {
+        "brace-expansion": "5.0.9"
+      }
+    },
+    "eslint": {
+      "minimatch": {
+        "brace-expansion": "2.1.4"
+      }
+    }
+  },
+  "build": {
+    "appId": "com.antigravity.desktop",
+    "productName": "Antigravity",
+    "asar": true,
+    "files": [
+      "main.js"
+    ],
+    "extraResources": [
+      {
+        "from": ".next/standalone",
+        "to": "app-server",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "electronDownload": {
+      "mirror": "https://npmmirror.com/mirrors/electron/"
+    },
+    "directories": {
+      "output": "dist-electron"
+    },
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        "dir"
+      ]
+    }
+  }
+}

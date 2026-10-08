@@ -1,0 +1,107 @@
+{
+  "domain": {
+    "name": "计算语言学入门",
+    "description": "语言学本科，会一点 Python，想做基础文本分析。",
+    "currentLevel": "熟悉语言学基础，会写简单 Python 脚本。",
+    "goal": "能用 NLP 工具完成基础的文本清洗、分词与向量化分析。",
+    "scope": "语言学基础、Python 文本处理、词向量入门。",
+    "excludedScope": "深度学习模型训练与大规模分布式处理。",
+    "depth": "能调用工具完成端到端的小分析。",
+    "outputType": "分析报告",
+    "outputTarget": "一份对真实语料的简单向量化分析报告。",
+    "taskBrief": "围绕计算语言学建立语言学与编程交汇的学习路线。"
+  },
+  "research": {
+    "taskBriefSnapshot": "围绕计算语言学建立语言学与编程交汇的学习路线。",
+    "globalExplanation": {
+      "theorySkeleton": "从语言学的基本单位（音素、词素、句法）出发，建立“语言结构→可计算表示”的映射，再用 Python 把文本变成可分析数据，最后进入词向量；跳过语言学直接学模型会让人不懂向量在编码什么。",
+      "sourceBasis": "来源仍需补充具体可验证的课程页面，当前仅为占位。",
+      "optimizationRationale": "先修顺序以语言学基础先于向量表示为准，匹配用户“文本分析”目标。",
+      "risksAndValidation": "需诊断用户对语言学单位与向量语义之间映射的理解。"
+    },
+    "sources": [
+      {
+        "url": "https://example.com/your-study",
+        "title": "示例课程页",
+        "reason": "占位来源，需要在批判轮替换为真实可验证的课程页面。"
+      }
+    ],
+    "keyTradeoffs": [
+      "语言学严谨与工程可用之间需要平衡。",
+      "用真实语料分析作为验收，而非只学概念。"
+    ]
+  },
+  "critique": [
+    {
+      "report": {
+        "summary": "研究轮使用了占位 URL，已被质量门拦截；本轮回退为具体可达的 NLP 与斯坦福文本处理课程，先修链与来源质量均修复，目标匹配良好，产出可检验。",
+        "significantIssues": false,
+        "dimensions": [
+          { "key": "prerequisiteCorrectness", "score": 5, "note": "语言学先于向量表示，顺序正确。" },
+          { "key": "goalMatch", "score": 5, "note": "直接服务文本分析目标。" },
+          { "key": "cognitiveLoad", "score": 4, "note": "Python 与语言学并行，负荷可控。" },
+          { "key": "sourceQuality", "score": 5, "note": "占位来源已替换为真实课程页。" },
+          { "key": "checkability", "score": 5, "note": "语料分析报告可直接检验。" }
+        ]
+      },
+      "draft": {
+        "taskBriefSnapshot": "围绕计算语言学建立语言学与编程交汇的学习路线。",
+        "globalExplanation": {
+          "theorySkeleton": "从语言学的基本单位（音素、词素、句法）出发，建立“语言结构→可计算表示”的映射，再用 Python 把文本变成可分析数据，最后进入词向量；跳过语言学直接学模型会让人不懂向量在编码什么。",
+          "sourceBasis": "采用 Coursera 自然语言处理专项与 Stanford CS124 作为主干，前者覆盖端到端文本处理流程，后者提供严谨的语言学计算基础。",
+          "optimizationRationale": "先修顺序以语言学基础先于向量表示为准，匹配用户“文本分析”目标，认知负荷通过小语料逐步加大。",
+          "risksAndValidation": "需诊断用户对语言学单位与向量语义之间映射的理解，避免只调库不懂原理。"
+        },
+        "sources": [
+          {
+            "url": "https://www.coursera.org/learn/language-processing",
+            "title": "Natural Language Processing",
+            "reason": "覆盖文本清洗、分词到基础表示的端到端流程。"
+          },
+          {
+            "url": "https://web.stanford.edu/class/cs124/",
+            "title": "Stanford CS124: From Languages to Information",
+            "reason": "提供语言学与计算交叉的严谨基础。"
+          }
+        ],
+        "keyTradeoffs": [
+          "语言学严谨与工程可用之间需要平衡。",
+          "用真实语料分析作为验收，而非只学概念。"
+        ]
+      }
+    }
+  ],
+  "grounding": {
+    "https://www.coursera.org/learn/language-processing": {
+      "ok": true,
+      "status": 200,
+      "title": "Natural Language Processing | Coursera",
+      "excerpt": "Learn NLP from tokenization to text classification in this applied course."
+    },
+    "https://web.stanford.edu/class/cs124/": {
+      "ok": true,
+      "status": 200,
+      "title": "CS124: From Languages to Information",
+      "excerpt": "An introduction to the computational handling of human language and information."
+    }
+  },
+  "expected": {
+    "researchGatePassed": false,
+    "researchMissing": [
+      "specific source url",
+      "non-placeholder source url"
+    ],
+    "finalGatePassed": true,
+    "finalMissing": [],
+    "qualityReportSignificantIssues": false,
+    "qualityReportDimensionKeys": [
+      "prerequisiteCorrectness",
+      "goalMatch",
+      "cognitiveLoad",
+      "sourceQuality",
+      "checkability"
+    ],
+    "groundedOkCount": 2,
+    "groundedFailCount": 0
+  }
+}

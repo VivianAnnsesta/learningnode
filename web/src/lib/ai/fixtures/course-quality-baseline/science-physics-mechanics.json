@@ -1,0 +1,109 @@
+{
+  "domain": {
+    "name": "经典力学",
+    "description": "高中物理及格，但大学力学里的参考系、功与能量关系不清楚。",
+    "currentLevel": "会套公式解高中题，不理解参考系与能量守恒的普遍意义。",
+    "goal": "建立牛顿力学与能量方法的统一框架，能分析多体系统。",
+    "scope": "运动学、牛顿定律、功与能量、动量、转动。",
+    "excludedScope": "相对论与量子力学基础。",
+    "depth": "能推导关键结论并解释适用边界。",
+    "outputType": "推导笔记",
+    "outputTarget": "一份多体系统分析模板。",
+    "taskBrief": "围绕经典力学建立从运动学到能量的统一框架。"
+  },
+  "research": {
+    "taskBriefSnapshot": "围绕经典力学建立从运动学到能量的统一框架。",
+    "globalExplanation": {
+      "theorySkeleton": "从运动学与参考系出发，建立牛顿定律作为动力学核心，再用功—能定理与动量守恒统一不同视角；先牛顿后能量，否则守恒律会变成无来源的技巧。",
+      "sourceBasis": "采用 MIT OpenCourseWare 8.01 力学课程大纲与 OpenStax University Physics 第一卷作为概念补充。",
+      "optimizationRationale": "先修顺序以“运动学→牛顿→能量→动量→转动”为准，匹配用户“多体系统分析”目标，认知负荷通过逐步引入约束加大。",
+      "risksAndValidation": "需诊断用户对参考系选择与能量守恒适用边界的理解，避免只记公式。"
+    },
+    "sources": [
+      {
+        "url": "https://ocw.mit.edu/courses/8-01sc-classical-mechanics-fall-2016/",
+        "title": "MIT 8.01 Classical Mechanics",
+        "reason": "权威课程大纲，先修顺序与实验视角清晰。"
+      },
+      {
+        "url": "https://openstax.org/books/university-physics-volume-1/pages/1-introduction",
+        "title": "OpenStax University Physics Volume 1",
+        "reason": "提供力学与守恒律的系统教材章节。"
+      }
+    ],
+    "keyTradeoffs": [
+      "以 MIT 课程保证结构严谨，以 OpenStax 补足系统教材。",
+      "用多体系统模板作为统一验收，而非分散刷题。"
+    ]
+  },
+  "critique": [
+    {
+      "report": {
+        "summary": "先修链由运动学到能量正确，来源权威可达；目标匹配良好；产出可用多体模板检验；认知负荷在转动处略陡，建议先以平面刚体示例缓冲。",
+        "significantIssues": false,
+        "dimensions": [
+          { "key": "prerequisiteCorrectness", "score": 5, "note": "牛顿先于能量，无倒置。" },
+          { "key": "goalMatch", "score": 5, "note": "直接服务多体系统分析。" },
+          { "key": "cognitiveLoad", "score": 4, "note": "转动处负荷略陡，需平面示例。" },
+          { "key": "sourceQuality", "score": 5, "note": "MIT 与 OpenStax 具体互补。" },
+          { "key": "checkability", "score": 5, "note": "多体模板可直接检验。" }
+        ]
+      },
+      "draft": {
+        "taskBriefSnapshot": "围绕经典力学建立从运动学到能量的统一框架。",
+        "globalExplanation": {
+          "theorySkeleton": "从运动学与参考系出发，建立牛顿定律作为动力学核心，再用功—能定理与动量守恒统一不同视角；在转动前加入一个平面刚体示例以缓冲负荷。",
+          "sourceBasis": "采用 MIT OpenCourseWare 8.01 力学课程大纲与 OpenStax University Physics 第一卷作为概念补充。",
+          "optimizationRationale": "先修顺序以“运动学→牛顿→能量→动量→转动”为准，匹配用户“多体系统分析”目标，认知负荷通过逐步引入约束加大。",
+          "risksAndValidation": "需诊断用户对参考系选择与能量守恒适用边界的理解，避免只记公式。"
+        },
+        "sources": [
+          {
+            "url": "https://ocw.mit.edu/courses/8-01sc-classical-mechanics-fall-2016/",
+            "title": "MIT 8.01 Classical Mechanics",
+            "reason": "权威课程大纲，先修顺序与实验视角清晰。"
+          },
+          {
+            "url": "https://openstax.org/books/university-physics-volume-1/pages/1-introduction",
+            "title": "OpenStax University Physics Volume 1",
+            "reason": "提供力学与守恒律的系统教材章节。"
+          }
+        ],
+        "keyTradeoffs": [
+          "以 MIT 课程保证结构严谨，以 OpenStax 补足系统教材。",
+          "用多体系统模板作为统一验收，而非分散刷题。"
+        ]
+      }
+    }
+  ],
+  "grounding": {
+    "https://ocw.mit.edu/courses/8-01sc-classical-mechanics-fall-2016/": {
+      "ok": true,
+      "status": 200,
+      "title": "8.01SC Classical Mechanics | Physics | MIT OpenCourseWare",
+      "excerpt": "This course is an introduction to classical mechanics, covering kinematics, Newton's laws, work and energy, and more."
+    },
+    "https://openstax.org/books/university-physics-volume-1/pages/1-introduction": {
+      "ok": true,
+      "status": 200,
+      "title": "1 Introduction | University Physics Volume 1 - OpenStax",
+      "excerpt": "University Physics is designed for the two- or three-semester calculus-based physics course."
+    }
+  },
+  "expected": {
+    "researchGatePassed": true,
+    "researchMissing": [],
+    "finalGatePassed": true,
+    "finalMissing": [],
+    "qualityReportSignificantIssues": false,
+    "qualityReportDimensionKeys": [
+      "prerequisiteCorrectness",
+      "goalMatch",
+      "cognitiveLoad",
+      "sourceQuality",
+      "checkability"
+    ],
+    "groundedOkCount": 2,
+    "groundedFailCount": 0
+  }
+}

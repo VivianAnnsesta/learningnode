@@ -1,0 +1,22 @@
+{
+  "title": "Empty goal and coreTopics skeleton",
+  "status": "draft",
+  "stages": [
+    {
+      "key": "foundation",
+      "title": "基础",
+      "goal": "建立基础。",
+      "coreTopics": ["x"],
+      "prerequisiteStageTitles": [],
+      "prerequisiteStageKeys": []
+    },
+    {
+      "key": "core",
+      "title": "核心",
+      "goal": "   ",
+      "coreTopics": [],
+      "prerequisiteStageTitles": [],
+      "prerequisiteStageKeys": []
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run audit:release
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run check:encoding
+      - run: npm run test
+      - run: npx prisma validate
+        env:
+          DATABASE_URL: file:./ci-schema-validation.db
+      - run: npm run fixture:migration-legacy
+      - run: npm run verify:migration-fidelity
+      - run: npx playwright install chromium
+      - run: npm run test:e2e
+
+  desktop-release-gates:
+    needs: quality
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build:app
+      - run: npm run verify:electron-runtime
+      - run: npm run verify:electron-upgrade
+      - run: npm run verify:electron-security

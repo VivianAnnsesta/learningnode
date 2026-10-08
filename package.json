@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "encoding:check": "powershell -ExecutionPolicy Bypass -File tools/check-encoding-garbled.ps1"
+  },
+  "devDependencies": {
+    "prisma": "^5.18.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.18.0"
+  }
+}
