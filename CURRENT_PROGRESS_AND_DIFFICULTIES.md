@@ -2,6 +2,20 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第七批记录剪藏已完成本批既定门禁并合并GitHub main：[PR #7](https://github.com/VivianAnnsesta/learningnode/pull/7)，合并提交 `92f925e9b6e41445897240cdb9b904412e9659be`，已验证源HEAD `1f8b333d8053fa873b8fa18210e575ce0bef9348`。两处编辑入口可预览公开HTML或本人提供文字、选择固定片段、把正文和来源一起插入/安全撤销，最终仍明确保存；标题、类型、别名、日期、领域和已有来源保留。过期/淘汰可重读后明确替换来源，正文保留供合并；保存结果不明时冻结原payload核对，既有保存可在凭据失效后复用原命令找回。修订继续原CAS与retained，当前/历史来源离线固定可读；系统取得和本人提供分别标明，均不表示内容核实或学习完成。
+
+该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42647177876)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42647167137)均真实全成功：127文件/1325测试，含20项新SQLite/HTTP、41项剪藏合同、10项store及73传输/13提取（含5个真实受控TLS case）；完整页面44通过/9按原配置跳过，新7条剪藏链和旧视图返回两边均通过，真正公开HTTPS预览→保存→历史也实际执行。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42647177873)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42647167166)各24文件/532测试及33页面全过。四份完整日志/SHA索引 `1f8b-full-evidence.json` 和专项 `1f8b-target-evidence.json` 在 `web/test-results/record-clips-2026-11-09/`；root独立核验四完整日志hash和fresh job/commit状态。依赖高危门通过，11项moderate仍保留，不记为零漏洞。
+
+两套Electron42.11.16打包、空白seed运行、备份后旧库升级（各2份备份）和安全交互全部成功；新增packaged实测确认正式preview→create→revise路由共用来源凭据、固定历史/继承字段保真、篡改400/淘汰410、原创建命令重放不重复写入且返回原保存修订，认证/Host/Origin门保持。临时目录/marker/userData预校验先于任何验证数据写入。原31空白seed SHA256 `165ae84d3fa0bc8edf3b03cf1a998add3425ce1dc885b88e09d346a564ddb714` 未改，27业务表空、31迁移checksum/FK0/integrity及四条备份保真边界均过；无schema、迁移或依赖变化，旧教学读取未改。
+
+发布累计30路径（14新增/16修改/0删除），合并树 `92ec6831ac97dfd75c6e3026846452ff567b0634` 的621blob精确等于已验证1f8b源；99项保护文件、原index/历史、Word及真实用户数据库/设置保持，发布和整树证明在 `web/test-results/obsidian-record-clipping-publication-2026-11-09/`。最初4项安全夹具失败、8f6b两套页面失败和官方trace均保留；增量仅收窄提示locator、绑定新返回请求/JSON及状态记录，原业务断言/5秒和60秒门保留，无全局重试或生产改动。新网络读取保持CA/hostname、逐跳公开地址pin/peer、整次deadline/byte限制和纯文本展示，预览截取/启发式限制可见；取得来源不等于内容准确。
+
+持续优化目标保持进行中，下一批为可携带导出：从整个已应用检索结果或单记录捕获一致只读快照，保留固定修订、原始来源/别名/日期字段与显式关系，用可读Markdown及版本化manifest交接。当前仅有只读适配审查，须先形成ADR/合同再实现，不以整库备份或兼容画布导出代替。本机已安装桌面包未替换；上述为隔离SQLite/页面和GitHub Windows包运行证据，不等同于真实AI教学、学习效果或分发发布合格。
+
+### 第七批过程记录
+
+以下保留对应源HEAD当时的开发、待验及原失败状态；最新结果以上方已验证1f8b源与合并提交为准。
+
 第七批依据[ADR0033](docs/adr/0033-explicit-record-clipping-and-source-receipts.md)推进公开HTML/本人提供文字的剪藏预览、选片、正文与来源一起插入/安全撤销、明确保存和固定历史。固定预览/process共用凭据、唯一writer及两入口已接通；首轮20项SQLite/HTTP已实际通过，但页面定位/导航同步失败仍须新头验证，打包跨route尚未执行，不以第六批结果覆盖。每次预览固定所见与取得时间，过期明确重读；创建沿用原hash/prior，修订沿用原CAS，不引入通用修订ledger或假学习会话。原index、31seed、真实用户库/设置及历史SQL不动。
 
 已发布[草稿PR #7](https://github.com/VivianAnnsesta/learningnode/pull/7)，首轮源HEAD `8f6b321205d0ef39780a2ac11a4b14446835812c`。[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42643273805)与[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42643183158)均24文件/532测试全过，含20项新SQLite/HTTP；两套页面各32通过/1失败，新的7条剪藏链中6条通过，含真正公开HTTPS读取/保存/历史、410重读、CRLF/409及撤销交接。剩余unknown结果用例停在第120行：全局alert同时命中应用错误与空的Next路由播报，尚未执行后续淘汰/原payload重放断言，不能记其已通过。完整原日志/SHA及官方工件索引 `8f6b-target-evidence.json` 在 `web/test-results/record-clips-2026-11-09/`。
@@ -12,7 +26,7 @@
 
 官方PR工件13686658711（39218606字节、digest已核）另确证旧views最后返回href保留正确q/领域b/排序/summary字段；原5秒断言期间目标RSC 200但body仍pending，正确列表请求直到失败后约299ms才发出，未取得成功JSON，不能说条件丢失或读取已完成，也不推定底层慢因。现点击前注册精确返回URL及新列表request，等其200和完整JSON核scope/实际记录身份，再原5秒筛选值和fields断言；保持60秒总门，不等待页面finished流。两页面修改独立TypeScript/ESLint通过，原失败/trace保留在 `8f6b-push-target-unknown-failure/`、`pr-full-42643274038-views-return/`；修后仍待新头真实验收。
 
-### 第七批开发记录
+#### 开发与本机证据
 
 以下保留开发时本机/模拟证据；最新真实运行结果以上方对应源HEAD记录为准。
 
@@ -36,7 +50,7 @@
 
 发布累计43路径（17新增/26修改/0删除），合并树 `2e442f3b4875fdab613016780a974aa698a5a18d` 的607blob与已验证53eb源精确一致，发布及整树证明位于 `web/test-results/obsidian-record-calendar-publication-2026-11-09/`。首轮旧GET/导航竞态和额外独立客户端ECONNRESET的官方原trace与失败均保留；前者以保存状态就绪同步修正，后者读取页面实际200JSON，不以无socket证据推定keepalive根因。原业务断言及5秒/60秒门保留，无全局重试或生产改动。本机已安装桌面包未替换；这些是隔离SQLite/页面和GitHub Windows包运行证据，不等同于真实AI教学、学习效果或分发发布合格。
 
-持续优化目标保持进行中，下一批接通公开HTML与人工选文的剪藏预览、来源身份、选片和明确插入/保存；导出仍待实施。两项目前只有只读适配审查，尚未交付，不以记录日期或现有来源入口替代。既有教学质量阻断继续按原状态处理。
+第六批完成时的后续计划为公开HTML与人工选文的剪藏预览、来源身份、选片和明确插入/保存；对应第七批最新结果见上方，导出仍待实施，不以记录日期或现有来源入口替代。既有教学质量阻断继续按原状态处理。
 
 ### 第六批过程记录
 
