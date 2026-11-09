@@ -23,6 +23,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
+      - run: npm install --global npm@11.17.0
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint

@@ -17,12 +17,52 @@ function positions(nodes: Neighborhood["nodes"]) {
   for (const distance of [0, 1, 2]) {
     const ring = nodes.filter(node => node.distance === distance);
     ring.forEach((node, index) => {
-      const angle = index * 2 * Math.PI / ring.length - Math.PI / 2;
+      const angle = index * 2 * Math.PI / ring.length + (distance === 1 ? -Math.PI / 4 : Math.PI / 6);
       const radius = distance === 0 ? 0 : distance === 1 ? 175 : 300;
       result.set(node.id, { x: Math.round(420 + radius * Math.cos(angle)), y: Math.round(350 + radius * Math.sin(angle)) });
     });
   }
   return result;
+}
+
+type Position = { x: number; y: number };
+
+function connectionPath(edge: Neighborhood["edges"][number], nodes: Neighborhood["nodes"], layout: Map<string, Position>) {
+  const from = layout.get(edge.fromKnowledgePointId), to = layout.get(edge.toKnowledgePointId);
+  if (!from || !to) return null;
+  const length = Math.hypot(to.x - from.x, to.y - from.y) || 1;
+  const normal = { x: -(to.y - from.y) / length, y: (to.x - from.x) / length };
+  let best: { control: Position; score: number } | null = null;
+  // Test a few bounded curves so a long connection does not pass through an unrelated record or its label.
+  for (const bend of [28, -28, 70, -70, 130, -130, 200, -200]) {
+    const control = { x: (from.x + to.x) / 2 + normal.x * bend, y: (from.y + to.y) / 2 + normal.y * bend };
+    let score = 0;
+    for (let step = 1; step < 20; step++) {
+      const t = step / 20;
+      const x = (1 - t) ** 2 * from.x + 2 * (1 - t) * t * control.x + t ** 2 * to.x;
+      const y = (1 - t) ** 2 * from.y + 2 * (1 - t) * t * control.y + t ** 2 * to.y;
+      if (x < 25 || x > 815 || y < 25 || y > 675) score += 500;
+      for (const node of nodes) {
+        if (node.id === edge.fromKnowledgePointId || node.id === edge.toKnowledgePointId) continue;
+        const position = layout.get(node.id);
+        if (!position) continue;
+        const clearance = Math.hypot(x - position.x, y - position.y) - (node.distance === 0 ? 43 : 37);
+        if (clearance < 0) score += 100 + clearance ** 2;
+        if (Math.abs(x - position.x) < 85 && y > position.y + 32 && y < position.y + 55) score += 100;
+      }
+    }
+    if (!best || score < best.score) best = { control, score };
+    if (score === 0) break;
+  }
+  if (!best) return null;
+  const control = best.control;
+  const fromLength = Math.hypot(control.x - from.x, control.y - from.y) || 1;
+  const toLength = Math.hypot(to.x - control.x, to.y - control.y) || 1;
+  const fromRadius = nodes.find(node => node.id === edge.fromKnowledgePointId)?.distance === 0 ? 33 : 27;
+  const toRadius = nodes.find(node => node.id === edge.toKnowledgePointId)?.distance === 0 ? 37 : 31;
+  const start = { x: from.x + (control.x - from.x) / fromLength * fromRadius, y: from.y + (control.y - from.y) / fromLength * fromRadius };
+  const end = { x: to.x - (to.x - control.x) / toLength * toRadius, y: to.y - (to.y - control.y) / toLength * toRadius };
+  return `M ${start.x.toFixed(1)} ${start.y.toFixed(1)} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${end.x.toFixed(1)} ${end.y.toFixed(1)}`;
 }
 
 export function RecordNeighborhood({ pointId, refresh }: { pointId: string; refresh: number }) {
@@ -72,20 +112,20 @@ export function RecordNeighborhood({ pointId, refresh }: { pointId: string; refr
         <svg viewBox="0 0 840 700" className="min-w-[600px] w-full" role="group" aria-label={`当前记录周围${neighborhood.depth}层的知识联系`}>
           <defs><marker id={markerId} markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#64748b" /></marker></defs>
           {neighborhood.edges.map(edge => {
-            const from = layout.get(edge.fromKnowledgePointId), to = layout.get(edge.toKnowledgePointId);
-            if (!from || !to) return null;
-            const length = Math.hypot(to.x - from.x, to.y - from.y) || 1;
-            const dx = (to.x - from.x) / length, dy = (to.y - from.y) / length;
+            const path = connectionPath(edge, neighborhood.nodes, layout);
+            if (!path) return null;
             const symmetric = ["related", "analogy", "contrast"].includes(edge.type);
-            return <line key={edge.id} x1={from.x + dx * 27} y1={from.y + dy * 27} x2={to.x - dx * 30} y2={to.y - dy * 30} stroke="#64748b" strokeWidth="1.5" markerEnd={symmetric ? undefined : `url(#${markerId})`}><title>{titles.get(edge.fromKnowledgePointId)} {symmetric ? "↔" : "→"} {titles.get(edge.toKnowledgePointId)}：{relationKindLabels[edge.type] || edge.type}。{edge.detail}</title></line>;
+            return <path key={edge.id} d={path} fill="none" stroke="#64748b" strokeWidth="1.5" markerEnd={symmetric ? undefined : `url(#${markerId})`}><title>{titles.get(edge.fromKnowledgePointId)} {symmetric ? "↔" : "→"} {titles.get(edge.toKnowledgePointId)}：{relationKindLabels[edge.type] || edge.type}。{edge.detail}</title></path>;
           })}
           {neighborhood.nodes.map(node => {
             const position = layout.get(node.id);
             if (!position) return null;
+            const labelWidth = Math.min(node.title.length, 13) * 13 + 12;
             return <a key={node.id} href={`/learning/knowledge/${encodeURIComponent(node.id)}`} aria-label={`打开记录：${node.title}`}>
               <title>{node.title}{node.distance === 0 ? "（当前记录）" : `（${node.distance}层联系）`}</title>
               <circle cx={position.x} cy={position.y} r={node.distance === 0 ? 29 : 23} fill={node.distance === 0 ? "#0f766e" : node.distance === 1 ? "#dbeafe" : "#fef3c7"} stroke="#334155" strokeWidth="1.5" />
               <text x={position.x} y={position.y + 4} textAnchor="middle" fontSize="11" fill={node.distance === 0 ? "#ffffff" : "#0f172a"}>{node.distance === 0 ? "当前" : `${node.distance}层`}</text>
+              <rect x={position.x - labelWidth / 2} y={position.y + 31} width={labelWidth} height="22" rx="3" fill="#fffbf0" fillOpacity="0.95" />
               <text x={position.x} y={position.y + 46} textAnchor="middle" fontSize="13" fill="#0f172a">{node.title.length > 13 ? `${node.title.slice(0, 12)}…` : node.title}</text>
             </a>;
           })}

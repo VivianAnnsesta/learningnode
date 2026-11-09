@@ -26,6 +26,10 @@ export const relationKindLabels: Record<string, string> = {
   derive: "推导", application: "应用", prerequisite: "前置", boundary: "边界"
 };
 
+export const recordSourceLabels: Record<string, string> = {
+  user: "本人记录", accepted_ai: "本人接受的 AI 内容", excerpt: "来源摘录", legacy_unknown: "历史来源未注明"
+};
+
 export function isRecordSnapshot(value: unknown): value is RecordSnapshot {
   if (!value || typeof value !== "object") return false;
   const source = value as Record<string, unknown>;

@@ -8,6 +8,14 @@
 
 远端目标已核实为 `VivianAnnsesta/learningnode`，本地无 Git remote 且旧历史包含不应公开的配置/数据库路径。因此基于远端 main 在独立发布目录准备当前源码快照，排除设置、用户数据库、缓存、产物和私人 Word 文档，原工作区 index/历史不变。版本化空白 seed 与合成迁移 fixture 已只读核验；具体发布提交、PR 及 CI 结果待实际完成后追加。段落锚点、别名/未链接提及、更多属性视图、模板、日期回看、剪藏与导出仍是后续目标，没有记作已交付。
 
+源码首批已发布为 [PR #1](https://github.com/VivianAnnsesta/learningnode/pull/1)，提交 `dd3242ec867405988b51d792a9c5b98c8a72c9d1`，main 未改。两条 PR CI 均在 `npm ci` 停止，报告缺失 brace-expansion/concat-map，后续检查未运行；原始 [CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42566142454) 与 [针对验证](https://github.com/VivianAnnsesta/learningnode/actions/runs/42566142412) 保留。根因输入包括本机 npm 11.17.0 与 runner npm 10.9.9 对既有 override/lock 的解析差异，现按 ADR 0005 固定 npm 工具链再重验。首次 lock-only 重算未改变锁，不能把安装命令退出 0 当作 CI 修复成功。
+
+新增来源请求边界纯逻辑测试 3/3 通过；10 项 SQLite 与3条新页面链仍待实际后端验证。另以合成正式 API 完成6项浏览器操作/视觉检查，超过72k字符旧来源的新增引用请求仅409字节；这是 mock UI 证据，不是 SQLite/Electron 验收。视觉问题已修复：局部图谱避让节点和标签，相关/类比/对比在列表及图谱统一使用双向语义。固定历史 schema 已原字节归档，校验及无 `.git` 读取通过，实际迁移保真待 CI。
+
+本次重新查询依赖审计发现当前 high/critical 阻断，旧日期的零漏洞结果不覆盖新公告。正在按官方修复范围升级兼容补丁；Electron 41 没有消除当前阻断公告的可用补丁，依据 ADR 0005 计划升到最小已修复 Electron 42.11.16，并重新验证完整桌面运行/升级/安全门禁。没有降低审计阈值或把未打包源码当作可发布桌面程序。
+
+安全维护已写入 package/lock：Next.js 与 eslint-config-next 15.5.28、Electron 42.11.16、Vitest 4.1.12、sharp 0.35.5 和兼容传递补丁。`npm run audit:release`、npm 11.17.0 的 `npm ci --dry-run --ignore-scripts` 均通过，最新完整审计 0 critical / 0 high / 11 moderate。剩余 moderate 为 [minimatch globparts amplification](https://github.com/advisories/GHSA-g3hv-75wg-m249) 的 9/10 传递依赖链，限于现有开发/构建 glob 使用，暂不以不兼容的 minimatch 11 强制覆盖；后续跟进依赖拥有者的兼容修复，不能据此宣称零漏洞。before/after 审计与 lock 检查在同一证据目录。Electron 42 的显式 binary 安装已接入开发命令；本机 node_modules 尚未切到新依赖，真实新版本行为继续待 CI 及桌面门禁。
+
 更新日期：2026-11-08
 
 本轮路线输入与显式修复的代码改动已完成，最新隔离串行全量 **766/766** 通过，0失败、0未运行；全项目 typecheck、lint、encoding 通过。[全量JSON](web/test-results/planning-evidence-final-full-2026-10-28.json)、[输出](web/test-results/planning-evidence-final-full-2026-10-28.log)、[类型](web/test-results/planning-evidence-final-typecheck-2026-10-28.log)、[规范](web/test-results/planning-evidence-final-lint-2026-10-28.log)、[编码](web/test-results/planning-evidence-final-encoding-2026-10-28.log)保留。此前中间态755/755仍有效但不覆盖后来新增的旁路修复；编码命令首次误指向不存在的check-encoding.js，原[失败输出](web/test-results/planning-evidence-encoding-2026-10-28.log)保留，改用package脚本实际指向的check-mojibake.js后通过。未修改schema、真实用户数据库或Provider默认推理模式，未重新打包。

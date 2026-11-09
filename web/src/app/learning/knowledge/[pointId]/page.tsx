@@ -7,7 +7,7 @@ import { ActionButton, AppShell, PageHeader, SectionPanel } from "../../../compo
 import { RecordContextPanel } from "../../../components/RecordContextPanel";
 import { RecordNeighborhood } from "../../../components/RecordNeighborhood";
 import { RecordReferencePicker } from "../../../components/RecordReferencePicker";
-import { isRecordSnapshot, readRecordJson, recordKindLabels, recordSourceInputs, relationKindLabels, sameRecordSource, type RecordChoice, type RecordSnapshot } from "../../../components/recordDiscoveryTypes";
+import { isRecordSnapshot, readRecordJson, recordKindLabels, recordSourceInputs, recordSourceLabels, relationKindLabels, sameRecordSource, type RecordChoice, type RecordSnapshot } from "../../../components/recordDiscoveryTypes";
 
 type Point = {
   id: string; title: string; body: string; kind: string; currentRevisionId: string;
@@ -143,7 +143,7 @@ export default function KnowledgePage() {
           const result = await mutate(`/api/knowledge-points/${encodeURIComponent(id)}`, { title, body, kind, sourceType, ...(sourceType === "accepted_ai" ? { acceptAiContent: true } : {}), expectedRevisionId: draftRevisionId, ...(sources ? { sources } : {}) }, "PATCH");
           if (result && currentId.current === id) { hydrateDraft(result.knowledgePoint); setMessage("已保存新修订，原内容和引用快照仍可回看。"); }
         }}>确认保存新修订</ActionButton>
-        <p>当前内容来源：{point.sourceType}。添加引用和保存修订不会完成学习任务或创建语义联系。</p>
+        <p>当前内容来源：{recordSourceLabels[point.sourceType] || "来源未注明"}。添加引用和保存修订不会完成学习任务或创建语义联系。</p>
         {draftRevisionId !== point.currentRevisionId && <div className="space-y-3 rounded-lg border border-amber-300 p-3">
           <p role="status" className="text-amber-800">记录已有较新修订，你的编辑草稿仍保留。请比较并合并内容，再明确选择新的保存基础。</p>
           <details><summary>比较最新保存的内容</summary><p>{point.title}</p><p className="whitespace-pre-wrap">{point.body}</p></details>
