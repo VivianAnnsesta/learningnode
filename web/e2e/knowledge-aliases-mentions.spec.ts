@@ -94,10 +94,14 @@ test("当前正文的名称提及经阅读、显式引用保存后退出候选�
   await expect(page.getByRole("article", { name: `已保存引用：${target.title} · 全文`, exact: true })).toBeVisible();
   const after = await counts();
   expect(after).toEqual({ ...before, revisions: before.revisions + 1 });
+  const returnedMentions = page.waitForResponse(r => r.request().method() === "GET" && new URL(r.url()).pathname === `/api/knowledge-points/${target.id}/mentions` && new URL(r.url()).searchParams.get("offset") === "0" && new URL(r.url()).searchParams.get("limit") === "20");
+  const returnedContext = page.waitForResponse(r => r.request().method() === "GET" && new URL(r.url()).pathname === `/api/knowledge-points/${target.id}/context` && new URL(r.url()).searchParams.get("offset") === "0" && new URL(r.url()).searchParams.get("limit") === "20");
   await openRecord(page, target, view);
   await expect(panel.getByText("当前没有找到尚未引用的来源记录。", { exact: true })).toBeVisible();
-  expect((await (await request.get(`/api/knowledge-points/${target.id}/mentions`)).json()).mentions.page.total).toBe(0);
-  const backlinks = (await (await request.get(`/api/knowledge-points/${target.id}/context`)).json()).backlinks;
+  const mentionsResponse = await returnedMentions; expect(mentionsResponse.status()).toBe(200);
+  expect((await mentionsResponse.json()).mentions.page.total).toBe(0);
+  const contextResponse = await returnedContext; expect(contextResponse.status()).toBe(200);
+  const backlinks = (await contextResponse.json()).backlinks;
   expect(backlinks.page.total).toBe(1);
   expect(backlinks.items[0].id).toBe(source.id);
   await expect(page.getByRole("region", { name: "记录引用与反向引用" }).getByRole("link", { name: source.title, exact: true })).toBeVisible();

@@ -119,6 +119,7 @@ test("日期409保留已编辑值，未编辑日期在明确采用最新基础�
   await expect(page.getByLabel("本人指定记录日期", { exact: true })).toHaveValue("2026-03-03"); await expect(page.getByLabel("修订记录内容", { exact: true })).toHaveValue("本地正文保留。");
   await page.getByRole("button", { name: "已合并，使用最新修订作为保存基础", exact: true }).click(); await expect(page.getByLabel("本人指定记录日期", { exact: true })).toHaveValue("2026-03-03");
   const kept = await saveRevision(page, note.id, second.currentRevisionId); expect(kept.result.knowledgePoint.recordDate).toEqual({ date: "2026-03-03", timeZone: "UTC" }); expect(kept.result.knowledgePoint.body).toBe("本地正文保留。");
+  await expect(page.getByText("当前已保存本人记录日期：2026-03-03 · UTC", { exact: true })).toBeVisible();
   await openDetail(page, note.id); const third = kept.result.knowledgePoint;
   const next = await request.patch(pointPath(note.id), { data: { expectedRevisionId: third.currentRevisionId, title: note.title, body: third.body, recordDate: { date: "2026-03-04", timeZone: "Asia/Shanghai" } } }); expect(next.status()).toBe(200); const fourth = (await next.json()).knowledgePoint;
   await page.getByLabel("修订记录内容", { exact: true }).fill("只改正文，日期采用新基础。");
