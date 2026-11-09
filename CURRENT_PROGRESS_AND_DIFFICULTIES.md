@@ -2,7 +2,15 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
-第二批依据 ADR 0028 实施段落级固定引用：共享原文段落/选择器算法，服务端校验指定修订的完整段落及哈希，多段草稿与预览、历史/反向引用回看。目标/当前差异：代码已接通，尚未通过本批完整验收；保留全文引用、不可覆盖来源、retained短描述符、明确保存和返回原视图。当前源码及远端头须以本轮实际检查为准，不复用首批通过声明替代本批结果。
+第二批段落级固定引用已通过本轮既定门禁并合并 GitHub main：[PR #2](https://github.com/VivianAnnsesta/learningnode/pull/2)，合并提交 `4afe2339edf432aa641261805b03fb1133d14cdc`。已验证源 HEAD 为 `98509f11e1d22179496e9ef9af7286049ea501f8`。全文与同修订多个完整段落可同时引用，重复文字按原文位置区分；选择先进入可撤销草稿，明确保存后能从当前/历史/反向引用回看固定原文，源记录后来修订不会移动旧摘录。服务端校验真实修订、完整段落、Unicode与哈希，沿用保留来源、并发冲突和返回原视图边界。
+
+本批[完整 PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42580595104)与[完整 push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42580589498)均真实成功：106文件/847测试，完整页面17通过/9按原配置跳过；Prisma校验、归档旧schema夹具及迁移保真；Electron42.11.16打包、空白seed运行、旧库升级和安全交互均通过，外键违例0。[专项 PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42580595109)与[专项 push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42580589496)均57/57及6/6页面通过。首次详情导航补充精确回应/URL同步后的完整流程两边均通过，原超时和持久化断言保留；旧失败未重跑或抹除，不推断当时未捕获的DOM状态。完整CI实际上传 `full-browser-evidence`，日志及原失败保存在 `web/test-results/paragraph-references-2026-11-08/`。
+
+本批没有schema、seed、迁移或依赖变更；真实用户数据库、AI设置、原工作区index及旧Git历史未变。源码安全发布、blob/tree保真与lease证据在 `web/test-results/obsidian-paragraph-publication-2026-11-08/`。这是隔离SQLite、页面及Windows桌面运行证据；真实AI教学、学习效果、分发发布限制仍按原状态处理。本机node_modules和已安装桌面包没有替换。持续优化目标保持进行中，下一批先处理个人记录别名检索与记录级未引用提及候选；更多属性视图、模板、日期回看、剪藏和导出仍未实现。
+
+### 第二批过程记录
+
+以下按对应提交保留当时结果；其中待验、未合并等陈述是该时点事实，最新结果以上方已验证源HEAD为准。
 
 源提交 `58f01ac1affdcbc1d556d71f17dde33271961372` 的专项 PR/push 均真实57/57及6/6页面通过。[完整 PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42578873180) quality已通过847/847、17页面通过/9原配置跳过，桌面仍在运行；同提交[完整 push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42578866960)为847/847、16页面通过/9跳过/1失败，桌面未运行。失败发生在旧全产品用例首次进入记录详情等待保存按钮的5秒断言；日志同时记录了详情与API冷编译，正在核查导航/数据就绪同步，不能用另一套成功忽略此失败。原生产代码、超时和业务断言未变，当前不合并。
 
@@ -18,7 +26,9 @@
 
 同提交[完整 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42577713854)已实际通过106文件/847测试，完整E2E为16通过/9跳过/1旧提示断言失败，桌面未运行。目标引擎诊断实测 `sqlite_version=3.41.2`：64个a+NUL的hash解码长度成为64，`->`原始JSON仍保留NUL转义，确认了原始层过滤的必要性；原3条合法引用及坏选择器拒绝断言均通过。原完整日志 `pr-ci-42577713854-full-e2e-failure.log` 保留，下一CI仍须完成完整页面及桌面门禁。
 
-首批已通过全部本轮门禁并合并 GitHub main：[PR #1](https://github.com/VivianAnnsesta/learningnode/pull/1)，合并提交 `106cd708c3ad4841080a607772cb85f79cdce150`。已验证源代码 HEAD 为 `8ebe33b41963ba219f56e9fba43bb16d30f4bb0a`；PR 与 push 两套完整CI均成功。功能包含固定修订引用与快照、当前反向引用分页、已确认局部图谱、类型/领域/主题视图、Ctrl+K查找，以及普通返回/引用/图谱/快捷查找沿用源筛选。正式地图、语义关系确认及学习履历的业务边界保持原规则。
+### 首批完成与过程记录
+
+首批已通过全部本轮门禁并合并 GitHub main：[PR #1](https://github.com/VivianAnnsesta/learningnode/pull/1)，合并提交 `106cd708c3ad4841080a607772cb85f79cdce150`。已验证源代码 HEAD 为 `8ebe33b41963ba219f56e9fba43bb16d30f4bb0a`；PR 与 push 两套完整CI均成功。功能包含固定修订引用与快照、当前反向引用分页、已确认局部图谱、类型/领域/主题视图、Ctrl+K查找，以及普通返回/引用/图谱/快捷查找沿用源筛选。正式地图、语义关系确认及学习履历的业务边界保持原规则。以下继续保留首批当时进程，后续范围以上方最新批次为准。
 
 [完整 Windows CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42571477526)真实通过：105文件、825/825测试；完整页面15通过/9按原配置跳过；Prisma校验、归档旧schema夹具生成、迁移保真；Electron42.11.16打包、空白seed运行、旧库升级运行和安全交互全部通过。[专项 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42571477458)为35/35和4/4页面流程通过。成功/原失败日志在 `web/test-results/obsidian-discovery-2026-11-08/`，发布树/敏感扫描/保真核验在相邻 `obsidian-publication-2026-11-08/`；原工作区index与旧历史未改。
 
