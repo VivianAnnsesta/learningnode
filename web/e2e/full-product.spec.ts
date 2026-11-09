@@ -1,0 +1,85 @@
+import { test, expect, type Page } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
+const db = new PrismaClient();
+const fixture = process.env.E2E_TEACHING_FIXTURE === '1';
+test.afterAll(async()=>db.$disconnect());
+test.beforeEach(({page},info)=>{
+  page.on('response',async r=>{if(r.url().includes('/api/')&&!/settings|ai-config/.test(r.url()))try{await info.attach(`API ${r.request().method()} ${new URL(r.url()).pathname}`,{body:JSON.stringify({status:r.status(),input:r.request().postData(),output:await r.json()},null,2),contentType:'application/json'});}catch{}});
+});
+async function prepare(page:Page){await page.getByRole('button',{name:'准备教学',exact:true}).click();await expect(page.getByRole('heading',{name:'交点与计数'})).toBeVisible();await page.getByRole('button',{name:'从图像理解 · 按需准备',exact:true}).click();await expect(page.getByLabel('活动回答')).toBeVisible();}
+test('分页读取：较早学习与主题记录能从真实页面找到，不造新内容或调用AI',async({page,request})=>{
+  const key=crypto.randomUUID();
+  await db.nodeTeachingSession.createMany({data:Array.from({length:52},(_,i)=>({id:`history-${key}-${i}`,scopeKey:`legacy:${key}-${i}`,requestId:`history-${key}-${i}`,contextHash:'old',contextJson:JSON.stringify({schemaVersion:2,focus:`分页旧学习 ${key} ${i}`}),lessonJson:'{}',aiCallLogId:'old',progressJson:'{}',updatedAt:new Date(1000+i)}))});
+  await db.knowledgePoint.createMany({data:Array.from({length:52},(_,i)=>({id:`history-record-${key}-${i}`,title:`分页旧记录 ${key} ${i}`,userUnderstanding:'原始旧内容',updatedAt:new Date(1000+i)}))});
+  const group=(await(await request.post('/api/knowledge-collections',{data:{title:`分页旧主题 ${key}`}})).json()).collection;
+  expect((await request.patch(`/api/knowledge-collections/${group.id}`,{data:{knowledgePointId:`history-record-${key}-0`}})).ok()).toBe(true);
+  const before={sessions:await db.nodeTeachingSession.count(),records:await db.knowledgePoint.count(),ai:await db.aiCallLog.count()};
+  await page.goto('/learning/sessions');await expect(page.getByRole('link',{name:`分页旧学习 ${key} 0`,exact:true})).toHaveCount(0);await page.getByRole('button',{name:'继续查看更早的学习',exact:true}).click();await expect(page.getByRole('link',{name:`分页旧学习 ${key} 0`,exact:true})).toBeVisible();
+  await page.goto('/learning/knowledge');await expect(page.getByRole('link',{name:`分页旧记录 ${key} 0`,exact:true})).toHaveCount(0);await page.getByLabel('筛选主题').selectOption(group.id);await expect(page.getByRole('link',{name:`分页旧记录 ${key} 0`,exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'删除主题，保留记录',exact:true}).click();await expect(page.getByLabel('筛选主题')).toHaveValue('');await page.getByRole('button',{name:'继续查看更早的记录',exact:true}).click();await expect(page.getByRole('link',{name:`分页旧记录 ${key} 0`,exact:true})).toBeVisible();
+  expect(await db.nodeTeachingSession.count()).toBe(before.sessions);expect(await db.knowledgePoint.count()).toBe(before.records);expect(await db.aiCallLog.count()).toBe(before.ai);
+});
+test('路线任务：反馈实际活动、输入恢复、保存与完成分开',async({page})=>{
+  test.skip(!fixture,'使用隔离 HTTP 模型夹具验证操作链，真实模型另行记录');
+  const domain=await db.domain.create({data:{name:'操作链数学',goal:'通过图像判断实根数'}});
+  const node=await db.learningNode.create({data:{domainId:domain.id,title:'交点计数',objective:'区分参数和交点',orderIndex:0}});
+  await page.goto(`/learning/domains/${domain.id}/items/${node.id}`);
+  await prepare(page);
+  await page.getByLabel('活动回答').fill('我把切点算了两次');
+  await page.getByRole('button',{name:'提交尝试并获得反馈'}).click();
+  await expect(page.getByText('你的推理把临界交点计入了两段；请列出不同交点。',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'进入建议：通过列表澄清重复计数'}).click();
+  await expect(page.getByText('将两段的交点合成不重复的列表。',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'返回原学习位置'}).click();
+  await page.getByLabel('记录标题').fill('仍需要澄清的交点');
+  await page.getByLabel('记录类型').selectOption('question');
+  await page.getByLabel('个人记录内容').fill('我需要区分切点和重根。');
+  await page.getByRole('button',{name:'确认保存个人记录'}).click();
+  await expect(page.getByText('已保存个人记录；任务完成状态未改变。')).toBeVisible();
+  expect((await db.learningNode.findUniqueOrThrow({where:{id:node.id}})).status).not.toBe('completed');
+  await page.reload();await expect(page.getByLabel('个人记录内容')).toHaveValue('我需要区分切点和重根。');
+  const sessions=await db.nodeTeachingSession.findMany({where:{nodeId:node.id},include:{interactions:true}});
+  expect(sessions).toHaveLength(1);expect(sessions[0].interactions).toHaveLength(1);
+  expect(await db.knowledgePoint.count({where:{nodeLinks:{some:{nodeId:node.id}}}})).toBe(1);
+});
+test('独立问题：无课程启动、提问与返回位置可恢复',async({page})=>{
+  test.skip(!fixture,'真实模型另行记录');
+  await page.goto('/learning/sessions');await page.getByLabel('探索问题').fill('公共广场可以有哪些不同使用者？');
+  await page.getByRole('button',{name:'开始独立探索'}).click();await expect(page).toHaveURL(/learning\/sessions\//);
+  await page.getByLabel('向老师提问').fill('我还没开始课程，可以先讨论吗？');
+  await page.getByRole('button',{name:'提问并获得帮助'}).click();
+  await expect(page.getByRole('button',{name:'进入建议：通过列表澄清重复计数'})).toBeVisible();
+  const id=page.url().split('/').at(-1)!;expect((await db.nodeTeachingSession.findUniqueOrThrow({where:{id}})).nodeId).toBeNull();
+  await page.getByLabel('独立探索问题').fill('进一步理解公共性');await page.getByRole('button',{name:'另开探索并保留返回位置'}).click();
+  await expect(page).not.toHaveURL(new RegExp(id));await expect(page.getByRole('link',{name:'返回之前的学习位置'})).toBeVisible();await page.reload();await page.getByRole('link',{name:'返回之前的学习位置'}).click();await expect(page).toHaveURL(new RegExp(id));
+});
+test('个人记录：独立保存、修订、主题和普通关系可使用',async({page})=>{
+  const space=await db.domain.create({data:{name:'开放公共空间',goal:'讨论不同使用者'}}),math=await db.domain.create({data:{name:'图像与边界',goal:'理解临界情况'}});
+  await page.goto('/learning/knowledge');await page.getByLabel('新记录标题').fill('公共空间的疑问');await page.getByLabel('新记录内容').fill('不同人如何分享同一个场所？');await page.getByRole('button',{name:'确认保存',exact:true}).click();
+  await expect(page.getByRole('link',{name:'公共空间的疑问',exact:true})).toBeVisible();
+  await page.getByLabel('新主题名称').fill('空间与公共性');await page.getByRole('button',{name:'创建主题'}).click();
+  await expect(page.getByRole('button',{name:'空间与公共性 · 0 条记录'})).toBeVisible();
+  await page.getByLabel('新主题名称').fill('边界比较');await page.getByRole('button',{name:'创建主题'}).click();
+  await page.getByLabel('筛选领域').selectOption(math.id);await page.getByLabel('新记录标题').fill('极值与边界');await page.getByLabel('新记录内容').fill('讨论边界时应说明适用条件。');await page.getByRole('button',{name:'确认保存',exact:true}).click();
+  await expect(page.getByRole('link',{name:'极值与边界',exact:true})).toBeVisible();
+  const mathRecord=await db.knowledgePoint.findFirstOrThrow({where:{currentRevision:{title:'极值与边界'}}});
+  await page.getByLabel('筛选领域').selectOption('');
+  await page.getByRole('link',{name:'公共空间的疑问',exact:true}).click();
+  await expect(page.getByRole('button',{name:/保存新修订/})).toBeVisible();
+  const id=page.url().split('/').at(-1)!;
+  const original=await db.knowledgePoint.findUniqueOrThrow({where:{id}});
+  await page.getByLabel('修订记录内容').fill('公共空间的活力与不同人群的可达性需要分别解释。');await page.getByRole('button',{name:'确认保存新修订'}).click();await expect(page.getByText('已保存新修订，原内容仍可回看。')).toBeVisible();
+  const revisions=await db.knowledgePointRevision.findMany({where:{knowledgePointId:id},orderBy:{sequence:'asc'}});expect(revisions).toHaveLength(2);expect(revisions[0].body).toBe('不同人如何分享同一个场所？');expect(revisions[0].id).toBe(original.currentRevisionId);
+  for(const domainId of [space.id,math.id]){await page.getByLabel('引用到领域').selectOption(domainId);const response=page.waitForResponse(r=>r.url().endsWith('/references')&&r.request().method()==='POST');await page.getByRole('button',{name:'引用同一记录到该领域'}).click();expect((await response).ok()).toBeTruthy();}
+  for(const name of ['空间与公共性','边界比较']){await page.getByLabel('加入主题').selectOption({label:name});const response=page.waitForResponse(r=>r.url().includes('/knowledge-collections/')&&r.request().method()==='PATCH');await page.getByRole('button',{name:'加入主题',exact:true}).click();expect((await response).ok()).toBeTruthy();}
+  expect(await db.knowledgeGraphMembership.count({where:{knowledgePointId:id}})).toBe(2);
+  await page.getByLabel('关系终点').selectOption(mathRecord.id);await page.getByLabel('关系说明').fill('两个领域都需要辨明边界，但数学结论不能直接证明空间设计的因果。');const relationResponse=page.waitForResponse(r=>r.url().endsWith('/relations')&&r.request().method()==='POST');await page.getByRole('button',{name:'确认建立联系'}).click();expect((await relationResponse).ok()).toBeTruthy();
+  const relation=await db.knowledgeGraphEdge.findFirstOrThrow({where:{fromKnowledgePointId:id,toKnowledgePointId:mathRecord.id}});expect(relation.status).toBe('confirmed');
+  await page.getByText('修订联系说明',{exact:true}).click();await page.getByLabel('修订联系：公共空间的疑问与极值与边界').fill('只作结构类比，需要分别验证各领域条件。');await page.getByRole('button',{name:'确认修改联系说明'}).click();await expect.poll(async()=>(await db.knowledgeGraphEdge.findUniqueOrThrow({where:{id:relation.id}})).detail).toBe('只作结构类比，需要分别验证各领域条件。');
+  await page.reload();await expect(page.getByText(/只作结构类比，需要分别验证/).first()).toBeVisible();
+  await page.getByLabel('记录探索问题').fill('为什么比较不能替代证明？');await page.getByRole('button',{name:'开始探索并保留记录来源'}).click();await expect(page).toHaveURL(/learning\/sessions\//);
+  const session=await db.nodeTeachingSession.findUniqueOrThrow({where:{id:page.url().split('/').at(-1)!}});expect(session.nodeId).toBeNull();expect(JSON.parse(session.contextJson).record.revisionId).toBe(revisions[1].id);
+  await page.getByRole('link',{name:'返回之前的学习位置'}).click();await expect(page).toHaveURL(new RegExp(id));
+  await page.getByRole('button',{name:'删除联系，保留两条记录'}).click();await expect.poll(()=>db.knowledgeGraphEdge.count({where:{id:relation.id}})).toBe(0);
+  expect(await db.knowledgePoint.count({where:{id:{in:[id,mathRecord.id]}}})).toBe(2);
+});

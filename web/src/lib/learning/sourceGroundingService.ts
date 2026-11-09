@@ -10,6 +10,8 @@ export type SourceDigest = {
   excerpt: string | null;
   fragments?: { location: string; text: string }[];
   error?: string;
+  /** Timestamp of this retrieval snapshot, when supplied by a request cache. */
+  retrievedAt?: string;
 };
 
 type FetchLike = (
@@ -32,7 +34,7 @@ type FetchLike = (
   arrayBuffer?(): Promise<ArrayBuffer>;
 }>;
 
-type GroundOptions = {
+export type GroundOptions = {
   fetchImpl?: FetchLike;
   timeoutMs?: number;
   maxBytes?: number;
@@ -207,7 +209,12 @@ const extractText = (html: string, excerptChars: number) => {
     : null;
   const h1 = h1Match ? stripTags(h1Match[1]) : null;
 
-  const bodyWithoutNoise = html
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body\s*>/i);
+  const actualBody = bodyMatch ? bodyMatch[1] : html
+    .replace(/<head[\s\S]*?<\/head\s*>/gi, " ")
+    .replace(/<title[\s\S]*?<\/title\s*>/gi, " ")
+    .replace(/<meta\b[^>]*>/gi, " ");
+  const bodyWithoutNoise = actualBody
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<nav[\s\S]*?<\/nav>/gi, " ")
@@ -429,7 +436,9 @@ export const groundCourseSource = async (
           title,
           excerpt,
           fragments,
-          ...(!excerpt ? { error: "PDF 可达，但未提取到可用文本。" } : {})
+          ...(!fragments?.some(fragment => fragment.text.trim())
+            ? { error: "PDF 可达，但未提取到带位置的可用正文。" }
+            : {})
         };
       }
       if (!contentType.toLowerCase().includes("text/html")) {
@@ -451,7 +460,10 @@ export const groundCourseSource = async (
         finalUrl: currentUrl,
         title,
         excerpt,
-        fragments
+        fragments,
+        ...(!fragments.some(fragment => fragment.text.trim())
+          ? { error: "HTML 可达，但未提取到可用正文；标题和摘要不能替代正文。" }
+          : {})
       };
     } catch (error) {
       const message =

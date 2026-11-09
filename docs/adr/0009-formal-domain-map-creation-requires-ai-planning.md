@@ -1,5 +1,9 @@
 # Formal Domain Map creation requires AI planning
 
+## 2026-10-09 后续决定
+
+本 ADR 中冲突的产品约定已被 [ADR 0025](0025-unified-learning-and-personal-knowledge.md) 部分或全部替代。AI 规划和具体地图确认仍必要；联网能力不足可明确使用用户材料与待核对解释，不伪造检索，认证或连接失败仍失败。 下文保留原决策背景，不能用其旧规则覆盖当前任务书。
+
 Status: Accepted
 
 Date: 2026-07-19

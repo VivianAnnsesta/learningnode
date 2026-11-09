@@ -1,9 +1,9 @@
+import { startLearningActivity, completeLearningActivity } from "./learningActivityService";
 import { parseConcept, parseGoals } from "./conceptPlanning";
 import { buildCourseContentCoverage, currentContentPositions } from "./contentCoverage";
 import { prisma } from "../prisma";
 import {
   replaceRoadmap,
-  saveLearningNodeProgress,
   type RoadmapInput,
   type LearningNodeProgressInput
 } from "./roadmapService";
@@ -162,26 +162,9 @@ const inferNodeType = (item: {
 export function normalizeLearningNodeStatus(
   legacyStatus: string | null | undefined
 ): LearningNodeStatus {
-  const status = legacyStatus?.trim() || "not_started";
-
-  if (status === "skipped") return "skipped";
-  if (status === "suggested") return "suggested";
-  if (reviewStatuses.has(status)) return "needs_review";
-  if (masteredStatuses.has(status)) return "mastered";
-  if (completedStatuses.has(status)) return "completed";
-  if (inProgressStatuses.has(status)) return "in_progress";
-  return "locked";
+  return legacyStatus === "completed" ? "completed" : legacyStatus === "in_progress" ? "in_progress" : "available";
 }
-
-const normalizePersistedLearningNodeStatus = (
-  status: string | null | undefined
-): LearningNodeStatus => {
-  const normalized = status?.trim() || "locked";
-  if (persistedNodeStatuses.has(normalized)) {
-    return normalized as LearningNodeStatus;
-  }
-  return normalizeLearningNodeStatus(normalized);
-};
+const normalizePersistedLearningNodeStatus = normalizeLearningNodeStatus;
 
 const normalizePersistedLearningNodeType = (
   type: string | null | undefined,
@@ -203,17 +186,15 @@ const normalizePersistedLearningNodeType = (
 };
 
 const isDone = (status: LearningNodeStatus) =>
-  status === "completed" || status === "mastered" || status === "skipped";
+  status === "completed";
 
 export function calculateLearningProgress(
   nodes: Array<Pick<DomainMapNode, "status">>
 ): LearningProgress {
   const totalNodes = nodes.length;
   const completedNodes = nodes.filter((node) => isDone(node.status)).length;
-  const masteredNodes = nodes.filter((node) => node.status === "mastered").length;
-  const needsReviewNodes = nodes.filter(
-    (node) => node.status === "needs_review"
-  ).length;
+  const masteredNodes = 0;
+  const needsReviewNodes = 0;
 
   return {
     totalNodes,
@@ -234,10 +215,7 @@ function annotatePrerequisiteWarnings(nodes: DomainMapNode[]) {
     });
     return {
       ...node,
-      status:
-        node.status === "locked"
-          ? ("available" as LearningNodeStatus)
-          : node.status,
+      status: node.status,
       unmetDependencyIds
     };
   });
@@ -525,7 +503,7 @@ export async function confirmDomainMap(
 ) {
   const confirmationReason = normalizeOptional(reason);
   if (!confirmationReason) {
-    throw new Error("确认领域地图前必须写明任务书确认理由。");
+    throw new Error("请明确确认当前路线及已显示的范围与来源限制。");
   }
 
   const domain = await prisma.domain.findUnique({
@@ -545,12 +523,10 @@ export async function confirmDomainMap(
   if (!domain) {
     throw new Error("未找到该学习领域。");
   }
-  if (!normalizeOptional(domain.taskBrief) || !domain.taskBriefConfirmedAt) {
-    throw new Error("确认领域地图前必须先保存并确认任务书。");
-  }
+
   const state = await getCourseDesignState(domainId);
   const isCombinedCreationConfirmation = Boolean(courseDesign);
-  const expectedCourseDesignStatus = isCombinedCreationConfirmation
+  const expectedCourseDesignStatus = isCombinedCreationConfirmation && state.status !== "confirmed"
     ? "draft"
     : "confirmed";
   if (state.status !== expectedCourseDesignStatus || !state.draft) {
@@ -560,6 +536,7 @@ export async function confirmDomainMap(
   if (!courseDesign.qualityGate.passed) {
     throw new Error("课程设计方向未通过质量门，不能确认领域地图。");
   }
+  if (courseDesign.knowledgeReview?.verdict === "confirmed_error") throw new Error("MAP_QUALITY_BLOCKED: 课程方向仍有明确知识错误，必须先修正。") ;
   if (!state.aiCallLogId) {
     throw new Error("课程设计方向缺少 AI 生成凭据，请重新研究后再确认领域地图。");
   }
@@ -681,50 +658,8 @@ export async function assertLearningNodeInDomain(
   return node;
 }
 
-export async function startLearningNode(nodeId: string) {
-  const node = await prisma.learningNode.findUnique({
-    where: { id: nodeId },
-    select: {
-      id: true,
-      status: true,
-      legacyRoadmapItemId: true
-    }
-  });
-
-  if (node) {
-    if (
-      node.status === "in_progress" ||
-      node.status === "completed" ||
-      node.status === "mastered"
-    ) {
-      return node;
-    }
-
-    return prisma.learningNode.update({
-      where: { id: nodeId },
-      data: { status: "in_progress" }
-    });
-  }
-  throw new Error("未找到学习节点。");
-}
-
-export async function completeLearningNode(
-  nodeId: string,
-  input: LearningNodeProgressInput = {}
-) {
-  const userUnderstanding = input.userUnderstanding?.trim();
-  if (!userUnderstanding) {
-    throw new Error("请先用自己的话写下理解，再确认沉淀。");
-  }
-  return saveLearningNodeProgress(nodeId, {
-    userUnderstanding,
-    coreEssence: null,
-    masteryStatus: "seen",
-    isIsland: false,
-    islandReason: null,
-    markNodeCompleted: true
-  });
-}
+export async function startLearningNode(nodeId:string){return startLearningActivity(nodeId);}
+export async function completeLearningNode(nodeId:string,input:LearningNodeProgressInput={}){return completeLearningActivity(nodeId,input);}
 
 export async function getLearningNodeDetails(nodeId: string) {
   const item = await prisma.learningNode.findUnique({

@@ -1,3 +1,4 @@
+import { createPersonalKnowledge } from "./personalKnowledgeService";
 import { parseConcept, parseProblem, parseGoals, parseConceptReferences, validateConceptGoals } from "./conceptPlanning";
 import { validateLearningUnitOwnership, validateContentContributions } from "./curriculumBoundary";
 import type { ConceptProfile, ConceptReference, LearningGoal, StageProblem } from "./roadmapPlanningTypes";
@@ -84,6 +85,7 @@ export function roadmapSkeletonToDraft(
       problem: stage.problem,
       title: stage.title,
       goal: stage.goal,
+      rationale: stage.rationale || null,
       status: "planned",
       moduleDirections: stage.coreTopics,
       moduleBlueprints: stage.moduleBlueprints || [],
@@ -115,6 +117,7 @@ export function roadmapDraftToSkeleton(
       problem: stage.problem,
       title: stage.title,
       goal: stage.goal || null,
+      rationale: stage.rationale || undefined,
       coreTopics: stage.moduleDirections,
       prerequisiteStageKeys: stage.prerequisiteStageKeys,
       prerequisiteStageTitles: stage.prerequisiteStageKeys
@@ -201,6 +204,8 @@ export type RoadmapItemLearningInput = {
 };
 
 export type LearningNodeProgressInput = RoadmapItemLearningInput & {
+  confirmed?: boolean;
+  reason?: string;
   markNodeCompleted?: boolean;
 };
 
@@ -331,7 +336,7 @@ const normalizeModuleBlueprints = (
     goal: module.goal?.trim() || "",
     goalKeys: normalizeStringList(module.goalKeys),
     keyQuestions: (module.keyQuestions || []).map((question) => ({
-      ...(question.contentQuestionKey ? {contentQuestionKey:question.contentQuestionKey.trim(),contentRequirements:question.contentRequirements,dimensionKeys:question.dimensionKeys} : {}),
+      ...(question.contentQuestionKey ? {contentQuestionKey:question.contentQuestionKey.trim(),contentRequirements:question.contentRequirements,dimensionKeys:question.dimensionKeys,...(question.importance ? {importance:question.importance} : {})} : {}),
       key: question.key?.trim() || "",
       goalKeys: normalizeStringList(question.goalKeys),
       question: question.question?.trim() || "",
@@ -618,44 +623,9 @@ const recallReadyStatuses = new Set([
 ]);
 const reviewNeededStatuses = new Set(["needs_review", "island"]);
 
-function buildStageAdjustmentReason(stage: StageAssessmentSummary) {
-  const topFlags = stage.flaggedItems
-    .slice(0, 3)
-    .map((item) => `${item.title}: ${item.reason}`);
-  const actionSummary = stage.nextActions.slice(0, 3);
 
-  return [
-    stage.recommendation,
-    topFlags.length ? `重点问题: ${topFlags.join("; ")}` : "",
-    actionSummary.length ? `下一步: ${actionSummary.join("; ")}` : ""
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
 
-function toStageAssessmentRecordDto(record: {
-  id: string;
-  unitId: string;
-  readiness: string;
-  recommendation: string;
-  adjustmentReason: string;
-  appliedRoadmapStatus: string;
-  flaggedItemsSummary: string | null;
-  nextActionsSummary: string | null;
-  createdAt: Date;
-}): StageAssessmentRecordDto {
-  return {
-    id: record.id,
-    unitId: record.unitId,
-    readiness: record.readiness,
-    recommendation: record.recommendation,
-    adjustmentReason: record.adjustmentReason,
-    appliedRoadmapStatus: record.appliedRoadmapStatus,
-    flaggedItemsSummary: record.flaggedItemsSummary,
-    nextActionsSummary: record.nextActionsSummary,
-    createdAt: record.createdAt
-  };
-}
+
 
 export async function getRoadmapByDomain(domainId: string) {
   const [domain, units, nodes] = await prisma.$transaction([
@@ -818,9 +788,6 @@ export async function saveRoadmapDraft(
   });
 
   if (!domain) throw new Error("学习领域不存在");
-  if (!domain.taskBriefConfirmedAt) {
-    throw new Error("请先确认任务书，再保存领域地图草稿。");
-  }
   const courseDesignAiCallLogId =
     expectedCourseDesignAiCallLogId ||
     (domain.courseDesignStatus === "confirmed"
@@ -854,7 +821,6 @@ export async function saveRoadmapDraft(
     where: {
       id: domainId,
       mapRevision: domain.mapRevision,
-      taskBriefConfirmedAt: { not: null },
       courseDesignStatus: domain.courseDesignStatus,
       courseDesignAiCallLogId,
       ...("expectedCurrentDraft" in options
@@ -892,7 +858,7 @@ export async function replaceRoadmap(
   if (input.planningVersion !== 3) throw new Error("正式地图须使用已审查的教学单元规划。");
   const domain = await prisma.domain.findUnique({
     where: { id: domainId },
-    select: { id: true, name: true, mapRevision: true }
+    select: { id: true, name: true, goal: true, scope: true, excludedScope: true, currentLevel: true, mapRevision: true }
   });
 
   if (!domain) {
@@ -935,18 +901,6 @@ export async function replaceRoadmap(
       )
     )
   );
-  const removedLearnedNode = existingNodes.find(
-    (node) =>
-      !desiredNodeKeys.has(node.mapKey || node.id) &&
-      (Boolean(node.knowledgePointId) ||
-        !["locked", "available", "suggested"].includes(node.status))
-  );
-  if (removedLearnedNode) {
-    throw new Error(
-      `已沉淀或已开始的节点 ${removedLearnedNode.mapKey || removedLearnedNode.id} 不能从首版地图删除。`
-    );
-  }
-
   await prisma.$transaction(async (tx) => {
     const revisionClaim = await tx.domain.updateMany({
       where: {
@@ -955,7 +909,6 @@ export async function replaceRoadmap(
         ...(confirmation.expectedCourseDesignAiCallLogId &&
         confirmation.expectedCourseDesignStatus
           ? {
-              taskBriefConfirmedAt: { not: null },
               courseDesignStatus: confirmation.expectedCourseDesignStatus,
               courseDesignAiCallLogId:
                 confirmation.expectedCourseDesignAiCallLogId
@@ -978,6 +931,7 @@ export async function replaceRoadmap(
         learningGoalsJson: JSON.stringify(validated.learningGoals || []),
         roadmapDraftCourseDesignAiCallLogId: null,
         mapRevision: { increment: 1 },
+        taskBriefConfirmedAt: new Date(),
         ...(confirmation.courseDesignDraftJson
           ? {
               courseDesignDraft: confirmation.courseDesignDraftJson,
@@ -1088,24 +1042,9 @@ export async function replaceRoadmap(
       .filter((node) => !desiredNodeKeys.has(node.mapKey || node.id))
       .map((node) => node.id);
     if (removedNodeIds.length) {
-      const newlyProtectedNode = await tx.learningNode.findFirst({
-        where: {
-          id: { in: removedNodeIds },
-          OR: [
-            { knowledgePointId: { not: null } },
-            { status: { notIn: ["locked", "available", "suggested"] } }
-          ]
-        },
-        select: { id: true, mapKey: true }
-      });
-      if (newlyProtectedNode) {
-        throw new Error(
-          `已沉淀或已开始的节点 ${newlyProtectedNode.mapKey || newlyProtectedNode.id} 不能从首版地图删除。`
-        );
-      }
-      await tx.learningNode.deleteMany({
-        where: { id: { in: removedNodeIds } }
-      });
+      const removed=existingNodes.filter(node=>!desiredNodeKeys.has(node.mapKey||node.id));
+    for(const old of removed){const snapshot=await tx.learningNode.findUnique({where:{id:old.id}});await tx.learningProgress.create({data:{domainId,nodeId:old.id,status:"removed_from_map",payloadJson:JSON.stringify({task:snapshot,mapRevision:domain.mapRevision})}});}
+    await tx.learningNode.deleteMany({where:{id:{in:removed.map(node=>node.id)}}});
     }
 
     const desiredStageKeys = new Set(stages.map((stage) => stage.key));
@@ -1156,6 +1095,14 @@ export async function replaceRoadmap(
       });
     }
     if (confirmationReason) {
+      await tx.learningProgress.create({
+        data: { domainId, status: "map_confirmed", payloadJson: JSON.stringify({
+          action: "confirm_map", fromRevision: domain.mapRevision, toRevision: domain.mapRevision + 1,
+          reason: confirmationReason, intent: { name: domain.name, goal: domain.goal, scope: domain.scope, excludedScope: domain.excludedScope, currentLevel: domain.currentLevel },
+          draft: validated, courseDesignAiCallLogId: confirmation.expectedCourseDesignAiCallLogId || null,
+          ...(confirmation.courseDesignDraftJson ? { courseDesign: JSON.parse(confirmation.courseDesignDraftJson) } : {})
+        }) }
+      });
       await tx.aiCallLog.create({
         data: {
           canvasId: domainId,
@@ -1163,7 +1110,7 @@ export async function replaceRoadmap(
           provider: "user",
           status: "success",
           inputSummary:
-            "Domain map confirmed by user after task brief confirmation.",
+            "User accepted the displayed route, intent, scope and source limitations.",
           outputSummary: confirmationReason
         }
       });
@@ -1180,7 +1127,7 @@ export async function replaceRoadmap(
 
 const toCompatKnowledgeWord = (point: {
   id: string;
-  domainId: string;
+  domainId: string | null;
   title: string;
   language?: string | null;
   sentenceSample?: string | null;
@@ -1259,108 +1206,11 @@ export async function getRoadmapItemForLearning(itemId: string) {
   };
 }
 
-export async function saveRoadmapItemLearning(
-  itemId: string,
-  input: LearningNodeProgressInput
-) {
-  const item = await prisma.learningNode.findUnique({
-    where: { id: itemId },
-    include: {
-      knowledgePoint: true
-    }
-  });
-
-  if (!item) {
-    throw new Error("路线图知识点不存在");
-  }
-
-  const point = item.knowledgePoint;
-
-  const isIsland = Boolean(input.isIsland);
-  const masteryStatus = isIsland
-    ? "island"
-    : input.masteryStatus?.trim() || point?.masteryStatus || "not_started";
-  const nodeProgressStatus = isIsland
-    ? input.masteryStatus?.trim() || "can_apply"
-    : masteryStatus;
-  const userUnderstanding = normalizeOptional(input.userUnderstanding);
-  const coreEssence = normalizeOptional(input.coreEssence);
-  const schedule = buildReviewSchedule({
-    masteryStatus,
-    isIsland,
-    previousIntervalDays: point?.reviewIntervalDays
-  });
-
-  const saved = await prisma.$transaction(async (tx) => {
-    const pointData = {
-      title: item.title,
-      sentenceSample: item.keyQuestion || item.objective || null,
-      coreEssence,
-      userUnderstanding,
-      masteryStatus,
-      isIsland,
-      islandReason: normalizeOptional(input.islandReason),
-      lastReviewedAt: schedule.lastReviewedAt,
-      nextReviewAt: schedule.nextReviewAt,
-      reviewIntervalDays: schedule.reviewIntervalDays
-    };
-    const updatedPoint = point
-      ? await tx.knowledgePoint.update({
-          where: { id: point.id },
-          data: pointData
-        })
-      : await tx.knowledgePoint.create({
-          data: {
-            id: item.id,
-            domainId: item.domainId,
-            language: "und",
-            ...pointData
-          }
-        });
-
-    const updatedNode = await tx.learningNode.update({
-      where: { id: itemId },
-      data: {
-        status: input.markNodeCompleted
-          ? "completed"
-          : toLearningNodeStatus(nodeProgressStatus),
-        knowledgePointId: updatedPoint.id
-      }
-    });
-
-    await tx.knowledgeGraphNode.upsert({
-      where: { id: updatedPoint.id },
-      create: {
-        id: updatedPoint.id,
-        domainId: item.domainId,
-        knowledgePointId: updatedPoint.id,
-        title: updatedPoint.title,
-        nodeType: item.nodeType || "knowledge",
-        status: isIsland ? "island" : masteryStatus
-      },
-      update: {
-        title: updatedPoint.title,
-        nodeType: item.nodeType || "knowledge",
-        status: isIsland ? "island" : masteryStatus
-      }
-    });
-
-    return {
-      word: toCompatKnowledgeWord(updatedPoint),
-      core: coreEssence
-        ? {
-            id: updatedPoint.id,
-            wordId: updatedPoint.id,
-            summary: coreEssence,
-            rationale: null
-          }
-        : null,
-      schedule,
-      node: updatedNode
-    };
-  });
-
-  return saved;
+export async function saveRoadmapItemLearning(itemId:string,input:LearningNodeProgressInput){
+ const item=await prisma.learningNode.findUnique({where:{id:itemId}});if(!item)throw new Error("学习任务不存在。");
+ const body=input.userUnderstanding?.trim();if(!body)throw new Error("请输入自己的记录内容。");
+ const saved=await createPersonalKnowledge({requestId:`legacy-save-${item.id}-${Date.now()}`,title:item.title,body,kind:"understanding",domainId:item.domainId,nodeIds:[item.id]});
+ return {word:{id:saved.knowledgePoint.id,text:saved.knowledgePoint.title,userUnderstanding:saved.knowledgePoint.body,masteryStatus:"seen"},core:null,schedule:null,node:item};
 }
 
 export async function getLearningNodeForStudy(nodeId: string) {
@@ -1748,60 +1598,5 @@ export async function getLongTermReviewSummary(
     longTermIslands,
     weakRelations,
     nextActions
-  };
-}
-
-export async function applyStageAssessment(domainId: string, stageId: string) {
-  const data = await getStageAssessmentSummaries(domainId);
-  const stage = data.stages.find((entry) => entry.stageId === stageId);
-
-  if (!data.roadmap) {
-    throw new Error("学习路线图不存在");
-  }
-
-  if (!stage) {
-    throw new Error("阶段不存在");
-  }
-
-  const nextRoadmapStatus =
-    stage.readiness === "ready_for_assessment" || stage.readiness === "completed"
-      ? "confirmed"
-      : "adjusting";
-
-  const adjustmentReason = buildStageAdjustmentReason(stage);
-
-  const result = await prisma.$transaction(async (tx) => {
-    const roadmap = await tx.domain.update({
-      where: { id: domainId },
-      data: { roadmapStatus: nextRoadmapStatus }
-    });
-
-    const record = await tx.unitAssessmentRecord.create({
-      data: {
-        unitId: stage.stageId,
-        readiness: stage.readiness,
-        recommendation: stage.recommendation,
-        adjustmentReason,
-        appliedRoadmapStatus: nextRoadmapStatus,
-        flaggedItemsSummary: stage.flaggedItems.length
-          ? JSON.stringify(stage.flaggedItems)
-          : null,
-        nextActionsSummary: stage.nextActions.length
-          ? JSON.stringify(stage.nextActions)
-          : null
-      }
-    });
-
-    return { roadmap, record };
-  });
-
-  return {
-    roadmap: {
-      id: result.roadmap.id,
-      title: result.roadmap.roadmapTitle || data.roadmap!.title,
-      status: result.roadmap.roadmapStatus
-    },
-    stage,
-    record: toStageAssessmentRecordDto(result.record)
   };
 }

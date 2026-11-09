@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../prisma";
+import { planningRequestSelect, planningRequestFingerprint, StalePlanningRequestError } from "./planningRequestSnapshot";
 import {
   validateCourseDesignDraft,
   type CourseDesignDraft
@@ -45,14 +46,6 @@ export function getMissingCourseResearchInputs(domain: CourseDesignDomain) {
 
   if (!hasText(domain.name)) missing.push("学习领域");
   if (!hasText(domain.goal)) missing.push("学习目标");
-  if (!hasText(domain.currentLevel)) missing.push("当前水平自评");
-  if (!hasText(domain.description)) missing.push("当前水平证据");
-  if (!hasText(domain.outputType)) missing.push("预期产出类型");
-  if (!hasText(domain.outputTarget)) missing.push("具体产出描述");
-  if (!hasText(domain.depth)) missing.push("时间或深度约束");
-  if (!hasText(domain.excludedScope)) missing.push("排除范围");
-  if (!hasText(domain.taskBrief)) missing.push("任务书");
-
   return missing;
 }
 
@@ -66,8 +59,9 @@ export function assertCourseResearchInputs(domain: CourseDesignDomain) {
 function toCourseDesignStateDto(
   domain: CourseDesignStateRecord
 ): CourseDesignStateDto {
-  const draft = domain.courseDesignDraft
-    ? validateCourseDesignDraft(JSON.parse(domain.courseDesignDraft))
+  const saved = domain.courseDesignDraft ? JSON.parse(domain.courseDesignDraft) as CourseDesignDraft : null;
+  const draft = saved
+    ? { ...validateCourseDesignDraft(saved), ...(saved.knowledgeReview ? { knowledgeReview: saved.knowledgeReview } : {}) }
     : null;
 
   return {
@@ -85,6 +79,7 @@ export async function saveCourseDesignDraft(
     draft: CourseDesignDraft;
     aiCallLogId?: string | null;
     repairCount?: number;
+    expectedPlanningFingerprint?: string;
   }
 ): Promise<CourseDesignStateDto> {
   const repairCount = Math.max(0, Math.floor(input.repairCount || 0));
@@ -98,6 +93,12 @@ export async function saveCourseDesignDraft(
   };
 
   return prisma.$transaction(async (tx) => {
+    // Read and write in one SQLite transaction: stale input/candidate cannot be revived,
+    // including by the fallback path or another request with identical learner input.
+    if (input.expectedPlanningFingerprint !== undefined) {
+      const current = await tx.domain.findUnique({ where: { id: domainId }, select: planningRequestSelect });
+      if (!current || planningRequestFingerprint(current) !== input.expectedPlanningFingerprint) throw new StalePlanningRequestError();
+    }
     const domain = await tx.domain.update({
       where: { id: domainId },
       data,
@@ -134,6 +135,7 @@ export async function confirmCourseDesign(
   if (!state.draft.qualityGate.passed) {
     throw new Error("课程设计方向未通过质量门，不能确认。");
   }
+  if (state.draft.knowledgeReview?.verdict === "confirmed_error") throw new Error("课程有尚未纠正的明确知识错误，请先修订。");
 
   const data = {
       courseDesignStatus: "confirmed",
@@ -169,5 +171,6 @@ export async function getConfirmedCourseDesign(domainId: string) {
   if (!state.draft.qualityGate.passed) {
     throw new Error("课程设计方向未通过质量门，不能生成领域地图。");
   }
+  if (state.draft.knowledgeReview?.verdict === "confirmed_error") throw new Error("课程有尚未纠正的明确知识错误，请先修订。");
   return state.draft;
 }

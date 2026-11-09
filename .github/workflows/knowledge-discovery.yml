@@ -1,0 +1,38 @@
+name: Knowledge discovery
+
+on:
+  push:
+    branches: ["codex/obsidian-knowledge-discovery"]
+  pull_request:
+
+concurrency:
+  group: knowledge-discovery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  record-reading:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run check:encoding
+      - run: npx vitest run src/lib/learning/personalKnowledgeDiscovery.test.ts src/app/components/recordDiscoveryTypes.test.ts --reporter=default --reporter=json --outputFile=test-results/obsidian-discovery.json
+      - run: npx playwright install chromium
+      - run: npm run test:e2e -- knowledge-discovery.spec.ts
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: knowledge-discovery-evidence
+          path: web/test-results/
+          retention-days: 7

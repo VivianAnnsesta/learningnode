@@ -113,6 +113,24 @@ describe("retained AI generation evidence", () => {
     expect(mocks.generateText).toHaveBeenCalledTimes(1);
   });
 
+  it("does not reinterpret a truncated outer stage as a complete inner module", async () => {
+    const partial='{"modules":[{"title":"完整内部模块","items":[]}],"tail":';
+    mocks.generateText.mockResolvedValueOnce({...response(partial),raw:{choices:[{finish_reason:"length"}],usage:{completion_tokens:9000}}}).mockResolvedValueOnce(response('{"ok":true}'));
+    const result=await runJsonTask(task());
+    expect(result.data).toEqual({ok:true}); expect(records["log-1"].rawOutput).toBe(partial);
+    expect(String(records["log-1"].validationIssuesJson)).toContain("output_truncated");
+    expect(records["log-1"].parsedOutputJson).toBeUndefined();
+    expect(mocks.generateText.mock.calls[1][0].messages[1].content).toContain("not lesson bodies");
+  });
+
+  it("bounds report repairs, retains every report and never treats unavailable review as passed", async () => {
+    mocks.generateText.mockResolvedValue(response('{"report":{"blockingIssues":["unsupported"]}}'));
+    await expect(runJsonTask(task({taskType:"roadmap_skeleton_critique",userPrompt:"Report findings only. Report-only review.",validate:()=>{throw new AiTaskValidationError("缺少真实目标原文");}}))).rejects.toThrow("缺少真实目标原文");
+    expect(mocks.generateText).toHaveBeenCalledTimes(3);
+    expect(Object.values(records).every(r=>r.status==="failed"&&r.rawOutput)).toBe(true);
+    expect(mocks.generateText.mock.calls[1][0].messages[1].content).toContain("REPORT repair");
+  });
+
   it("records each transport failure and keeps the provider error response", async () => {
     const raw = { id: "rate-limit-response", error: { message: "Quota temporarily exceeded" } };
     mocks.generateText.mockRejectedValueOnce(new AiProviderError("Rate limit", 429, { text: "", raw, providerRequestId: raw.id }))

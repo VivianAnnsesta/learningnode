@@ -28,6 +28,8 @@ import {
 import { checkLayeredStageContentRisk } from "../../../../../../lib/ai/roadmapPlanningQuality";
 import { aiFailureReference, validationIssues } from "../../../../../../lib/ai/validationEvidence";
 import { AiLogPersistenceError } from "../../../../../../lib/ai/generationEvidence";
+import { createUncertainPlanningKnowledgeReview } from "../../../../../../lib/ai/planningKnowledgeReview";
+import { planningMaterials, selectPlanningMaterials } from "../../../../../../lib/learning/planningEvidence";
 
 type RoadmapAiDraftPayload = {
   step?: "skeleton" | "stage";
@@ -97,12 +99,35 @@ export async function POST(
         aiCallLogIds: result.aiCallLogIds,
         availability: result.reviewAvailability
       });
+      const report = receipt.report;
+
+      if (report.knowledgeReview?.verdict === "confirmed_error" || (result.reviewAvailability !== "unavailable" && report.status === "blocked")) {
+        return Response.json(
+          {
+            ...result,
+            error: `MAP_QUALITY_BLOCKED: ${report.knowledgeReview?.verdict === "confirmed_error" ? report.knowledgeReview.summary : report.summary}`,
+            draft: saved.draft,
+            mapRevision: saved.mapRevision,
+            qualityReport: report,
+            aiCallLogIds: receipt.aiCallLogIds,
+            reviewState: "blocked",
+            qualityReview: {
+              id: receipt.id,
+              availability: result.reviewAvailability || "available"
+            },
+            courseDesignAiCallLogId: state.aiCallLogId
+          },
+          { status: 422 }
+        );
+      }
 
       if (result.reviewAvailability === "unavailable") {
         return Response.json({
           ...result,
           draft: saved.draft,
           mapRevision: saved.mapRevision,
+          qualityReport: report,
+          aiCallLogIds: receipt.aiCallLogIds,
           reviewState: "unavailable",
           qualityReview: {
             id: receipt.id,
@@ -112,28 +137,12 @@ export async function POST(
         });
       }
 
-      if (result.qualityReport.status === "blocked") {
-        return Response.json(
-          {
-            error: `MAP_QUALITY_BLOCKED: ${result.qualityReport.summary}`,
-            ...result,
-            draft: saved.draft,
-            mapRevision: saved.mapRevision,
-            reviewState: "blocked",
-            qualityReview: {
-              id: receipt.id,
-              availability: "available"
-            },
-            courseDesignAiCallLogId: state.aiCallLogId
-          },
-          { status: 422 }
-        );
-      }
-
       return Response.json({
         ...result,
         draft: saved.draft,
         mapRevision: saved.mapRevision,
+        qualityReport: report,
+        aiCallLogIds: receipt.aiCallLogIds,
         reviewState: "passed",
         qualityReview: {
           id: receipt.id,
@@ -250,10 +259,14 @@ export async function POST(
           throw error;
         }
         reviewAvailability = "unavailable";
+        const failure = aiFailureReference(error);
+        aiCallLogIds = [...new Set([...aiCallLogIds, ...(failure.aiCallLogIds || []), ...(failure.aiCallLogId ? [failure.aiCallLogId] : [])])];
+        const materials = selectPlanningMaterials(planningMaterials(courseDesign), JSON.stringify(draft));
         qualityReport = {
           status: "blocked",
           summary: "AI 语义复审暂不可用；这不是路线内容缺陷。",
           blockingIssues: [],
+          knowledgeReview: createUncertainPlanningKnowledgeReview(draft, materials, `AI 语义复审不可用，独立知识核对尚未执行：${error.message}`, aiCallLogIds),
           warnings: [
             {
               code: "reviewUnavailable",
@@ -282,9 +295,31 @@ export async function POST(
       aiCallLogIds,
       availability: reviewAvailability
     });
+    qualityReport = receipt.report;
+    aiCallLogIds = receipt.aiCallLogIds;
     const savedStage = saved.draft.stages?.find(
       (stage) => stage.key === stageKey
     );
+
+    if (qualityReport.knowledgeReview?.verdict === "confirmed_error" || (reviewAvailability !== "unavailable" && qualityReport.status === "blocked")) {
+      return Response.json(
+        {
+          error: `MAP_QUALITY_BLOCKED: ${qualityReport.knowledgeReview?.verdict === "confirmed_error" ? qualityReport.knowledgeReview.summary : qualityReport.summary}`,
+          stage: savedStage || generated.stage,
+          draft: saved.draft,
+          qualityReport,
+          reviewState: "blocked",
+          qualityReview: {
+            id: receipt.id,
+            availability: reviewAvailability
+          },
+          aiCallLogIds,
+          repairAttempts,
+          courseDesignAiCallLogId: state.aiCallLogId
+        },
+        { status: 422 }
+      );
+    }
 
     if (reviewAvailability === "unavailable") {
       return Response.json({
@@ -301,26 +336,6 @@ export async function POST(
         repairAttempts,
         courseDesignAiCallLogId: state.aiCallLogId
       });
-    }
-
-    if (qualityReport.status === "blocked") {
-      return Response.json(
-        {
-          error: `MAP_QUALITY_BLOCKED: ${qualityReport.summary}`,
-          stage: savedStage || generated.stage,
-          draft: saved.draft,
-          qualityReport,
-          reviewState: "blocked",
-          qualityReview: {
-            id: receipt.id,
-            availability: "available"
-          },
-          aiCallLogIds,
-          repairAttempts,
-          courseDesignAiCallLogId: state.aiCallLogId
-        },
-        { status: 422 }
-      );
     }
 
     return Response.json({

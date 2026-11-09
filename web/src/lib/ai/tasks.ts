@@ -4,6 +4,7 @@ import { parseKnowledgeBoundary, knowledgeBoundaryShape, learningUnitShape, conc
 import type { KnowledgeBoundary } from "../learning/roadmapPlanningTypes";
 import { validateCriticalPlanningReport, criticalPlanningTargets, validateContentRevisions, criticalReviewRules, contentRevisionRules, type ContentRevision, type CriticalEvidence } from "./planningReviewPolicy";
 import type { LearningGoal, StageProblem } from "../learning/roadmapPlanningTypes";
+import type { PlanningKnowledgeReview } from "./planningKnowledgeReview";
 import type { DiagnosticSessionInput } from "../learning/diagnosticService";
 import type { RoadmapInput, RoadmapStageInput } from "../learning/roadmapService";
 import {
@@ -46,6 +47,14 @@ const textArray = (value: unknown) =>
   asArray(value)
     .map((item) => (typeof item === "string" ? item.trim() : ""))
     .filter(Boolean);
+
+const planningEvidenceRules = `
+MATERIAL, SCOPE AND ORDERING RESPONSIBILITY:
+- Prefer the actual teaching material supplied in server-fetched fragments or pasted text. A source URL, title, reputation, search snippet or successful HTTP response without teaching text does not verify its syllabus, sequence, theorem or conditions. Only cite a specific arrangement as verified when an actual supplied fragment supports it. Missing bodies remain evidence gaps; model recollection and pedagogical proposals are explicitly pending verification. Never create or alter grounding facts, content fingerprints or knowledge-review reports in model output.
+- Treat user statements, course entry assumptions and demonstrated understanding as separate evidence. If currentLevel is unknown but the learner states a foundation in the goal or task brief, quote that statement as a learner-declared foundation; do not invent an assessment. knowledgeBoundary.assumedKnowledge remains a proposed entry assumption with its reason, not a claim that the learner has mastered it.
+- Every newly registered contentQuestion explicitly declares importance as required or optional according to the learner's actual goal and scope. Module references inherit this choice from the registry. Preserve an existing choice during expansion and local repair; old missing importance remains unspecified rather than silently required. Optional topics must not become compulsory node objectives, task completion outputs or prerequisites of required work. Related required and optional content may be taught together when their responsibilities remain distinguishable. If a prerequisite is truly necessary, explain the scope conflict instead of silently promoting elective content.
+- Each Stage rationale explains the proposed teaching order and its benefit to this learner. Distinguish a pedagogical preference from a logical/mathematical prerequisite; sequence alone never establishes necessity or a dependency edge. State genuine required knowledge and its prior-to-use support separately. Never claim an order is irreversible merely because it is the chosen teaching route.
+`;
 
 const stripOuterMarkdownFence = (text: string) => {
   const trimmed = text.trim();
@@ -125,7 +134,7 @@ export function parseJsonObjectFromModel(text: string): unknown {
 
       const candidate = findCompleteJsonObjectFrom(source, startIndex);
       if (!candidate) {
-        continue;
+        throw new AiTaskValidationError("AI 返回的最外层 JSON 尚未结束，可能被截断；不能把内部模块当作完整返回。", [{code:"incomplete_json_object",path:"$",message:"Return the complete outer JSON object. Do not repeat lengthy lesson bodies; preserve all required fields and identities."}]);
       }
 
       try {
@@ -168,6 +177,12 @@ export type SourceGroundingInfo = {
   status: number | null;
   title: string | null;
   excerpt: string | null;
+  finalUrl?: string | null;
+  error?: string | null;
+  contentHash?: string | null;
+  retrievedAt?: string | null;
+  bodyRetrieved?: boolean;
+  fragments?: { location: string; text: string }[];
   relevance?: SourceGroundingRelevance | null;
   aiRelevance?: SourceGroundingAiRelevance | null;
 };
@@ -227,6 +242,8 @@ export type CourseDesignDraft = {
   keyTradeoffs: string[];
   qualityGate: CourseDesignQualityGate;
   qualityReport?: RouteQualityReport | null;
+  /** Server-owned independent evidence; generated model JSON cannot set this. */
+  knowledgeReview?: PlanningKnowledgeReview;
 };
 
 export type RoadmapSkeletonStage = {
@@ -235,6 +252,7 @@ export type RoadmapSkeletonStage = {
   key: string;
   title: string;
   goal: string | null;
+  rationale?: string | null;
   coreTopics: string[];
   prerequisiteStageTitles: string[];
   prerequisiteStageKeys: string[];
@@ -271,6 +289,8 @@ export type MapDraftQualityReport = {
   blockingIssues: MapDraftQualityFinding[];
   warnings: MapDraftQualityFinding[];
   contentRevisions?: ContentRevision[];
+  /** Independent of structural/semantic status; absent historical evidence stays absent. */
+  knowledgeReview?: PlanningKnowledgeReview;
 };
 
 export type RoadmapSkeletonCritique = {
@@ -294,13 +314,10 @@ export function evaluateCourseDesignQuality(
   if (!explanation.risksAndValidation.trim()) {
     missing.push("risksAndValidation");
   }
-  if (draft.sources.length === 0) missing.push("sources");
   if (draft.sources.some((source) => !source.url || !source.reason)) {
     missing.push("source url/reason");
   }
-  if (draft.sources.some((source) => !hasSpecificSourceUrl(source.url))) {
-    missing.push("specific source url");
-  }
+  if (draft.sources.some((source) => !isSafeExternalUrl(source.url))) missing.push("unsafe source url");
   if (draft.sources.some((source) => hasSuspiciousSourceUrl(source.url))) {
     missing.push("non-placeholder source url");
   }
@@ -464,6 +481,7 @@ export function buildCourseDesignPrompt(
   return `
 Research and propose a course design direction before generating a domain map.
 ${curriculumBoundaryRules}
+${planningEvidenceRules}
 
 Domain data:
 ${JSON.stringify(domain, null, 2)}
@@ -478,7 +496,7 @@ Return only JSON with this shape:
   "knowledgeBoundary": ${knowledgeBoundaryShape},
   "globalExplanation": {
     "theorySkeleton": "Chinese paragraph: the first-principles theoretical skeleton of the domain",
-    "sourceBasis": "Chinese paragraph: which source links were used and why",
+    "sourceBasis": "Chinese paragraph: actual supplied fragments used, their concrete support, and missing source bodies; proposed links are not verified teaching evidence",
     "optimizationRationale": "Chinese paragraph: explicit ordering rationale — state the chosen topic sequence, why it beats the obvious alternative (e.g. the source skeleton order), and which optimization priority each decision serves",
     "risksAndValidation": "Chinese paragraph: what still needs diagnostic validation"
   },
@@ -493,9 +511,9 @@ Return only JSON with this shape:
 }
 
 Research rules:
-- Prefer famous university course designs first, then official documentation, textbooks, syllabi, and high-quality supplementary sources.
+- Prefer actual obtained teaching materials that match this learner's scope. Consider official documentation, textbooks, syllabi and recognizable university courses as candidate sources, while distinguishing their actual textual support from reputation or model recollection.
 - Start from first principles: identify the basic objects, core questions, minimal prerequisite chain, generative concepts, tools/examples/boundaries, and orderings that would damage understanding if reversed.
-- Use sources to challenge and correct the theoretical skeleton, not to average conflicting outlines.
+- Use actual supplied source text to challenge and correct the theoretical skeleton. Without a source body, do not claim that its detailed outline or topic order was verified.
 - Apply the optimization priority in order when making any sequencing or tradeoff decision: prerequisite correctness first, then learner goal match, then cognitive load, then authoritative course order, then personalization for interest or style. This is a scoring requirement, not only a tie-breaker for conflicts.
 - Every item in keyTradeoffs must name the optimization priority it serves (prerequisite correctness / goal match / cognitive load / authoritative course order / personalization) and state the concrete tradeoff.
 - The optimizationRationale must give the ordering rationale: which sequence you chose, why it beats the obvious alternative (such as the source skeleton order), and how it respects the optimization priority above.
@@ -527,6 +545,7 @@ export function buildCourseDesignRepairPrompt(input: {
   return `
 Repair the course design research result so it passes the structural quality gate.
 ${curriculumBoundaryRules}
+${planningEvidenceRules}
 
 Domain data:
 ${JSON.stringify(input.domain, null, 2)}
@@ -537,7 +556,7 @@ ${JSON.stringify(input.draft, null, 2)}
 Missing or invalid fields:
 ${JSON.stringify(input.missing)}
 
-Web search is enabled for this repair. Use it to replace missing or invalid evidence instead of merely rewriting sourceBasis.
+Use web search only if an actual search tool is available. Suggesting a URL does not fetch its body; the server will independently retrieve and bind source evidence. Without tool results or supplied body text, disclose the evidence gap instead of pretending research was performed.
 
 Return only JSON with exactly this content shape (the server computes qualityGate separately):
 {
@@ -562,11 +581,11 @@ Return only JSON with exactly this content shape (the server computes qualityGat
 
 Repair requirements:
 - Fix every item listed in Missing or invalid fields. Do not preserve an empty or invalid field that the gate reported.
-- When any source-related item is missing, perform web search and return 2-5 concrete HTTPS source objects in sources. Updating sourceBasis alone is not a repair.
+- When a source field is invalid, use actual available search results to propose concrete HTTPS sources, or clearly report that trustworthy material could not be obtained. Updating sourceBasis alone must not invent evidence.
 - Source URLs must point to specific course, syllabus, textbook, exam-outline, or official-document pages, not institutional homepages, search result pages, placeholders, or guessed IDs.
 - Prefer official documentation and recognizable university course pages that directly match the learner's scope.
 - Keep valid parts of the draft unless they conflict with researched evidence.
-- Do not invent source pages. If a trustworthy concrete page cannot be found, leave sources empty so the server keeps the result blocked.
+- Do not invent source pages. If a trustworthy concrete page cannot be identified, return sources:[] and disclose the evidence gap. An empty public-source list is not itself a structural or knowledge error; actual user-supplied bodies remain separate materials to inspect, without claiming external authority or verified curriculum support.
 - Do not include qualityGate, stages, modules, or learning nodes.
 `.trim();
 }
@@ -585,12 +604,25 @@ const parseGroundingInfo = (value: unknown): SourceGroundingInfo | null => {
   } else if (relevanceValue !== undefined) {
     relevance = null;
   }
+  const aiRelevanceValue = value.aiRelevance;
+  const aiRelevance: SourceGroundingAiRelevance | null = isRecord(aiRelevanceValue) ? {
+    score: typeof aiRelevanceValue.score === "number" && Number.isFinite(aiRelevanceValue.score) ? Math.max(0, Math.min(1, aiRelevanceValue.score)) : 0,
+    lowRelevance: aiRelevanceValue.lowRelevance === true,
+    reason: requiredText(aiRelevanceValue.reason, "未说明资料相关性依据。")
+  } : null;
   return {
     ok: value.ok === true,
     status: typeof value.status === "number" ? value.status : null,
     title: optionalText(value.title),
     excerpt: optionalText(value.excerpt),
-    relevance
+    ...(value.finalUrl !== undefined ? {finalUrl:optionalText(value.finalUrl)} : {}),
+    ...(value.error !== undefined ? {error:optionalText(value.error)} : {}),
+    ...(value.contentHash !== undefined ? {contentHash:optionalText(value.contentHash)} : {}),
+    ...(value.retrievedAt !== undefined ? {retrievedAt:optionalText(value.retrievedAt)} : {}),
+    ...(value.bodyRetrieved !== undefined ? {bodyRetrieved:value.bodyRetrieved === true} : {}),
+    ...(Array.isArray(value.fragments) ? { fragments: value.fragments.filter(isRecord).filter(x => typeof x.location === 'string' && typeof x.text === 'string').slice(0, 200).map(x => ({ location: String(x.location).slice(0, 300), text: String(x.text).slice(0, 6000) })) } : {}),
+    relevance,
+    ...(value.aiRelevance !== undefined ? {aiRelevance} : {})
   };
 };
 
@@ -712,12 +744,18 @@ export function buildCourseDesignCritiquePrompt(input: {
     status: number | null;
     title: string | null;
     excerpt: string | null;
+    fragments?: {location: string; text: string}[];
+    finalUrl?: string;
+    contentHash?: string;
+    retrievedAt?: string;
+    bodyRetrieved?: boolean;
     error?: string;
   }>;
 }) {
   return `
 You are a strict course-design critic. Review the course design draft below using the grounded source evidence, then return a quality report and a revised draft.
 ${curriculumBoundaryRules}
+${planningEvidenceRules}
 Preserve the course knowledgeBoundary, or revise it explicitly against the task and learner feedback. Never remove it. Foundation assumptions are not learner assessments.
 
 Domain data:
@@ -726,18 +764,18 @@ ${JSON.stringify(input.domain, null, 2)}
 Current course design draft:
 ${JSON.stringify(input.draft, null, 2)}
 
-Grounded source evidence fetched by the server (reachability and real page excerpts):
+Source retrieval facts and actual teaching fragments fetched by the server (reachability alone does not verify a teaching claim):
 ${JSON.stringify(input.groundedSources, null, 2)}
 
 Score the draft on this fixed rubric, 1-5 each, with a short Chinese note:
 - prerequisiteCorrectness: does the theory skeleton imply a correct minimal prerequisite chain, with no ordering that would damage understanding if reversed?
 - goalMatch: does the design match the learner's goal, scope, excluded scope, level evidence, and expected output?
 - cognitiveLoad: is the progression manageable, with generative concepts introduced before their applications?
-- sourceQuality: are the sources reachable, concrete, relevant to this domain, and actually supporting the design? Unreachable or mismatched sources must be called out.
+- sourceQuality: do actual supplied teaching fragments support the concrete design claims? Separately call out missing bodies, unreachable or mismatched sources. A reachable URL or recognized title alone is not content support.
 - checkability: can the learner's outcomes be verified through questions, outputs, or diagnostics?
 
 Revision rules:
-- Fix every weakness you identify, especially unreachable or irrelevant sources: replace them with concrete, relevant HTTPS sources using web search, or explicitly note in risksAndValidation why a source cannot be verified.
+- Fix concrete weaknesses supported by supplied evidence. Only use web search if a tool is actually available; proposing replacement URLs does not verify their bodies. Remove unsupported attribution of detailed teaching arrangements and explicitly record missing material in sourceBasis and risksAndValidation.
 - Apply the optimization priority in order: prerequisite correctness first, then goal match, then cognitive load, then authoritative course order, then personalization.
 - Check that every keyTradeoffs item names the optimization priority it serves (prerequisite correctness / goal match / cognitive load / authoritative course order / personalization); if any item omits its priority, revise it or call it out in the goalMatch or prerequisiteCorrectness note.
 - Check that optimizationRationale states the ordering rationale (chosen sequence, why it beats the alternative, how it respects the optimization priority); if it only restates the tradeoff without explaining the sequence, flag it in the prerequisiteCorrectness or goalMatch note.
@@ -962,8 +1000,9 @@ export function buildRoadmapSkeletonPrompt(domain: {
   return `
 Generate only the global semantic skeleton for a structured learning roadmap.
 ${curriculumBoundaryRules}
+${planningEvidenceRules}
 
-HARD CONTRACT: return planningVersion=3 and contentCoverageVersion=1. Register concrete contentQuestions under each learningGoal. Every Stage MUST contain a non-empty moduleBlueprints array. Every Module blueprint MUST contain a stable key, title, goal (content scope), and non-empty keyQuestions references with stable keys and contentQuestionKey. The server resolves their text, requirements and dimensions and computes parent coverage. A Stage that only has coreTopics is invalid. Do not return Stage fields named modules or items; moduleBlueprints is the only allowed Module-level field in this pass.
+HARD CONTRACT: return planningVersion=3 and contentCoverageVersion=1. Register concrete contentQuestions with explicit importance=required|optional under each learningGoal. Every Stage MUST contain a non-empty moduleBlueprints array and a teaching-order rationale. Every Module blueprint MUST contain a stable key, title, goal (content scope), and non-empty keyQuestions references with stable keys and contentQuestionKey. The server resolves their text, requirements, importance and dimensions and computes parent coverage. A Stage that only has coreTopics is invalid. Do not return Stage fields named modules or items; moduleBlueprints is the only allowed Module-level field in this pass.
 
 Domain data:
 ${JSON.stringify(domain, null, 2)}
@@ -975,7 +1014,7 @@ Return only JSON with this shape:
 {
   "planningVersion": 3,
   "contentCoverageVersion": 1,
-  "learningGoals": [{"key":"goal-1","description":"a concrete Domain learning goal","contentQuestions":[{"key":"content-1","question":"one specific question the course must explain","contentRequirements":["the explanation/example/conditions the material must provide"],"dimensionKeys":["definition","boundaries"]}]}],
+  "learningGoals": [{"key":"goal-1","description":"a concrete Domain learning goal","contentQuestions":[{"key":"content-1","question":"one specific question the course must explain","importance":"required","contentRequirements":["the explanation/example/conditions the material must provide"]}]}],
   "title": "string",
   "status": "draft",
   "stages": [
@@ -983,6 +1022,7 @@ Return only JSON with this shape:
       "key": "stable-short-key",
       "title": "string",
       "goal": "string",
+      "rationale": "why this Stage is placed here for this learner; distinguish teaching preference from genuine prerequisite",
       "problem": {"question":"representative whole problem of this stage","steps":["identify the question","reason or act using the concepts","interpret the result"]},
       "coreTopics": ["short topic names"],
       "prerequisiteStageTitles": ["exact title of prerequisite stages"],
@@ -1007,7 +1047,7 @@ Return only JSON with this shape:
 Requirements:
 - This first pass includes all course stages, Module directions, critical content questions and explicit prerequisites, without concept nodes or lesson bodies. Preserve the learner's goal and scope. Register a finite set of specific questions, not generic labels such as "understand" or "can use". Every goal has at least one content question; every registered question is arranged in a Module. Do not pad fixed counts.
 - contentQuestions keys are unique across the whole course. A keyQuestions entry references exactly one registered contentQuestionKey, using its own unique stable planning-question key. Repeated use of a content question is allowed when useful, without duplicating the registration. Do not return Stage/Module/question goalKeys or checkableOutcome; the server computes them. Parent summaries cannot constrain the registry.
-- contentRequirements describe what MATERIAL must explain, demonstrate, compare or delimit. They never require learner submissions, exam scores, AI grading, proof of mastery or a Stage learning-outcome review. Use only nine dimensionKeys: definition, motivation, use, significance, relations, role, mechanism, boundaries, selection. Choose relevant dimensions intentionally; not every question needs all nine.
+- contentRequirements describe what MATERIAL must explain, demonstrate, compare or delimit. They never require learner submissions, exam scores, AI grading, proof of mastery or a Stage learning-outcome review. Organize the concrete content requirements by the current goal. Do not use fixed teaching dimensions, fixed segments or mandatory scored exercises. Open exploration can use questions, cases and discussion without a unique answer.
 - Thinking tasks may be skipped freely. Never make skipped thinking require diagnostic evidence or block learning or sedimentation. Personal self-explanations are saved and confirmed by the learner, without AI review.
 - Return no more than 16 Stages. If the subject naturally has more sections, merge adjacent sections into coherent expandable Stages instead of exceeding this limit.
 - Give every stage a unique, stable key that is not derived from its display title later.
@@ -1017,7 +1057,7 @@ Requirements:
 - Do not satisfy quality by padding a fixed count. One focused content question is valid when it truly covers the Module scope; several are required for independent teaching problems. Definition, use and boundaries of the same concept may remain under one question with explicit material requirements.
 - When a Module scope contains independent teaching problems, arrange each using registered content-question references. Check foundations, mechanisms, method-selection conditions, boundaries, misconceptions and application where relevant; do not replace material requirements with learner outcome assessments.
 - Do not generate Learning Nodes, exercises, common mistakes, transfer prompts, node prerequisites, or detailed teaching content in this pass.
-- Keep stages in prerequisite order so later batch requests can expand one stage at a time.
+- Propose an approachable teaching order and explain it in each Stage rationale. Put genuine logical prerequisites before the work that uses them, while allowing alternative teaching orders and parallel roots. Stage display order never creates a dependency.
 - If a confirmed course design direction is provided, follow its theory skeleton, source basis, optimization rationale, and risk notes.
 - Preserve uncertainty. If scope is unclear, encode conservative assumptions in stage goals.
 - This is a draft skeleton for later batch expansion, not the final detailed roadmap.
@@ -1085,6 +1125,7 @@ export function validateRoadmapSkeletonDraft(value: unknown): RoadmapSkeletonDra
       key: requiredText(stageValue.key, `stage-${stageIndex + 1}`),
       title: requiredText(stageValue.title, `Stage ${stageIndex + 1}`),
       goal: optionalText(stageValue.goal),
+      rationale: optionalText(stageValue.rationale),
       goalKeys: textArray(stageValue.goalKeys),
       problem: parseProblem(stageValue.problem),
       coreTopics: textArray(stageValue.coreTopics).slice(0, 12),
@@ -1205,6 +1246,7 @@ export function buildRoadmapSkeletonCritiquePrompt(input: {
 }) {
   return `
 Independently review this layered roadmap skeleton. Report findings only; do not rewrite the draft. Review concrete content-question coverage against scope and actual sources, unjustified prerequisites and whole-problem roles. Do not evaluate learner self-explanations or Stage learning outcomes. contentRequirements describe teaching materials, not learner submissions. Parent goalKeys are server-computed summaries. Do not demand one node per question or a fixed node/question density; one concept may answer multiple questions. Skipping thinking is free and never requires diagnostic evidence.
+${planningEvidenceRules}
 
 Domain data:
 ${JSON.stringify(input.domain, null, 2)}
@@ -1265,6 +1307,7 @@ export function buildRoadmapSkeletonRepairPrompt(
 ) {
   return `
 Repair this layered roadmap skeleton using the independent review. This call edits the draft and then reports only defects that remain in the returned draft.
+${planningEvidenceRules}
 
 Domain data:
 ${JSON.stringify(input.domain, null, 2)}
@@ -1290,7 +1333,7 @@ Return only JSON with this shape:
     "warnings": []
   },
   "contentRevisions": [],
-  "draft": { "planningVersion": 3, "contentCoverageVersion":1, "learningGoals": [{"key":"existing goal key","description":"unchanged goal description","contentQuestions":[{"key":"stable content key","question":"revised content question if needed","contentRequirements":["material requirement"],"dimensionKeys":["definition"]}]}], "title": "string", "status": "draft", "stages": [] }
+  "draft": { "planningVersion": 3, "contentCoverageVersion":1, "learningGoals": [{"key":"existing goal key","description":"unchanged goal description","contentQuestions":[{"key":"stable content key","question":"revised content question if needed","importance":"required","contentRequirements":["material requirement"]}]}], "title": "string", "status": "draft", "stages": [] }
 }
 
 Repair rules:
@@ -1333,17 +1376,27 @@ export function validateRoadmapSkeletonCritique(
   };
 }
 
+function planningReviewFocus(input: { scope: string; stageKey?: string; feedback?: string | null }) {
+  return `Current review focus (read-only data): ${JSON.stringify({ scope: input.scope, stageKey: input.stageKey || null, userConcern: input.feedback || null })}
+Treat the user's concern as a question to check against the actual draft and agreed goal/scope, not as an established defect or permission to add course requirements. When stageKey is present, prioritize that Stage's newly expanded responsibilities and actual teaching text while still checking the complete map's scope, explicit prerequisites and cross-Stage consistency. This focus never expands the permitted edit scope or authorizes changing read-only fields. Preserve this concern through bounded repair and explain unsupported objections without inventing a blocker.`;
+}
+
 export function buildMapDraftQualityReviewPrompt(input: {
   domain: Record<string, unknown>;
   courseDesign: CourseDesignDraft;
   draft: unknown;
   scope: "skeleton" | "stage" | "map";
+  stageKey?: string;
+  feedback?: string | null;
   previousReport?: MapDraftQualityReport | null;
 }) {
   return `
 Independently review this persisted planningVersion=3 Map Draft. Report findings only; do not rewrite the draft.
+${planningEvidenceRules}
 
 Review scope: ${input.scope}
+
+${planningReviewFocus(input)}
 
 Domain data:
 ${JSON.stringify(input.domain, null, 2)}
@@ -1376,7 +1429,7 @@ Return only JSON with this shape:
 }
 
 Review rules:
-- For contentCoverageVersion=1, trace learningGoals/contentQuestions through Module contentQuestionKey references and concepts to concrete nine-dimension material requirements. goalKeys are server-computed summaries. Never demand Stage learning-outcome grading, review a personal self-explanation, or require diagnostic evidence when thinking is skipped. Judge teaching coverage and sources, not repeated goal labels or learner performance.
+- For contentCoverageVersion=1, trace learningGoals/contentQuestions through Module contentQuestionKey references and concepts to the concrete material requirements of this course. goalKeys are server-computed summaries. Never demand Stage learning-outcome grading, review a personal self-explanation, or require diagnostic evidence when thinking is skipped. Judge teaching coverage and sources, not repeated goal labels or learner performance.
 - Check scope coverage, Module boundaries, teaching coherence, prerequisite correctness, goal alignment, cognitive load, and checkability against the confirmed Course Design Direction.
 - A planned Stage is complete at blueprint level when its Module blueprints, concrete content-question references, material requirements, and Stage prerequisites are present. Legacy checkableOutcome is a material-requirement summary in the new protocol, not a learner assessment. Never report stageCoverage merely because a planned Stage has no Learning Nodes. Apply Learning Node coverage checks only to expanded Stages.
 - Every Learning Node must have a coherent explicit teaching scope. Related concepts, principles or methods may be taught together; assess their concrete meanings, conditions, differences and uses rather than concept count. A broad heading without actual teaching tasks is insufficient. Definition/use/selection questions for the SAME concept belong to one node via planningQuestionKeys; a concept may cover multiple questions. Detect synonym duplicates and reuse existing stable keys through conceptReferences. Every planned question must be covered by a concept or reference. Check content-question arrangements and each concept's role in the representative whole problem. For an old draft without a registry, retain its existing goalKeys consistency checks.
@@ -1398,8 +1451,11 @@ export function buildMapDraftQualityRepairPrompt(
 ) {
   return `
 Repair this persisted planningVersion=3 Map Draft using the independent semantic review. This call edits the draft and then reports only defects that remain in the returned draft.
+${planningEvidenceRules}
 
 Review scope: ${input.scope}
+
+${planningReviewFocus(input)}
 
 Domain data:
 ${JSON.stringify(input.domain, null, 2)}
@@ -1422,13 +1478,13 @@ Return only JSON with this shape:
     "warnings": []
   },
   "contentRevisions": [],
-  "draft": { "planningVersion": 3, "contentCoverageVersion":1, "learningGoals": [{"key":"existing goal key","description":"unchanged goal description","contentQuestions":[{"key":"stable content key","question":"revised question if needed","contentRequirements":["material requirement"],"dimensionKeys":["definition"]}]}], "title": "string", "status": "draft", "baseRevision": 0, "stages": [] }
+  "draft": { "planningVersion": 3, "contentCoverageVersion":1, "learningGoals": [{"key":"existing goal key","description":"unchanged goal description","contentQuestions":[{"key":"stable content key","question":"revised question if needed","importance":"required","contentRequirements":["material requirement"]}]}], "title": "string", "status": "draft", "baseRevision": 0, "stages": [] }
 }
 
 Repair rules:
 - A planned Stage is complete at blueprint level. Never add Learning Nodes merely to satisfy coverage; apply Learning Node coverage only to expanded Stages.
 - Fix supported serious blockers. Keep optional improvements as warnings without repeatedly expanding the course.
-- Preserve every Stage stable key and its current planned/expanded state. Never expand a planned Stage or collapse an expanded Stage during repair.
+- Preserve stable keys and planned/expanded states for retained Stages. Global repair may remove or merge a planned Stage with no detailed nodes, preserving all required content responsibilities in the remaining blueprints and updating prerequisite references. Do not keep an unnecessary container by inventing compulsory foundation content. Never remove an expanded Stage, expand a planned Stage or collapse an expanded Stage during repair; any new Stage stays planned.
 - Preserve stable keys for unchanged semantic content, keep baseRevision unchanged, and do not mark the draft confirmed.
 - Preserve the course goal keys and descriptions. Parent goalKeys are server computed. For an old draft without a content registry, preserve its original legacy contract instead of inventing a registry.
 - Re-evaluate the exact draft you return. blockingIssues must contain only defects still present in that returned draft; remove resolved findings.
@@ -1465,6 +1521,9 @@ export function buildRoadmapStageQualityRepairPrompt(
   }));
   return `
 Repair ONLY the expanded Stage with key ${JSON.stringify(input.stageKey)} using the semantic review. The server merges this Stage into its current complete Map Draft and validates the whole map. Other Stages and course goals are read-only context.
+${planningEvidenceRules}
+
+${planningReviewFocus(input)}
 
 Domain data:
 ${JSON.stringify(input.domain, null, 2)}
@@ -1558,6 +1617,7 @@ export function buildRoadmapStagePrompt(input: {
   return `
 Expand exactly one roadmap stage into modules and coherent scoped teaching units. Related concepts, principles or methods MAY be taught together; state what is taught, its conditions and differences. Several questions may map to one unit. Do not enforce one concept per node or split by teaching dimension. Whole-problem application uses the included knowledge and explicit prior-to-use teaching. Reuse known concepts via conceptReferences, never duplicate or silently edit their original nodes.
 ${curriculumBoundaryRules}
+${planningEvidenceRules}
 
 For contentCoverageVersion=1, the course contentQuestions registry and this Stage's keyQuestions arrangements are read-only. Address their concrete material requirements through planningQuestionKeys and learningUnit.version=2 contentContributions; select the exact original requirement indices and dimensions this node teaches. Split a shared question between nodes without requiring every node to teach all its dimensions. Do not grade learner self-explanations, create Stage outcome assessments, or require evidence when thinking is skipped. Parent goalKeys are server-computed summaries.
 
@@ -1614,6 +1674,7 @@ Return only JSON with this shape:
 
 Requirements:
 - Expand only the requested stage. Do not generate other stages.
+- This is concise CURRICULUM PLANNING, not a lesson body. newKnowledge names the added knowledge in at most two short sentences; teachingTasks are brief responsibilities, not full definitions/proofs/formula catalogs. example is one compact problem or demonstration plan. State required conditions and prior-to-use support without writing the full explanation. Preserve every planned question's concrete coverage; do not compress by dropping modules, references or requirements. Detailed explanations are generated later in the learning session.
 - A reused concept is ${conceptReferenceShape} in conceptReferences (use [] when no content-question registry exists). Its source node is unchanged. Modules may contain only references when no new concepts are needed.
 - Preserve the requested stage key and its prerequisiteStageKeys exactly.
 - Preserve the skeleton's module directions unless learner evidence justifies a change. Explain every change in rationale; if unchanged, say why the original direction still fits.

@@ -1,0 +1,13 @@
+"use client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback,useEffect,useRef,useState } from "react";
+import { ActionButton,AppShell,PageHeader,SectionPanel } from "../../components/ui";
+type SavedSession={id:string;title:string;status:string;historical:boolean};
+export default function SessionsPage(){
+ const router=useRouter(),[sessions,setSessions]=useState<SavedSession[]>([]),[question,setQuestion]=useState(""),[error,setError]=useState(""),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[nextOffset,setNextOffset]=useState<number|null>(null);
+ const generation=useRef({value:0}),creation=useRef<{question:string;requestId:string}|null>(null);
+ const load=useCallback(async(offset=0)=>{const request=++generation.current.value;setLoading(true);try{const r=await fetch(`/api/learning-sessions?limit=50&offset=${offset}`),d=await r.json();if(request!==generation.current.value)return;if(!r.ok)throw Error(d.error||"无法读取学习记录");setSessions(previous=>offset?[...previous,...d.sessions.filter((s:SavedSession)=>!previous.some(p=>p.id===s.id))]:d.sessions||[]);setNextOffset(d.page?.nextOffset??null);}catch(e){if(request===generation.current.value)setError(e instanceof Error?e.message:"无法读取学习记录");}finally{if(request===generation.current.value)setLoading(false);}},[]);
+ useEffect(()=>{const counter=generation.current;void load();return()=>{counter.value++;};},[load]);
+ return <AppShell><PageHeader title="当前学习与探索" description="临时问题也可以开始学习，不必先创建课程。"/><SectionPanel><textarea aria-label="探索问题" className="workshop-input min-h-28 w-full" value={question} onChange={e=>setQuestion(e.target.value)}/><ActionButton disabled={busy||!question.trim()} onClick={async()=>{setBusy(true);setError("");try{if(creation.current?.question!==question)creation.current={question,requestId:crypto.randomUUID()};const r=await fetch("/api/learning-sessions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(creation.current)}),d=await r.json();if(!r.ok)throw Error(d.error);router.push(`/learning/sessions/${d.session.id}`);}catch(e){setError(e instanceof Error?e.message:"无法开始探索");}finally{setBusy(false);}}}>开始独立探索</ActionButton>{error&&<p role="alert">{error}</p>}</SectionPanel>{sessions.map(s=><SectionPanel key={s.id}><Link className="underline" href={`/learning/sessions/${s.id}`}>{s.title}</Link><p>{s.historical?"历史教学，可回看":"可恢复的学习空间"}</p></SectionPanel>)}{nextOffset!==null&&<ActionButton variant="secondary" disabled={loading} onClick={()=>void load(nextOffset)}>继续查看更早的学习</ActionButton>}{loading&&<p role="status">正在读取学习记录…</p>}</AppShell>;
+}

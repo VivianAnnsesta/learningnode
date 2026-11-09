@@ -78,12 +78,12 @@ describe("database Domain ownership guards", () => {
     ).rejects.toThrow("LearningNode dependency must be non-self and within one Domain");
   });
 
-  it("rejects graph nodes and edges that cross Domain ownership", async () => {
+  it("allows cross-domain record references and relationships but requires real knowledge endpoints", async () => {
     await expect(
       client.$executeRawUnsafe(`
         UPDATE "KnowledgeGraphNode" SET "knowledgePointId" = 'point-b' WHERE "id" = 'graph-a'
       `)
-    ).rejects.toThrow("KnowledgeGraphNode knowledge point must belong to the same Domain");
+    ).resolves.toBe(1);
 
     await expect(
       client.$executeRawUnsafe(`
@@ -93,7 +93,10 @@ describe("database Domain ownership guards", () => {
           'edge-cross', 'domain-a', 'graph-a', 'graph-b', 'related', 'candidate', 'unknown', '2026-07-17T00:00:00.000Z'
         )
       `)
-    ).rejects.toThrow("KnowledgeGraphEdge endpoints must belong to the same Domain");
+    ).rejects.toThrow("Knowledge relation must connect two actual personal records");
+    await expect(client.$executeRawUnsafe(`INSERT INTO "KnowledgeGraphEdge" (
+      "id","domainId","fromKnowledgePointId","toKnowledgePointId","relationType","status","createdAt"
+    ) VALUES ('actual-cross','domain-a','point-a','point-b','related','confirmed','2026-10-09')`)).resolves.toBe(1);
   });
 
   it("rejects parent Domain changes that would invalidate existing ownership", async () => {
@@ -105,7 +108,7 @@ describe("database Domain ownership guards", () => {
       client.$executeRawUnsafe(`
         UPDATE "KnowledgePoint" SET "domainId" = 'domain-b' WHERE "id" = 'point-a'
       `)
-    ).rejects.toThrow("KnowledgePoint Domain cannot contradict existing owners");
+    ).rejects.toThrow("Legacy LearningNode owner cannot be contradicted");
 
     await client.$executeRawUnsafe(`
       INSERT INTO "LearningNode" (
@@ -135,9 +138,9 @@ describe("database Domain ownership guards", () => {
     `);
     await client.$executeRawUnsafe(`
       INSERT INTO "KnowledgeGraphEdge" (
-        "id", "domainId", "fromNodeId", "toNodeId", "relationType", "status", "evidenceStrength", "createdAt"
+        "id", "domainId", "fromNodeId", "toNodeId", "fromKnowledgePointId", "toKnowledgePointId", "relationType", "status", "evidenceStrength", "createdAt"
       ) VALUES (
-        'edge-a', 'domain-a', 'graph-a', 'graph-a2', 'related', 'candidate', 'unknown',
+        'edge-a', 'domain-a', 'graph-a', 'graph-a2', 'point-a', 'point-b', 'related', 'candidate', 'unknown',
         '2026-07-17T00:00:00.000Z'
       )
     `);
@@ -145,6 +148,8 @@ describe("database Domain ownership guards", () => {
       client.$executeRawUnsafe(`
         UPDATE "KnowledgeGraphNode" SET "domainId" = 'domain-b' WHERE "id" = 'graph-a2'
       `)
-    ).rejects.toThrow("KnowledgeGraphNode Domain cannot contradict existing edges");
+    ).resolves.toBe(1);
+    const edge=await client.knowledgeGraphEdge.findUniqueOrThrow({where:{id:"edge-a"}});
+    expect([edge.fromKnowledgePointId,edge.toKnowledgePointId]).toEqual(["point-a","point-b"]);
   });
 });

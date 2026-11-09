@@ -1,5 +1,9 @@
 # Expand a complete domain skeleton one stage at a time
 
+## 2026-10-09 后续决定
+
+本 ADR 中冲突的产品约定已被 [ADR 0025](0025-unified-learning-and-personal-knowledge.md) 部分或全部替代。逐阶段展开保留；节点移出当前路线时删除计划项并以 SetNull 和任务快照保留历史，不再禁止所有已开始项移除；有理由的主要下一步可改选。 下文保留原决策背景，不能用其旧规则覆盖当前任务书。
+
 Status: Accepted
 
 Updated: 2026-07-15

@@ -1,208 +1,36 @@
 import { describe, expect, it } from "vitest";
-import {
-  mergeRoadmapStageDraft,
-  roadmapDraftToSkeleton,
-  validateRoadmapInput
-} from "./roadmapService";
-
-const moduleBlueprints = [
-  {
-    key: "limit-foundations",
-    title: "极限基础",
-    goal: "理解极限",
-    keyQuestions: [
-      {
-        key: "limit-meaning",
-        question: "极限表达了什么？",
-        checkableOutcome: "能解释定义"
-      }
-    ]
-  }
-];
-
-const baseStage = {
-  key: "limits",
-  title: "极限",
-  goal: "理解极限",
-  rationale: "按蓝图规划",
-  moduleDirections: ["极限基础"],
-  moduleBlueprints,
-  prerequisiteStageKeys: []
-};
-
-describe("roadmapService layered draft validation", () => {
-  it("keeps a v2 planned Stage without materializing Learning Nodes", () => {
-    const result = validateRoadmapInput({
-      planningVersion: 2,
-      title: "高数路线",
-      stages: [{ ...baseStage, status: "planned", modules: [] }]
-    });
-
-    expect(result.planningVersion).toBe(2);
-    expect(result.stages[0].moduleBlueprints).toEqual(moduleBlueprints);
-    expect(result.stages[0].modules).toEqual([]);
+import { currentRoadmap } from "./currentRoadmap.fixture";
+import { mergeRoadmapStageDraft, roadmapDraftToSkeleton, validateRoadmapInput } from "./roadmapService";
+describe("当前渐进阶段规划", () => {
+  it("蓝图只声明教学问题，当前没有正式节点", () => {
+    const value = validateRoadmapInput(currentRoadmap());
+    expect(value.stages[0].modules).toEqual([]); expect(value.stages[0].goalKeys).toEqual(["count"]);
+    expect(value.stages[0].moduleBlueprints![0].keyQuestions[0].question).toBe("如何解释参数并正确计数交点？");
   });
-
-  it("rejects an expanded v2 Stage that does not cover its planned question", () => {
-    expect(() =>
-      validateRoadmapInput({
-        planningVersion: 2,
-        title: "高数路线",
-        stages: [
-          {
-            ...baseStage,
-            status: "expanded",
-            modules: [
-              {
-                title: "极限基础",
-                items: [
-                  {
-                    key: "node-1",
-                    title: "极限定义",
-                    keyQuestion: "极限表达了什么？",
-                    objective: "能解释极限定义",
-                    planningQuestionKey: null,
-                    prerequisiteKeys: []
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      })
-    ).toThrow("没有规划问题归属");
+  it("实际问题不能遗漏承接，允许多节点各承担一个要求", () => {
+    const value = currentRoadmap(true); expect(validateRoadmapInput(value).stages[0].modules[0].items).toHaveLength(2);
+    value.stages[0].modules[0].items.forEach(item => item.planningQuestionKeys = []);
+    expect(() => validateRoadmapInput(value)).toThrow();
   });
-
-  it("rejects an expanded v2 Learning Node without a checkable outcome", () => {
-    expect(() =>
-      validateRoadmapInput({
-        planningVersion: 2,
-        title: "高数路线",
-        stages: [
-          {
-            ...baseStage,
-            status: "expanded",
-            modules: [
-              {
-                title: "极限基础",
-                items: [
-                  {
-                    key: "node-1",
-                    title: "极限定义",
-                    keyQuestion: "极限表达了什么？",
-                    objective: "   ",
-                    planningQuestionKey: "limit-meaning",
-                    prerequisiteKeys: []
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      })
-    ).toThrow("缺少可检查结果");
+  it("从服务器蓝图恢复总目标、具体问题和阶段依赖，旧格式不能展开", () => {
+    const value = roadmapDraftToSkeleton(currentRoadmap());
+    expect(value.learningGoals![0].contentQuestions![0].contentRequirements).toHaveLength(2);
+    expect(value.stages[0].prerequisiteStageKeys).toEqual([]);
+    expect(() => roadmapDraftToSkeleton({ ...currentRoadmap(), planningVersion: 2 })).toThrow("planningVersion=3");
   });
-
-  it("accepts exact v2 coverage and preserves its planning key", () => {
-    const result = validateRoadmapInput({
-      planningVersion: 2,
-      title: "高数路线",
-      stages: [
-        {
-          ...baseStage,
-          status: "expanded",
-          modules: [
-            {
-              title: "极限基础",
-              items: [
-                {
-                  key: "node-1",
-                  title: "极限定义",
-                  keyQuestion: "极限表达了什么？",
-                  objective: "能解释极限定义",
-                  planningQuestionKey: "limit-meaning",
-                  prerequisiteKeys: []
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    });
-
-    expect(result.stages[0].modules[0].items[0].planningQuestionKey).toBe(
-      "limit-meaning"
-    );
+  it("只合并当前阶段，保持课程问题、其他阶段与其原有模块", () => {
+    const source = currentRoadmap(); const second = structuredClone(source.stages[0]);
+    second.key = "next"; second.title = "后续比较"; second.moduleBlueprints![0].key = "next-module"; second.moduleBlueprints![0].keyQuestions[0].key = "next-question";
+    source.stages.push(second);
+    const normalized = validateRoadmapInput(source), expanded = currentRoadmap(true).stages[0];
+    const result = mergeRoadmapStageDraft(normalized, "graph", expanded);
+    expect(result.learningGoals).toEqual(normalized.learningGoals); expect(result.stages[1]).toEqual(normalized.stages[1]);
+    expect(result.stages[0].moduleBlueprints).toEqual(normalized.stages[0].moduleBlueprints); expect(result.stages[0].status).toBe("expanded");
   });
-
-  it("continues to read legacy drafts without planning fields", () => {
-    expect(() =>
-      validateRoadmapInput({
-        title: "旧路线",
-        stages: [
-          {
-            key: "legacy-stage",
-            title: "旧阶段",
-            status: "planned",
-            moduleDirections: ["旧方向"],
-            prerequisiteStageKeys: [],
-            modules: []
-          }
-        ]
-      })
-    ).not.toThrow();
-  });
-
-  it("reconstructs the AI Stage input from the persisted server blueprint", () => {
-    const draft = validateRoadmapInput({
-      planningVersion: 2,
-      title: "高数路线",
-      baseRevision: 4,
-      stages: [{ ...baseStage, status: "planned", modules: [] }]
-    });
-
-    const skeleton = roadmapDraftToSkeleton(draft);
-
-    expect(skeleton.planningVersion).toBe(2);
-    expect(skeleton.stages[0].moduleBlueprints).toEqual(moduleBlueprints);
-    expect(skeleton.stages[0].coreTopics).toEqual(["极限基础"]);
-  });
-
-  it("merges only the requested Stage and preserves its reviewed blueprint", () => {
-    const draft = validateRoadmapInput({
-      planningVersion: 2,
-      title: "高数路线",
-      baseRevision: 4,
-      stages: [{ ...baseStage, status: "planned", modules: [] }]
-    });
-
-    const merged = mergeRoadmapStageDraft(draft, "limits", {
-      key: "model-tried-to-change-key",
-      title: "极限展开",
-      status: "expanded",
-      modules: [
-        {
-          title: "极限基础",
-          items: [
-            {
-              key: "limit-definition",
-              title: "极限定义",
-              keyQuestion: "极限表达了什么？",
-              objective: "能解释极限定义",
-              planningQuestionKey: "limit-meaning",
-              prerequisiteKeys: []
-            }
-          ]
-        }
-      ]
-    });
-
-    expect(merged.stages[0]).toEqual(
-      expect.objectContaining({
-        key: "limits",
-        status: "expanded",
-        moduleBlueprints
-      })
-    );
+  it("阶段显示顺序和概念复用不能制造隐式依赖", () => {
+    const source = currentRoadmap(true); source.stages[0].modules[0].items[1].prerequisiteKeys = [];
+    expect(validateRoadmapInput(source).stages[0].modules[0].items.every(n => n.prerequisiteKeys.length === 0)).toBe(true);
+    source.stages[0].modules[0].items[0].prerequisiteKeys = ["critical-count"]; source.stages[0].modules[0].items[1].prerequisiteKeys = ["parameters"];
+    expect(() => validateRoadmapInput(source)).toThrow();
   });
 });

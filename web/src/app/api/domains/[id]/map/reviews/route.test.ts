@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 import { AiTaskValidationError } from "../../../../../../lib/ai/tasks";
+import { AiConfigurationError } from "../../../../../../lib/ai/provider";
+import { createUncertainPlanningKnowledgeReview } from "../../../../../../lib/ai/planningKnowledgeReview";
 
 const mocks = vi.hoisted(() => ({ course: vi.fn(), roadmap: vi.fn(), review: vi.fn(), save: vi.fn(), bound: vi.fn(), evaluate: vi.fn(), record: vi.fn() }));
 vi.mock("../../../../../../lib/ai/tutorService", () => ({ reviewRoadmapDraftQuality: mocks.review }));
@@ -22,7 +24,7 @@ describe("Stage repair scope at the formal Domain review API", () => {
     mocks.roadmap.mockResolvedValue({ draft, draftCourseDesignAiCallLogId: "course-1", mapRevision: 7 });
     mocks.review.mockResolvedValue({ draft, qualityReport: report, aiCallLogIds: ["ai-1"], repairAttempts: 1 });
     mocks.save.mockResolvedValue({ draft, mapRevision: 7 });
-    mocks.record.mockResolvedValue({ id: "review-1" });
+    mocks.record.mockImplementation(async (input) => ({ id: "review-1", report: input.report, aiCallLogIds: input.aiCallLogIds }));
     mocks.bound.mockResolvedValue(null);
     mocks.evaluate.mockReturnValue("stale");
   });
@@ -67,5 +69,35 @@ describe("Stage repair scope at the formal Domain review API", () => {
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({ aiCallLogId: "failed-1", aiCallLogIds: ["failed-1", "failed-2"], validationIssues: [issue] });
     expect(mocks.save).not.toHaveBeenCalled();
+  });
+
+  it("returns the stored known error rather than a newer model opinion for the unchanged candidate", async () => {
+    const knowledgeReview = { ...createUncertainPlanningKnowledgeReview(draft, [], "原核对"), verdict: "confirmed_error", summary: "同一候选的必要条件仍缺失", aiCallLogIds: ["original-error-log"] };
+    const storedReport = { ...report, knowledgeReview };
+    mocks.record.mockResolvedValue({ id: "review-new", report: storedReport, aiCallLogIds: ["original-error-log", "ai-1"] });
+    const response = await POST(request({ scope: "map" }), params);
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ reviewState: "blocked", qualityReport: storedReport, aiCallLogIds: ["original-error-log", "ai-1"] });
+  });
+
+  it("keeps an unavailable retry blocked when persistence retains a same-candidate knowledge error", async () => {
+    const failure = Object.assign(new AiConfigurationError("Provider 暂不可用"), { aiCallLogIds: ["failure-log"] });
+    mocks.review.mockRejectedValue(failure);
+    const knowledgeReview = { ...createUncertainPlanningKnowledgeReview(draft, [], "原核对"), verdict: "confirmed_error", summary: "原错误尚未修正", aiCallLogIds: ["original-error-log"] };
+    const storedReport = { ...report, knowledgeReview };
+    mocks.record.mockResolvedValue({ id: "review-unavailable", report: storedReport, aiCallLogIds: ["original-error-log", "failure-log"] });
+    const response = await POST(request({ scope: "stage", stageKey: "limits" }), params);
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ reviewState: "blocked", qualityReview: { availability: "unavailable" }, qualityReport: storedReport, aiCallLogIds: ["original-error-log", "failure-log"] });
+    expect(mocks.record).toHaveBeenCalledWith(expect.objectContaining({ availability: "unavailable", aiCallLogIds: ["failure-log"] }));
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
+
+  it("exposes the persisted uncertainty for a new unavailable candidate", async () => {
+    mocks.review.mockRejectedValue(new AiConfigurationError("Provider 暂不可用"));
+    mocks.record.mockImplementation(async (input) => ({ id: "review-new", report: { ...input.report, knowledgeReview: createUncertainPlanningKnowledgeReview(input.draft, [], "尚未核对") }, aiCallLogIds: [] }));
+    const response = await POST(request({ scope: "map" }), params);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ reviewState: "unavailable", qualityReport: { knowledgeReview: { verdict: "uncertain" } } });
   });
 });

@@ -22,6 +22,7 @@
     "verify:electron-runtime": "node scripts/verify-electron-runtime.js",
     "verify:electron-upgrade": "node scripts/verify-electron-runtime.js --upgrade-fixture prisma/fixtures/legacy-pre-removal.db",
     "verify:electron-security": "node scripts/verify-electron-security.js",
+    "verify:desktop-learning": "node scripts/verify-full-product-desktop.js",
     "verify:migration-fidelity": "node scripts/verify-migration-fidelity.js",
     "audit:release": "npm audit --audit-level=high",
     "fixture:migration-legacy": "node scripts/create-legacy-migration-fixture.js",

@@ -1,0 +1,813 @@
+{
+  "schemaVersion": 1,
+  "createdDate": "2026-10-28",
+  "status": "parent_reviewed_before_first_model_call",
+  "parentReview": "根代理逐对核对代数证明、奇异矩阵反例、循环轨迹、Promise输入索引语义、零因果效应的相容世界和加权计数；保留原标签，未将教学取舍纳入统一真值。实验冻结以manifest的字节哈希为准。",
+  "provenance": "研究者于上一轮提示调整之后新构造的迁移诊断；未调用模型。不是实际生成成功样本，不是随机抽取或独立人类认证的保留集。",
+  "casesFile": "web/scripts/research/planning-transfer-cases.json",
+  "counts": {
+    "pairs": 6,
+    "cases": 12,
+    "expectedNoError": 6,
+    "expectedConfirmedError": 6
+  },
+  "inputPolicy": {
+    "allowedFields": [
+      "id",
+      "pair",
+      "domain",
+      "goal",
+      "planningText"
+    ],
+    "neverSendToModel": [
+      "本oracle的全部内容",
+      "expected",
+      "expectedIssue",
+      "proof",
+      "acceptableCorrection",
+      "对照另一例",
+      "成对差异说明"
+    ],
+    "execution": "逐例独立核对，不同时展示同对两例；冻结源文件哈希、完整实际提示和原始报告。先由根代理审查判据，再冻结；对照期间不改标签或提示。"
+  },
+  "evaluationRules": [
+    "知识真伪依据proof，不以审查模型的verdict作为真值。",
+    "总verdict命中、定位目标错误、可用更正、保留正确条件以及未引入新错分别记录。",
+    "no_error_found只指限定文本中的知识和逻辑主张可成立，不代表路线范围完备、教学顺序最优或学习有效。",
+    "若审查者发现oracle之外的具体问题，保留原文并独立核验；不能仅因不匹配预期标签就判审查失败。",
+    "改写代码、删去原题条件、缩小目标范围或新增强制任务来让错误句成立，不算合法修复。",
+    "初次结果、合同失败、Provider错误及后续更正全量保留，不以仅成功子集报告准确率。"
+  ],
+  "pairs": [
+    {
+      "pair": "p01",
+      "caseIds": [
+        "pt-01",
+        "pt-02"
+      ],
+      "singleSubstantiveChange": {
+        "correctSpan": "当 a、b 均为非负实数时，a²=b² 与 a=b 等价。",
+        "errorSpan": "当 a、b 为任意实数时，a²=b² 与 a=b 等价。"
+      },
+      "invariants": [
+        "domain相同",
+        "goal相同",
+        "planningText除此连续片段外完全相同"
+      ],
+      "interpretationSensitive": false,
+      "topic": "数学：平方等式与实数符号"
+    },
+    {
+      "pair": "p02",
+      "caseIds": [
+        "pt-03",
+        "pt-04"
+      ],
+      "singleSubstantiveChange": {
+        "correctSpan": "计算任意二阶实矩阵的行列式，不必先求出该矩阵的逆矩阵。",
+        "errorSpan": "计算任意二阶实矩阵的行列式，必须先求出该矩阵的逆矩阵。"
+      },
+      "invariants": [
+        "domain相同",
+        "goal相同",
+        "planningText除此连续片段外完全相同"
+      ],
+      "interpretationSensitive": false,
+      "topic": "数学：二阶行列式与计算前置"
+    },
+    {
+      "pair": "p03",
+      "caseIds": [
+        "pt-05",
+        "pt-06"
+      ],
+      "singleSubstantiveChange": {
+        "correctSpan": "这段代码执行完毕后，total 的值为 8。",
+        "errorSpan": "这段代码执行完毕后，total 的值为 1。"
+      },
+      "invariants": [
+        "domain相同",
+        "goal相同",
+        "planningText除此连续片段外完全相同"
+      ],
+      "interpretationSensitive": false,
+      "topic": "程序语义：JavaScript 循环控制"
+    },
+    {
+      "pair": "p04",
+      "caseIds": [
+        "pt-07",
+        "pt-08"
+      ],
+      "singleSubstantiveChange": {
+        "correctSpan": "values 精确为 [\"A\", \"B\"]。",
+        "errorSpan": "values 精确为 [\"B\", \"A\"]。"
+      },
+      "invariants": [
+        "domain相同",
+        "goal相同",
+        "planningText除此连续片段外完全相同"
+      ],
+      "interpretationSensitive": false,
+      "topic": "程序语义：JavaScript Promise 汇总顺序"
+    },
+    {
+      "pair": "p05",
+      "caseIds": [
+        "pt-09",
+        "pt-10"
+      ],
+      "singleSubstantiveChange": {
+        "correctSpan": "仅凭这些资料，不能证明开启提醒导致存活率提高。",
+        "errorSpan": "仅凭这些资料，已经足以证明开启提醒导致存活率提高。"
+      },
+      "invariants": [
+        "domain相同",
+        "goal相同",
+        "planningText除此连续片段外完全相同"
+      ],
+      "interpretationSensitive": false,
+      "topic": "开放观察：自选提醒与盆栽存活"
+    },
+    {
+      "pair": "p06",
+      "caseIds": [
+        "pt-11",
+        "pt-12"
+      ],
+      "singleSubstantiveChange": {
+        "correctSpan": "这并不保证把两类记录直接合并后，A的总体满意率仍高于B。",
+        "errorSpan": "这就保证把两类记录直接合并后，A的总体满意率仍高于B。"
+      },
+      "invariants": [
+        "domain相同",
+        "goal相同",
+        "planningText除此连续片段外完全相同"
+      ],
+      "interpretationSensitive": false,
+      "topic": "开放观察：分层与汇总满意率"
+    }
+  ],
+  "cases": [
+    {
+      "id": "pt-01",
+      "pair": "p01",
+      "expected": "confirmed_error",
+      "expectedIssue": {
+        "field": "planningText",
+        "quote": "当 a、b 为任意实数时，a²=b² 与 a=b 等价。",
+        "category": "condition_removed",
+        "description": "该句与本例已给条件及可复核推导不相容。"
+      },
+      "proof": {
+        "type": "algebraic_proof_and_counterexample",
+        "steps": [
+          "a=b 必然推出 a²=b²。",
+          "反向：a²=b² 推出 (a-b)(a+b)=0。若 a、b 非负，则 a+b=0 只可能二者都为0；否则 a-b=0。所以非负域内反向成立。",
+          "去掉非负条件后，取 a=-3、b=3，平方同为9但a不等于b；任意实数域的等价主张被反例否定。"
+        ],
+        "witness": {
+          "a": -3,
+          "b": 3,
+          "aSquared": 9,
+          "bSquared": 9,
+          "equal": false
+        }
+      },
+      "acceptableCorrection": {
+        "required": true,
+        "instruction": "恢复 a、b 均为非负实数的条件；或者在保留任意实数范围时，将反向结论改为 |a|=|b|（等价地 a=b 或 a=-b）。",
+        "exampleReplacement": "当 a、b 均为非负实数时，a²=b² 与 a=b 等价。"
+      },
+      "limits": [
+        "只评价实数等式的量词与条件，不评价学员是否已具备因式分解知识。",
+        "有限抽样仅能核验反例，不能代替非负实数全称命题的代数证明。"
+      ],
+      "sources": []
+    },
+    {
+      "id": "pt-02",
+      "pair": "p01",
+      "expected": "no_error_found",
+      "expectedIssue": null,
+      "proof": {
+        "type": "algebraic_proof_and_counterexample",
+        "steps": [
+          "a=b 必然推出 a²=b²。",
+          "反向：a²=b² 推出 (a-b)(a+b)=0。若 a、b 非负，则 a+b=0 只可能二者都为0；否则 a-b=0。所以非负域内反向成立。",
+          "去掉非负条件后，取 a=-3、b=3，平方同为9但a不等于b；任意实数域的等价主张被反例否定。"
+        ],
+        "witness": {
+          "a": -3,
+          "b": 3,
+          "aSquared": 9,
+          "bSquared": 9,
+          "equal": false
+        }
+      },
+      "acceptableCorrection": {
+        "required": false,
+        "instruction": "保留当前可成立主张；可解释条件，不因个人教学偏好把它判为知识错误。",
+        "preserve": "当 a、b 均为非负实数时，a²=b² 与 a=b 等价。"
+      },
+      "limits": [
+        "只评价实数等式的量词与条件，不评价学员是否已具备因式分解知识。",
+        "有限抽样仅能核验反例，不能代替非负实数全称命题的代数证明。"
+      ],
+      "sources": []
+    },
+    {
+      "id": "pt-03",
+      "pair": "p02",
+      "expected": "no_error_found",
+      "expectedIssue": null,
+      "proof": {
+        "type": "constructive_calculation_and_impossibility_witness",
+        "steps": [
+          "依据已给定义，只需两次实数乘法和一次减法，即可对任意四个实数条目计算 ad-bc，不需调用求逆。",
+          "给定矩阵A的行列式=1×4-2×2=0。",
+          "A乘以非零向量(-2,1)得到(0,0)。若逆矩阵B存在，左乘B会推出(-2,1)=(0,0)，矛盾；所以该矩阵不能求逆但可以计算行列式。"
+        ],
+        "witness": {
+          "matrix": [
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              4
+            ]
+          ],
+          "determinant": 0,
+          "nonzeroKernelVector": [
+            -2,
+            1
+          ],
+          "product": [
+            0,
+            0
+          ]
+        }
+      },
+      "acceptableCorrection": {
+        "required": false,
+        "instruction": "保留当前可成立主张；可解释条件，不因个人教学偏好把它判为知识错误。",
+        "preserve": "计算任意二阶实矩阵的行列式，不必先求出该矩阵的逆矩阵。"
+      },
+      "limits": [
+        "标签只否定数学上的必要计算步骤，不声称某位学员在某种课程中的最佳先修顺序。",
+        "目标含任意二阶实矩阵，不能通过删去不可逆矩阵来偷偷缩小范围。"
+      ],
+      "sources": []
+    },
+    {
+      "id": "pt-04",
+      "pair": "p02",
+      "expected": "confirmed_error",
+      "expectedIssue": {
+        "field": "planningText",
+        "quote": "计算任意二阶实矩阵的行列式，必须先求出该矩阵的逆矩阵。",
+        "category": "unsupported_logical_prerequisite",
+        "description": "该句与本例已给条件及可复核推导不相容。"
+      },
+      "proof": {
+        "type": "constructive_calculation_and_impossibility_witness",
+        "steps": [
+          "依据已给定义，只需两次实数乘法和一次减法，即可对任意四个实数条目计算 ad-bc，不需调用求逆。",
+          "给定矩阵A的行列式=1×4-2×2=0。",
+          "A乘以非零向量(-2,1)得到(0,0)。若逆矩阵B存在，左乘B会推出(-2,1)=(0,0)，矛盾；所以该矩阵不能求逆但可以计算行列式。"
+        ],
+        "witness": {
+          "matrix": [
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              4
+            ]
+          ],
+          "determinant": 0,
+          "nonzeroKernelVector": [
+            -2,
+            1
+          ],
+          "product": [
+            0,
+            0
+          ]
+        }
+      },
+      "acceptableCorrection": {
+        "required": true,
+        "instruction": "删除“必须先求逆”的逻辑依赖，改为直接依据已给条目计算 ad-bc；若仍希望先介绍逆矩阵，只能明确为教学安排，不能声称这是所有行列式计算的必要操作。",
+        "exampleReplacement": "计算任意二阶实矩阵的行列式，不必先求出该矩阵的逆矩阵。"
+      },
+      "limits": [
+        "标签只否定数学上的必要计算步骤，不声称某位学员在某种课程中的最佳先修顺序。",
+        "目标含任意二阶实矩阵，不能通过删去不可逆矩阵来偷偷缩小范围。"
+      ],
+      "sources": []
+    },
+    {
+      "id": "pt-05",
+      "pair": "p03",
+      "expected": "confirmed_error",
+      "expectedIssue": {
+        "field": "planningText",
+        "quote": "这段代码执行完毕后，total 的值为 1。",
+        "category": "program_execution_result",
+        "description": "该句与本例已给条件及可复核推导不相容。"
+      },
+      "proof": {
+        "type": "finite_execution_trace",
+        "steps": [
+          "初始 total=0。i=1执行加法后为1。",
+          "i=2执行continue，跳过本轮加法，随后仍执行循环更新并继续到i=3。",
+          "i=3加到4，i=4加到8，i=5时条件不成立而退出。"
+        ],
+        "witness": {
+          "trace": [
+            {
+              "i": 1,
+              "adds": true,
+              "total": 1
+            },
+            {
+              "i": 2,
+              "adds": false,
+              "total": 1
+            },
+            {
+              "i": 3,
+              "adds": true,
+              "total": 4
+            },
+            {
+              "i": 4,
+              "adds": true,
+              "total": 8
+            }
+          ],
+          "finalTotal": 8
+        }
+      },
+      "acceptableCorrection": {
+        "required": true,
+        "instruction": "把结果1改为8，解释continue只跳过当轮剩余语句；保留给定代码，不能把continue换成break来使原错误结果成立。",
+        "exampleReplacement": "这段代码执行完毕后，total 的值为 8。"
+      },
+      "limits": [
+        "只评价给定有限循环，不能扩为所有循环中的continue都只执行相同步骤。",
+        "不评价表格练习是否是对该学员最有效的教学方式。"
+      ],
+      "sources": [
+        {
+          "title": "ECMAScript: continue Statement",
+          "url": "https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#sec-continue-statement",
+          "accessed": "2026-10-28",
+          "relevance": "continue产生继续迭代的完成类型，与break不同；本例再按for循环更新和条件逐步计算。"
+        }
+      ]
+    },
+    {
+      "id": "pt-06",
+      "pair": "p03",
+      "expected": "no_error_found",
+      "expectedIssue": null,
+      "proof": {
+        "type": "finite_execution_trace",
+        "steps": [
+          "初始 total=0。i=1执行加法后为1。",
+          "i=2执行continue，跳过本轮加法，随后仍执行循环更新并继续到i=3。",
+          "i=3加到4，i=4加到8，i=5时条件不成立而退出。"
+        ],
+        "witness": {
+          "trace": [
+            {
+              "i": 1,
+              "adds": true,
+              "total": 1
+            },
+            {
+              "i": 2,
+              "adds": false,
+              "total": 1
+            },
+            {
+              "i": 3,
+              "adds": true,
+              "total": 4
+            },
+            {
+              "i": 4,
+              "adds": true,
+              "total": 8
+            }
+          ],
+          "finalTotal": 8
+        }
+      },
+      "acceptableCorrection": {
+        "required": false,
+        "instruction": "保留当前可成立主张；可解释条件，不因个人教学偏好把它判为知识错误。",
+        "preserve": "这段代码执行完毕后，total 的值为 8。"
+      },
+      "limits": [
+        "只评价给定有限循环，不能扩为所有循环中的continue都只执行相同步骤。",
+        "不评价表格练习是否是对该学员最有效的教学方式。"
+      ],
+      "sources": [
+        {
+          "title": "ECMAScript: continue Statement",
+          "url": "https://tc39.es/ecma262/multipage/ecmascript-language-statements-and-declarations.html#sec-continue-statement",
+          "accessed": "2026-10-28",
+          "relevance": "continue产生继续迭代的完成类型，与break不同；本例再按for循环更新和条件逐步计算。"
+        }
+      ]
+    },
+    {
+      "id": "pt-07",
+      "pair": "p04",
+      "expected": "no_error_found",
+      "expectedIssue": null,
+      "proof": {
+        "type": "finite_execution_and_language_rule",
+        "steps": [
+          "second在创建时已兑现为B；first在finishFirst(\"A\")被调用前仍待定，因此兑现先后确为second早于first。",
+          "Promise.all遍历输入时为各元素保存索引；兑现回调将值写入该输入的索引位置，不按兑现到达顺序追加。",
+          "first对应索引0写A，second对应索引1写B，因此values为[A,B]。"
+        ],
+        "witness": {
+          "inputOrder": [
+            "first",
+            "second"
+          ],
+          "fulfillmentOrder": [
+            "second",
+            "first"
+          ],
+          "values": [
+            "A",
+            "B"
+          ]
+        }
+      },
+      "acceptableCorrection": {
+        "required": false,
+        "instruction": "保留当前可成立主张；可解释条件，不因个人教学偏好把它判为知识错误。",
+        "preserve": "values 精确为 [\"A\", \"B\"]。"
+      },
+      "limits": [
+        "只评价此普通内置Promise、全部成功的代码；未覆盖拒绝处理、取消机制、修改内置对象或性能。",
+        "不据结果顺序推断请求何时启动、谁完成得快或用户已理解异步。"
+      ],
+      "sources": [
+        {
+          "title": "ECMAScript: PerformPromiseAll",
+          "url": "https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseall",
+          "accessed": "2026-10-28",
+          "relevance": "算法在遍历时保存输入index，兑现时将value放入该index对应位置。"
+        }
+      ]
+    },
+    {
+      "id": "pt-08",
+      "pair": "p04",
+      "expected": "confirmed_error",
+      "expectedIssue": {
+        "field": "planningText",
+        "quote": "values 精确为 [\"B\", \"A\"]。",
+        "category": "completion_order_vs_input_order",
+        "description": "该句与本例已给条件及可复核推导不相容。"
+      },
+      "proof": {
+        "type": "finite_execution_and_language_rule",
+        "steps": [
+          "second在创建时已兑现为B；first在finishFirst(\"A\")被调用前仍待定，因此兑现先后确为second早于first。",
+          "Promise.all遍历输入时为各元素保存索引；兑现回调将值写入该输入的索引位置，不按兑现到达顺序追加。",
+          "first对应索引0写A，second对应索引1写B，因此values为[A,B]。"
+        ],
+        "witness": {
+          "inputOrder": [
+            "first",
+            "second"
+          ],
+          "fulfillmentOrder": [
+            "second",
+            "first"
+          ],
+          "values": [
+            "A",
+            "B"
+          ]
+        }
+      },
+      "acceptableCorrection": {
+        "required": true,
+        "instruction": "把数组结果改为[A,B]，说明Promise.all保持输入的元素位置；不能交换原输入数组或更改兑现值来迎合错误答案。",
+        "exampleReplacement": "values 精确为 [\"A\", \"B\"]。"
+      },
+      "limits": [
+        "只评价此普通内置Promise、全部成功的代码；未覆盖拒绝处理、取消机制、修改内置对象或性能。",
+        "不据结果顺序推断请求何时启动、谁完成得快或用户已理解异步。"
+      ],
+      "sources": [
+        {
+          "title": "ECMAScript: PerformPromiseAll",
+          "url": "https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseall",
+          "accessed": "2026-10-28",
+          "relevance": "算法在遍历时保存输入index，兑现时将value放入该index对应位置。"
+        }
+      ]
+    },
+    {
+      "id": "pt-09",
+      "pair": "p05",
+      "expected": "no_error_found",
+      "expectedIssue": null,
+      "proof": {
+        "type": "finite_countermodel_to_causal_identification",
+        "steps": [
+          "18/20=90%，10/20=50%是这40盆植物的描述性记录。",
+          "构造与记录完全相容的情形：启用组18盆在启用或不启用时都会存活，2盆在两种情况下都会死亡；未启用组10盆在两种情况下都会存活，另10盆都会死亡。两组由种植者按未记录的初始状态自行选择。",
+          "在这个情形中，观察计数仍恰为18/20和10/20，而每盆植物的提醒因果效应均为0。所以当前记录不逻辑蕴含正因果效应。",
+          "该反例只证明“现有记录不够证明”，不声称现实中提醒一定没有作用。"
+        ],
+        "witness": {
+          "groups": [
+            {
+              "observedReminder": true,
+              "count": 18,
+              "surviveIfReminder": 1,
+              "surviveIfNoReminder": 1
+            },
+            {
+              "observedReminder": true,
+              "count": 2,
+              "surviveIfReminder": 0,
+              "surviveIfNoReminder": 0
+            },
+            {
+              "observedReminder": false,
+              "count": 10,
+              "surviveIfReminder": 1,
+              "surviveIfNoReminder": 1
+            },
+            {
+              "observedReminder": false,
+              "count": 10,
+              "surviveIfReminder": 0,
+              "surviveIfNoReminder": 0
+            }
+          ],
+          "allIndividualEffects": 0
+        }
+      },
+      "acceptableCorrection": {
+        "required": false,
+        "instruction": "保留当前可成立主张；可解释条件，不因个人教学偏好把它判为知识错误。",
+        "preserve": "仅凭这些资料，不能证明开启提醒导致存活率提高。"
+      },
+      "limits": [
+        "不把一个相容的零效应情形当作真实发生的机制。",
+        "不要求随机试验是所有场景唯一可用方法；这里判断的是这份明确缺少相关控制的记录是否已经充分。",
+        "不评价哪种园艺提醒方案最佳，也不提供实际植物养护建议。"
+      ],
+      "sources": []
+    },
+    {
+      "id": "pt-10",
+      "pair": "p05",
+      "expected": "confirmed_error",
+      "expectedIssue": {
+        "field": "planningText",
+        "quote": "仅凭这些资料，已经足以证明开启提醒导致存活率提高。",
+        "category": "observational_association_as_causation",
+        "description": "该句与本例已给条件及可复核推导不相容。"
+      },
+      "proof": {
+        "type": "finite_countermodel_to_causal_identification",
+        "steps": [
+          "18/20=90%，10/20=50%是这40盆植物的描述性记录。",
+          "构造与记录完全相容的情形：启用组18盆在启用或不启用时都会存活，2盆在两种情况下都会死亡；未启用组10盆在两种情况下都会存活，另10盆都会死亡。两组由种植者按未记录的初始状态自行选择。",
+          "在这个情形中，观察计数仍恰为18/20和10/20，而每盆植物的提醒因果效应均为0。所以当前记录不逻辑蕴含正因果效应。",
+          "该反例只证明“现有记录不够证明”，不声称现实中提醒一定没有作用。"
+        ],
+        "witness": {
+          "groups": [
+            {
+              "observedReminder": true,
+              "count": 18,
+              "surviveIfReminder": 1,
+              "surviveIfNoReminder": 1
+            },
+            {
+              "observedReminder": true,
+              "count": 2,
+              "surviveIfReminder": 0,
+              "surviveIfNoReminder": 0
+            },
+            {
+              "observedReminder": false,
+              "count": 10,
+              "surviveIfReminder": 1,
+              "surviveIfNoReminder": 1
+            },
+            {
+              "observedReminder": false,
+              "count": 10,
+              "surviveIfReminder": 0,
+              "surviveIfNoReminder": 0
+            }
+          ],
+          "allIndividualEffects": 0
+        }
+      },
+      "acceptableCorrection": {
+        "required": true,
+        "instruction": "保留90%与50%的描述，撤回“足以证明提醒导致提高”，改为当前观察与多种因果解释相容，需要额外设计或假设才能推断效应；不能反向断言提醒一定无效。",
+        "exampleReplacement": "仅凭这些资料，不能证明开启提醒导致存活率提高。"
+      },
+      "limits": [
+        "不把一个相容的零效应情形当作真实发生的机制。",
+        "不要求随机试验是所有场景唯一可用方法；这里判断的是这份明确缺少相关控制的记录是否已经充分。",
+        "不评价哪种园艺提醒方案最佳，也不提供实际植物养护建议。"
+      ],
+      "sources": []
+    },
+    {
+      "id": "pt-11",
+      "pair": "p06",
+      "expected": "confirmed_error",
+      "expectedIssue": {
+        "field": "planningText",
+        "quote": "这就保证把两类记录直接合并后，A的总体满意率仍高于B。",
+        "category": "stratum_result_improperly_generalized",
+        "description": "该句与本例已给条件及可复核推导不相容。"
+      },
+      "proof": {
+        "type": "exact_finite_arithmetic",
+        "steps": [
+          "简单事项A=9/10=90%，B=80/100=80%；复杂事项A=20/100=20%，B=1/10=10%。两层A均较高。",
+          "合并后A满意次数=9+20=29，总次数=10+100=110；B满意次数=80+1=81，总次数=100+10=110。",
+          "29/110<81/110，已给记录本身就是“组内都较高就保证汇总较高”的有限反例。权重分别偏向简单或复杂事项；不能把两层百分数不加权平均当作总体率。"
+        ],
+        "witness": {
+          "simple": {
+            "A": [
+              9,
+              10
+            ],
+            "B": [
+              80,
+              100
+            ]
+          },
+          "complex": {
+            "A": [
+              20,
+              100
+            ],
+            "B": [
+              1,
+              10
+            ]
+          },
+          "overall": {
+            "A": [
+              29,
+              110
+            ],
+            "B": [
+              81,
+              110
+            ]
+          }
+        }
+      },
+      "acceptableCorrection": {
+        "required": true,
+        "instruction": "撤回“保证汇总后A仍较高”，按总满意次数除以总服务次数得到A=29/110、B=81/110；保留原分层计数，不用调换人群权重来伪装修正。",
+        "exampleReplacement": "这并不保证把两类记录直接合并后，A的总体满意率仍高于B。"
+      },
+      "limits": [
+        "只比较这份记录的总体率，不推断总体人群的未知参数或某柜台本身的因果服务能力。",
+        "标准化到共同权重是另一问题，不能替代题目要求的直接合并。"
+      ],
+      "sources": []
+    },
+    {
+      "id": "pt-12",
+      "pair": "p06",
+      "expected": "no_error_found",
+      "expectedIssue": null,
+      "proof": {
+        "type": "exact_finite_arithmetic",
+        "steps": [
+          "简单事项A=9/10=90%，B=80/100=80%；复杂事项A=20/100=20%，B=1/10=10%。两层A均较高。",
+          "合并后A满意次数=9+20=29，总次数=10+100=110；B满意次数=80+1=81，总次数=100+10=110。",
+          "29/110<81/110，已给记录本身就是“组内都较高就保证汇总较高”的有限反例。权重分别偏向简单或复杂事项；不能把两层百分数不加权平均当作总体率。"
+        ],
+        "witness": {
+          "simple": {
+            "A": [
+              9,
+              10
+            ],
+            "B": [
+              80,
+              100
+            ]
+          },
+          "complex": {
+            "A": [
+              20,
+              100
+            ],
+            "B": [
+              1,
+              10
+            ]
+          },
+          "overall": {
+            "A": [
+              29,
+              110
+            ],
+            "B": [
+              81,
+              110
+            ]
+          }
+        }
+      },
+      "acceptableCorrection": {
+        "required": false,
+        "instruction": "保留当前可成立主张；可解释条件，不因个人教学偏好把它判为知识错误。",
+        "preserve": "这并不保证把两类记录直接合并后，A的总体满意率仍高于B。"
+      },
+      "limits": [
+        "只比较这份记录的总体率，不推断总体人群的未知参数或某柜台本身的因果服务能力。",
+        "标准化到共同权重是另一问题，不能替代题目要求的直接合并。"
+      ],
+      "sources": []
+    }
+  ],
+  "unscoredDesignExamples": [
+    {
+      "id": "design-scope",
+      "planningExample": "在30分钟兴趣入门中只教二阶行列式的数值计算，把面积解释留到后续。",
+      "whyNotKnowledgeTruth": "是否覆盖目标取决于学习者用途、时长与已确认范围；数值公式正确不证明范围足够，也不能单因未讲几何解释就判知识错误。",
+      "neededEvidence": "明确目标与范围承诺、所需任务覆盖，以及实际学习者能否完成目标任务。"
+    },
+    {
+      "id": "design-order",
+      "planningExample": "先让学习者追踪两个循环例子，再介绍continue和break的名称。",
+      "whyNotKnowledgeTruth": "这是教学顺序选择，不是数学或程序语义上的必需关系；仅凭文案没有唯一真值。",
+      "neededEvidence": "学习者背景、可选替代方案及理解或迁移表现；不能由另一个模型的偏好评分替代。"
+    },
+    {
+      "id": "design-granularity",
+      "planningExample": "把continue与break放在同一节点，通过对照表共同讲解。",
+      "whyNotKnowledgeTruth": "相关概念可共同讲；节点数量与教学效果不由一概念一节点规则决定。",
+      "neededEvidence": "实际前置是否补足、任务可理解性、练习与反馈的连续性，而非节点数。"
+    },
+    {
+      "id": "design-soft-prerequisite",
+      "planningExample": "建议先学循环再学Promise.all，因为这条具体路线后续要循环创建多项请求。",
+      "whyNotKnowledgeTruth": "针对一条路线的建议顺序并不等于所有Promise.all用法的逻辑必要前置；未给后续任务时不能统一判建议对错。",
+      "neededEvidence": "实际依赖任务与可替代实现；若作者明确声称普遍逻辑必要，才另行寻找有限反例。"
+    },
+    {
+      "id": "design-effect",
+      "planningExample": "讲解后提供一个可选的新情境对照活动，帮助学习者迁移。",
+      "whyNotKnowledgeTruth": "题目可执行和知识正确不证明活动提升迁移；可选活动也不等于更改必需任务承诺。",
+      "neededEvidence": "真实无辅助迁移表现及必要的延迟测量；记录用户是否选择活动。"
+    }
+  ],
+  "verification": {
+    "parentReviewPending": true,
+    "productionPromptsModified": false,
+    "modelCalled": false,
+    "realDatabaseUsed": false,
+    "finiteProofsProvided": true,
+    "localCodeAndArithmeticWitnessCheck": {
+      "status": "passed",
+      "runtime": "Node.js v24.19.0",
+      "date": "2026-10-28",
+      "inputFieldsExact": true,
+      "eachPairDiffersOnlyByDeclaredSingleSpan": true,
+      "loopCodeExtractedFromPlanningTextResult": 8,
+      "promiseCodeExtractedFromPlanningTextResult": ["A", "B"],
+      "determinant": 0,
+      "kernelVectorProduct": [0, 0],
+      "causalCountermodelMatchesObservedCounts": true,
+      "causalCountermodelAllIndividualEffectsZero": true,
+      "overallSatisfiedCounts": { "A": [29, 110], "B": [81, 110] },
+      "limitation": "有限计算核对不是全称命题证明；p01正确例另由代数证明支撑。尚待根代理独立核验后冻结。"
+    }
+  }
+}

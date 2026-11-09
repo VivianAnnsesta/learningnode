@@ -3,6 +3,8 @@ import type { DimensionKey } from "./teachingDimensions";
 export type CourseContentQuestion = {
   key: string;
   question: string;
+  /** Missing on legacy plans; it does not certify a learner's ability. */
+  importance?: "required" | "optional";
   contentRequirements: string[];
   dimensionKeys: DimensionKey[];
   requirementIndices?: number[];
@@ -11,6 +13,8 @@ export type CourseContentQuestion = {
 
 export type RoadmapModuleKeyQuestion = {
   contentQuestionKey?: string;
+  /** Resolved from the course registry, never independently promoted by a Module. */
+  importance?: "required" | "optional";
   contentRequirements?: string[];
   dimensionKeys?: DimensionKey[];
   goalKeys?: string[];

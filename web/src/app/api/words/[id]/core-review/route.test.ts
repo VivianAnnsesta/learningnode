@@ -55,10 +55,10 @@ describe("core review API", () => {
     expect(response.status).toBe(400);
   });
 
-  it("saves compatibility review data through the shared service", async () => {
-    coreReviewServiceMock.saveLegacyCoreReview.mockResolvedValue({
-      review: { id: "r1" }
-    });
+  it("keeps the retired compatibility write path closed", async () => {
+    coreReviewServiceMock.saveLegacyCoreReview.mockRejectedValue(
+      new coreReviewServiceMock.LegacyCoreReviewError("旧复习仅供历史读取", 410)
+    );
 
     const response = await POST(
       new Request("http://localhost/api/words/w1/core-review?canvasId=c1", {
@@ -69,7 +69,7 @@ describe("core review API", () => {
       params
     );
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(410);
     expect(coreReviewServiceMock.saveLegacyCoreReview).toHaveBeenCalledWith(
       "w1",
       "c1",

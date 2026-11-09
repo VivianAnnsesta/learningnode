@@ -16,6 +16,16 @@ vi.mock("./openaiCompatibleProvider", () => ({
 
 const passed: MapDraftQualityReport = { status: "passed", summary: "本阶段修订完成。", blockingIssues: [], warnings: [] };
 const policyPassed = { ...passed, reviewPolicyVersion: 1 as const };
+const uncertainKnowledge = { text: JSON.stringify({ verdict: "uncertain", summary: "本结构测试没有逐项知识核对证据。", limitations: ["缺少实际资料和独立推导；不能把结构复审通过当作知识正确。"], claims: [], findings: [] }), raw: {} };
+function queuePlanningResponses(...responses: Array<{ text: string; raw: Record<string, unknown> }>) {
+  let next = 0;
+  mocks.generateText.mockImplementation(async (input: { taskType: string }) => {
+    if (input.taskType === "planning_knowledge_check") return uncertainKnowledge;
+    const response = responses[next++];
+    if (!response) throw new Error(`Unexpected structural task: ${input.taskType}`);
+    return response;
+  });
+}
 const courseDesign: CourseDesignDraft = {
   taskBriefSnapshot: "学习定义域与极限。",
   globalExplanation: { theorySkeleton: "先理解函数取值范围，再理解趋近。", sourceBasis: "已提供的课程资料。", optimizationRationale: "保留真实前置。", risksAndValidation: "核对边界。" },
@@ -43,6 +53,64 @@ function baseline() {
 }
 
 describe("Stage repair and course-goal ownership", () => {
+  function withPlannedContainer() {
+    const original = baseline();
+    const container = structuredClone(original.stages[0]);
+    container.key = "entry-clarification";
+    container.status = "planned";
+    container.modules = [];
+    container.moduleBlueprints![0].key = "entry-module";
+    container.moduleBlueprints![0].keyQuestions[0].key = "entry-question";
+    return validateRoadmapInput({ ...original, stages: [container, ...original.stages] });
+  }
+
+  it("allows removing an unexpanded redundant container while preserving goals, work and revision", () => {
+    const original = withPlannedContainer();
+    const snapshot = structuredClone(original);
+    const draft = { ...original, stages: original.stages.filter(stage => stage.key !== "entry-clarification") };
+    const result = validateMapDraftQualityRepair({ report: passed, draft }, original);
+    expect(result.draft.stages.map(stage => stage.key)).toEqual(["domain", "limit"]);
+    expect(result.draft.learningGoals).toEqual(original.learningGoals);
+    expect(result.draft.baseRevision).toBe(7);
+    expect(result.draft.stages[1].modules[0].items[0].status).toBe("in_progress");
+    expect(original).toEqual(snapshot);
+  });
+
+  it("rejects deleting an expanded Stage even when remaining blueprints cover the course goals", () => {
+    const original = withPlannedContainer();
+    const draft = structuredClone(original);
+    draft.stages = draft.stages.filter(stage => stage.key !== "domain");
+    draft.stages.find(stage => stage.key === "limit")!.prerequisiteStageKeys = [];
+    draft.stages.find(stage => stage.key === "limit")!.modules[0].items[0].prerequisiteKeys = [];
+    expect(() => validateMapDraftQualityRepair({ report: passed, draft }, original)).toThrow("已有展开内容不能整体丢弃");
+  });
+
+  it("does not let container removal bypass required goal coverage or dangling prerequisite checks", () => {
+    const original = withPlannedContainer();
+    const draft = structuredClone(original);
+    draft.stages = draft.stages.filter(stage => stage.key !== "entry-clarification");
+    draft.stages[0].prerequisiteStageKeys = ["entry-clarification"];
+    expect(() => validateMapDraftQualityRepair({ report: passed, draft }, original)).toThrow(/前置/);
+    const missing = structuredClone(original);
+    missing.stages = missing.stages.filter(stage => stage.key === "limit");
+    missing.stages[0].prerequisiteStageKeys = [];
+    missing.stages[0].modules[0].items[0].prerequisiteKeys = [];
+    expect(() => validateMapDraftQualityRepair({ report: passed, draft: missing }, original)).toThrow(/目标|覆盖/);
+  });
+
+  it("allows only planned new containers and never expands them during global repair", () => {
+    const original = baseline();
+    const draft = withPlannedContainer();
+    expect(validateMapDraftQualityRepair({ report: passed, draft }, original).draft.stages[0].status).toBe("planned");
+    draft.stages[0].status = "expanded";
+    draft.stages[0].modules = structuredClone(original.stages[0].modules);
+    draft.stages[0].modules[0].items[0].key = "new-entry-node";
+    draft.stages[0].modules[0].items[0].title = "新增入口说明";
+    draft.stages[0].modules[0].items[0].concept!.name = "新增入口说明";
+    draft.stages[0].modules[0].items[0].planningQuestionKeys = ["entry-question"];
+    expect(() => validateMapDraftQualityRepair({ report: passed, draft }, original)).toThrow(/new Stages remain planned/);
+  });
+
   it("does not downgrade explicit contribution contracts during a local repair", () => {
     const original = baseline();
     const node = original.stages[0].modules[0].items[0];
@@ -203,14 +271,16 @@ describe("Stage repair and course-goal ownership", () => {
     const original = baseline();
     const report = { ...policyPassed, blockingIssues: [{ code: "coreKnowledgeError", targetKey: "node-domain", message: "核心定义需要修正。", suggestion: "修正定义。", evidence: { draftExcerpt: "函数定义域", requirement: "正确解释输入范围。", impact: "核心定义错误会使后续函数与极限学习建立在错误基础上。" } }] };
     const stage = { ...original.stages[0], rationale: "修正核心定义。" };
-    mocks.generateText.mockResolvedValueOnce({ text: JSON.stringify({ report }), raw: {} })
-      .mockResolvedValueOnce({ text: JSON.stringify({ report: policyPassed, draft: original }), raw: {} })
-      .mockResolvedValueOnce({ text: JSON.stringify({ report: policyPassed, stage }), raw: {} });
+    queuePlanningResponses({ text: JSON.stringify({ report }), raw: {} },
+      { text: JSON.stringify({ report: policyPassed, draft: original }), raw: {} },
+      { text: JSON.stringify({ report: policyPassed, stage }), raw: {} });
     const result = await reviewRoadmapDraftQuality("domain-1", { courseDesign, draft: original, scope: "map", stageKey: "domain" });
     expect(result.draft.learningGoals).toEqual(original.learningGoals);
     expect(result.draft.stages[1]).toEqual(original.stages[1]);
     expect(result.qualityReport.status).toBe("passed");
-    expect(result.aiCallLogIds).toEqual(["log-1", "log-2", "log-3"]);
+    expect(result.aiCallLogIds).toEqual(["log-1", "log-2", "log-3", "log-4"]);
+    expect(result.qualityReport.knowledgeReview).toMatchObject({ verdict: "uncertain", claims: [], aiCallLogIds: ["log-4"] });
+    expect(records["log-4"]).toMatchObject({ taskType: "planning_knowledge_check", status: "success" });
     expect(records["log-2"]).toMatchObject({ status: "failed", promptVersion: "stage-scoped-repair-v3-critical-1-contributions-2-continuity-1" });
     expect(records["log-3"]).toMatchObject({ status: "success", retryReason: "validation" });
     const prompt = mocks.generateText.mock.calls[1][0].messages[1].content;
@@ -219,37 +289,78 @@ describe("Stage repair and course-goal ownership", () => {
     expect(prompt).toContain("Never return draft, stages, learningGoals");
   });
 
+  it("keeps the current concern and target Stage in actual review, repair retry and knowledge calls", async () => {
+    const original = baseline();
+    const feedback = "CONCERN_731：请核对当前阶段是否把选学比较变成必需前置；这是质疑而非已确认错误。";
+    const report = { ...policyPassed, blockingIssues: [{ code: "coreKnowledgeError", targetKey: "node-domain", message: "核心定义需要修正。", suggestion: "修正定义。", evidence: { draftExcerpt: "函数定义域", requirement: "正确解释输入范围。", impact: "核心定义错误会使后续学习建立在错误基础上。" } }] };
+    const stage = { ...original.stages[0], rationale: "按当前证据修正核心定义。" };
+    queuePlanningResponses({ text: JSON.stringify({ report }), raw: {} },
+      { text: JSON.stringify({ report: policyPassed, draft: original }), raw: {} },
+      { text: JSON.stringify({ report: policyPassed, stage }), raw: {} });
+    const result = await reviewRoadmapDraftQuality("domain-1", { courseDesign, draft: original, scope: "map", stageKey: "domain", feedback });
+    const requests = mocks.generateText.mock.calls.map(([input]) => input);
+    expect(requests.map(input => input.taskType)).toEqual(["roadmap_stage_critique", "roadmap_stage_repair", "roadmap_stage_repair", "planning_knowledge_check"]);
+    for (const input of requests) expect(input.messages[1].content).toContain(feedback);
+    expect(requests[0].messages[1].content).toContain('"stageKey":"domain"');
+    expect(requests[0].messages[1].content).toContain(original.stages[1].key);
+    expect(requests[0].messages[1].content).toContain("not as an established defect");
+    expect(requests[1].messages[1].content).toContain('Repair ONLY the expanded Stage with key "domain"');
+    expect(result.draft.stages[1]).toEqual(original.stages[1]);
+    expect(result.draft.learningGoals).toEqual(original.learningGoals);
+    expect(records["log-2"].status).toBe("failed");
+  });
+
+  it("passes a whole-map concern without inventing a target Stage or repair permission", async () => {
+    const original = baseline(), feedback = "GLOBAL_CONCERN_913：比较整个课程的实际范围。";
+    queuePlanningResponses({ text: JSON.stringify({ report: policyPassed }), raw: {} });
+    const result = await reviewRoadmapDraftQuality("domain-1", { courseDesign, draft: original, scope: "map", feedback });
+    const firstPrompt = mocks.generateText.mock.calls[0][0].messages[1].content;
+    expect(firstPrompt).toContain(feedback);
+    expect(firstPrompt).toContain('"stageKey":null');
+    expect(result.draft).toEqual(original);
+    expect(result.repairAttempts).toBe(0);
+  });
+
+  it("rejects an unknown target Stage before any review call even with a user concern", async () => {
+    await expect(reviewRoadmapDraftQuality("domain-1", { courseDesign, draft: baseline(), scope: "map", stageKey: "invented-stage", feedback: "请修改不存在的阶段" })).rejects.toThrow("已展开的目标阶段");
+    expect(mocks.generateText).not.toHaveBeenCalled();
+  });
+
   it("stops local repair when only other Stages' findings remain, without clearing their blocker", async () => {
     const original = baseline();
     const outside = { code: "criticalCoverageGap", targetKey: "q-limit", message: "后续阶段遗漏核心必学内容。", suggestion: "单独处理。", evidence: { draftExcerpt: "这个概念表达什么？", requirement: "正确解释极限。", impact: "缺少核心内容会使极限课程无法学习。" } };
     const local = { code: "coreKnowledgeError", targetKey: "node-domain", message: "当前核心定义错误。", suggestion: "修正定义。", evidence: { draftExcerpt: "函数定义域", requirement: "正确解释输入范围。", impact: "会使后续函数学习建立在错误基础上。" } };
-    mocks.generateText.mockResolvedValueOnce({ text: JSON.stringify({ report: { ...policyPassed, blockingIssues: [local, outside] } }), raw: {} })
-      .mockResolvedValueOnce({ text: JSON.stringify({ report: policyPassed, stage: original.stages[0] }), raw: {} });
+    queuePlanningResponses({ text: JSON.stringify({ report: { ...policyPassed, blockingIssues: [local, outside] } }), raw: {} },
+      { text: JSON.stringify({ report: policyPassed, stage: original.stages[0] }), raw: {} });
     const result = await reviewRoadmapDraftQuality("domain-1", { courseDesign, draft: original, scope: "map", stageKey: "domain" });
-    expect(mocks.generateText).toHaveBeenCalledTimes(2);
+    expect(mocks.generateText).toHaveBeenCalledTimes(3);
     expect(result.repairAttempts).toBe(1);
     expect(result.qualityReport).toMatchObject({ status: "blocked", blockingIssues: [outside] });
     expect(result.draft.learningGoals).toEqual(original.learningGoals);
+    expect(result.qualityReport.knowledgeReview?.verdict).toBe("uncertain");
+    expect(records["log-3"].taskType).toBe("planning_knowledge_check");
   });
 
   it("passes with warnings and does not spend repair calls on optional enrichment", async () => {
     const original = baseline();
-    mocks.generateText.mockResolvedValue({ text: JSON.stringify({ report: { ...policyPassed, warnings: [{ code: "optionalEnrichment", targetKey: "domain", message: "可增加一个示范。" }] } }), raw: {} });
+    queuePlanningResponses({ text: JSON.stringify({ report: { ...policyPassed, warnings: [{ code: "optionalEnrichment", targetKey: "domain", message: "可增加一个示范。" }] } }), raw: {} });
     const result = await reviewRoadmapDraftQuality("domain-1", { courseDesign, draft: original, scope: "map" });
     expect(result.qualityReport.status).toBe("passed");
     expect(result.qualityReport.warnings).toHaveLength(1);
     expect(result.repairAttempts).toBe(0);
-    expect(mocks.generateText).toHaveBeenCalledTimes(1);
+    expect(mocks.generateText).toHaveBeenCalledTimes(2);
+    expect(mocks.generateText.mock.calls.map(([input]) => input.taskType)).toEqual(["roadmap_stage_critique", "planning_knowledge_check"]);
+    expect(result.qualityReport.knowledgeReview).toMatchObject({ verdict: "uncertain", claims: [], aiCallLogIds: ["log-2"] });
   });
 
   it("stops after an ineffective repair and retains the serious defect", async () => {
     const original = baseline();
     const report = { ...policyPassed, blockingIssues: [{ code: "coreKnowledgeError", targetKey: "node-domain", message: "核心定义错误。", evidence: { draftExcerpt: "函数定义域", requirement: "解释输入范围。", impact: "错误定义会使函数学习失去正确基础。" } }] };
-    mocks.generateText.mockResolvedValueOnce({ text: JSON.stringify({ report }), raw: {} })
-      .mockResolvedValue({ text: JSON.stringify({ report, stage: original.stages[0] }), raw: {} });
+    queuePlanningResponses({ text: JSON.stringify({ report }), raw: {} },
+      { text: JSON.stringify({ report, stage: original.stages[0] }), raw: {} });
     const result = await reviewRoadmapDraftQuality("domain-1", { courseDesign, draft: original, scope: "map", stageKey: "domain" });
     expect(result.repairAttempts).toBe(1);
-    expect(mocks.generateText).toHaveBeenCalledTimes(2);
+    expect(mocks.generateText).toHaveBeenCalledTimes(3);
     expect(result.qualityReport.status).toBe("blocked");
     expect(result.qualityReport.warnings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "repairNoProgress" })]));
   });
@@ -257,26 +368,30 @@ describe("Stage repair and course-goal ownership", () => {
   it("retains the last valid draft and all evidence when structural repair is exhausted", async () => {
     const original = baseline();
     const report = { ...policyPassed, blockingIssues: [{ code: "coreKnowledgeError", targetKey: "node-domain", message: "核心定义错误。", evidence: { draftExcerpt: "函数定义域", requirement: "解释输入范围。", impact: "错误定义会使函数学习失去正确基础。" } }] };
-    mocks.generateText.mockResolvedValueOnce({ text: JSON.stringify({ report }), raw: {} })
-      .mockResolvedValue({ text: JSON.stringify({ report: policyPassed, draft: original }), raw: {} });
+    queuePlanningResponses({ text: JSON.stringify({ report }), raw: {} },
+      { text: JSON.stringify({ report: policyPassed, draft: original }), raw: {} },
+      { text: JSON.stringify({ report: policyPassed, draft: original }), raw: {} });
     const result = await reviewRoadmapDraftQuality("domain-1", { courseDesign, draft: original, scope: "map", stageKey: "domain" });
     expect(result.draft).toEqual(original);
     expect(result.qualityReport.status).toBe("blocked");
-    expect(result.aiCallLogIds).toEqual(["log-1", "log-2", "log-3"]);
+    expect(result.aiCallLogIds).toEqual(["log-1", "log-2", "log-3", "log-4"]);
     expect(records["log-2"].status).toBe("failed");
     expect(records["log-3"].status).toBe("failed");
+    expect(records["log-4"]).toMatchObject({ taskType: "planning_knowledge_check", status: "success" });
+    expect(result.qualityReport.knowledgeReview).toMatchObject({ verdict: "uncertain", claims: [] });
     expect(result.qualityReport.warnings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "repairFailed" })]));
   });
 
   it("never reports success simply because two repair rounds were used", async () => {
     const original = baseline();
     const report = { ...policyPassed, blockingIssues: [{ code: "coreKnowledgeError", targetKey: "node-domain", message: "核心定义错误。", evidence: { draftExcerpt: "函数定义域", requirement: "解释输入范围。", impact: "错误定义会使函数学习失去正确基础。" } }] };
-    mocks.generateText.mockResolvedValueOnce({ text: JSON.stringify({ report }), raw: {} })
-      .mockResolvedValueOnce({ text: JSON.stringify({ report, stage: { ...original.stages[0], rationale: "第一轮调整。" } }), raw: {} })
-      .mockResolvedValueOnce({ text: JSON.stringify({ report, stage: { ...original.stages[0], rationale: "第二轮调整。" } }), raw: {} });
+    queuePlanningResponses({ text: JSON.stringify({ report }), raw: {} },
+      { text: JSON.stringify({ report, stage: { ...original.stages[0], rationale: "第一轮调整。" } }), raw: {} },
+      { text: JSON.stringify({ report, stage: { ...original.stages[0], rationale: "第二轮调整。" } }), raw: {} });
     const result = await reviewRoadmapDraftQuality("domain-1", { courseDesign, draft: original, scope: "map", stageKey: "domain" });
     expect(result.repairAttempts).toBe(2);
-    expect(mocks.generateText).toHaveBeenCalledTimes(3);
+    expect(mocks.generateText).toHaveBeenCalledTimes(4);
     expect(result.qualityReport.status).toBe("blocked");
+    expect(result.qualityReport.knowledgeReview?.verdict).toBe("uncertain");
   });
 });

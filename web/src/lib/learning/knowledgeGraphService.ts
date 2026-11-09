@@ -6,6 +6,7 @@ import {
   updateKnowledgeRelation,
   type KnowledgeRelationUpdateInput
 } from "./knowledgeService";
+import { listPersonalKnowledge, listPersonalRelations } from "./personalKnowledgeService";
 
 export type KnowledgeGraphRelationInput = {
   fromKnowledgePointId?: string;
@@ -49,7 +50,7 @@ const parseBranches = (value?: string | null): CompatBranch[] => {
 const toCompatWord = (
   point: {
     id: string;
-    domainId: string;
+    domainId: string | null;
     title: string;
     language: string | null;
     sentenceSample: string | null;
@@ -125,61 +126,13 @@ const toCompatWord = (
     : []
 });
 
-export async function getKnowledgeGraph(domainId: string) {
-  const [domain, points, graphNodes, relations] = await Promise.all([
-    prisma.domain.findUnique({
-      where: { id: domainId },
-      select: { id: true, name: true }
-    }),
-    prisma.knowledgePoint.findMany({
-      where: { domainId },
-      orderBy: { updatedAt: "desc" }
-    }),
-    prisma.knowledgeGraphNode.findMany({
-      where: { domainId }
-    }),
-    listKnowledgeRelations(domainId)
-  ]);
-
-  if (!domain) {
-    throw new Error("Domain not found.");
-  }
-
-  const graphNodeByPointId = new Map(
-    graphNodes
-      .filter((node) => node.knowledgePointId)
-      .map((node) => [node.knowledgePointId as string, node])
-  );
-
-  return {
-    domain,
-    nodes: points.map((point) => ({
-      id: point.id,
-      domainId: point.domainId,
-      title: point.title,
-      type: graphNodeByPointId.get(point.id)?.nodeType || "knowledge",
-      status: point.masteryStatus,
-      isIsland: point.isIsland,
-      coreEssence: point.coreEssence || null,
-      updatedAt: point.updatedAt
-    })),
-    relations: relations.map((relation) => ({
-      id: relation.id,
-      fromKnowledgePointId: relation.fromWordId,
-      toKnowledgePointId: relation.toWordId,
-      relationType: relation.relationType,
-      detail: relation.detail,
-      status: relation.status,
-      evidenceStrength: relation.evidenceStrength,
-      userExplanation: relation.userExplanation,
-      aiAssessment: relation.aiAssessment,
-      applicability: relation.applicability,
-      misuseRisk: relation.misuseRisk,
-      fromNode: relation.fromWord,
-      toNode: relation.toWord,
-      createdAt: relation.createdAt
-    }))
-  };
+export async function getKnowledgeGraph(domainId:string){
+ const [domain,local,relations,groups]=await Promise.all([prisma.domain.findUnique({where:{id:domainId},select:{id:true,name:true}}),listPersonalKnowledge("",domainId),listPersonalRelations(domainId),prisma.knowledgeGraphNode.findMany({where:{domainId,nodeType:"topic",knowledgePointId:null},include:{memberships:true}})]);
+ if(!domain)throw new Error("Domain not found.");
+ const ids=[...new Set(relations.relations.flatMap(e=>[e.fromKnowledgePointId,e.toKnowledgePointId]).filter((x):x is string=>!!x))];
+ const endpoints=await prisma.knowledgePoint.findMany({where:{id:{in:ids.filter(id=>!local.knowledgePoints.some(p=>p.id===id))}},include:{currentRevision:true}});
+ const records=[...local.knowledgePoints.map(p=>({id:p.id,title:p.title,body:p.body,domainId:p.domainId})),...endpoints.map(p=>({id:p.id,title:p.currentRevision?.title||p.title,body:p.currentRevision?.body||"",domainId:p.domainId}))];
+ return{domain,nodes:[...records.map(p=>({id:p.id,domainId:p.domainId,title:p.title,type:"knowledge",status:"record",isIsland:!relations.relations.some(e=>e.status==="confirmed"&&(e.fromKnowledgePointId===p.id||e.toKnowledgePointId===p.id)),coreEssence:p.body})),...groups.map(g=>({id:g.id,domainId:g.domainId,title:g.title,type:"topic",status:"confirmed",isIsland:false,coreEssence:null,members:g.memberships.map(m=>m.knowledgePointId)}))],relations:relations.relations.map(e=>({...e,fromKnowledgePointId:e.fromKnowledgePointId!,toKnowledgePointId:e.toKnowledgePointId!,relationType:e.type,fromNode:{id:e.fromKnowledgePointId,text:e.fromTitle},toNode:{id:e.toKnowledgePointId,text:e.toTitle}}))};
 }
 
 export async function getLegacyCanvasGraphPayload(canvasId: string) {
@@ -239,7 +192,7 @@ export async function createKnowledgeGraphRelation(
       toWordId: input.toKnowledgePointId,
       relationType,
       detail: normalizeOptional(input.detail),
-      status: relationType === "WORMHOLE" ? "wormhole_candidate" : "candidate",
+      status: input.status?.trim() || "confirmed",
       evidenceStrength: input.evidenceStrength?.trim() || "unknown",
       userExplanation: normalizeOptional(input.userExplanation),
       aiAssessment: normalizeOptional(input.aiAssessment),

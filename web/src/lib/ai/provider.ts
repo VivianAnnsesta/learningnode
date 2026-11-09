@@ -67,6 +67,7 @@ export type AiTaskType =
   | "course_design_research"
   | "course_design_repair"
   | "course_design_critique"
+  | "planning_knowledge_check"
   | "source_relevance_check"
   | "course_design_regeneration"
   | "roadmap_skeleton_generation"

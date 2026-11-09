@@ -33,6 +33,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -58,7 +59,7 @@ export default function Dashboard() {
 
   const deleteDomain = async (domain: DomainCard) => {
     const confirmed = window.confirm(
-      `确定删除“${domain.name}”吗？该领域的地图、学习节点、诊断记录和知识点会一并删除。`
+      `确定归档“${domain.name}”吗？领域将归档，课程、学习过程、记录和关系会保留。`
     );
     if (!confirmed) return;
 
@@ -73,7 +74,7 @@ export default function Dashboard() {
         setError(data.error || "删除学习领域失败。");
         return;
       }
-      setDomains((prev) => prev.filter((item) => item.id !== domain.id));
+      setDomains((prev) => prev.map((item) => item.id === domain.id ? {...item,status:"archived"} : item));
     } catch {
       setError("删除学习领域失败：无法连接到应用服务。");
     } finally {
@@ -81,10 +82,19 @@ export default function Dashboard() {
     }
   };
 
+  const restoreDomain = async (domain: DomainCard) => {
+    setDeletingId(domain.id); setError("");
+    try {
+      const response=await fetch(`/api/domains/${domain.id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"active"})});
+      const data=await response.json(); if(!response.ok)throw Error(data.error||"恢复失败");
+      setDomains(prev=>prev.map(item=>item.id===domain.id?{...item,status:"active"}:item));
+    }catch(e){setError(e instanceof Error?e.message:"恢复领域失败");}finally{setDeletingId("");}
+  };
+
   return (
     <AppShell>
       <PageHeader
-        kicker="沉浸式学习 v1.2"
+        kicker="EnglishNode"
         title="学习领域"
         description="从这里进入完整领域地图，自主选择要学习的节点。地图中的结构变更只有经过你确认后才会生效。"
         actions={
@@ -98,6 +108,7 @@ export default function Dashboard() {
           </>
         }
       />
+      <label className="flex items-center gap-2"><input type="checkbox" checked={showArchived} onChange={e=>setShowArchived(e.target.checked)}/>显示已归档领域</label>
 
       {error ? (
         <div className="rounded border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -118,7 +129,7 @@ export default function Dashboard() {
               <div className="workshop-kicker">开始</div>
               <h2 className="workshop-title mt-1 text-xl font-semibold">还没有学习领域</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                先创建一个学习领域，生成任务书和领域地图，并在确认路线后再开始第一个知识点。
+                输入领域与目标，审查并接受路线后开始学习；也可以直接进入当前学习探索问题。
               </p>
             </div>
             <Link href="/learning/domains/new" className="workshop-button px-3 py-2 text-sm">
@@ -127,7 +138,7 @@ export default function Dashboard() {
           </SectionPanel>
         ) : null}
 
-        {domains.map((domain) => {
+        {domains.filter(domain=>showArchived||domain.status!=="archived").map((domain) => {
           const hasMap = domain.hasMap;
 
           return (
@@ -200,10 +211,10 @@ export default function Dashboard() {
                   <ActionButton
                     type="button"
                     variant="danger"
-                    onClick={() => void deleteDomain(domain)}
+                    onClick={() => void (domain.status==="archived"?restoreDomain(domain):deleteDomain(domain))}
                     disabled={deletingId === domain.id}
                   >
-                    {deletingId === domain.id ? "删除中..." : "删除领域"}
+                    {deletingId === domain.id ? "保存中..." : domain.status==="archived"?"恢复领域":"归档领域"}
                   </ActionButton>
                 </div>
               </div>

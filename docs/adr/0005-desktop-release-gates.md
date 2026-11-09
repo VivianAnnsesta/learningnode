@@ -1,5 +1,9 @@
 # Desktop distribution requires security and data release gates
 
+## 2026-10-09 后续决定
+
+本 ADR 中冲突的产品约定已被 [ADR 0025](0025-unified-learning-and-personal-knowledge.md) 部分或全部替代。安全、备份和产物门禁保留；本轮本机交付不包含通用高阶掌握认证，不能据此阻塞普通学习。 下文保留原决策背景，不能用其旧规则覆盖当前任务书。
+
 Status: Accepted
 
 Updated: 2026-07-17
@@ -25,4 +29,5 @@ CI is a release gate, not advisory reporting. It must fail on lint, type, unit, 
 - Packaged Electron security-interaction verification is a permanent release regression gate, not a one-time check.
 - Empty-seed and upgrade-database verification are separate release scenarios; both must fail closed.
 - The synthetic legacy fixture is generated from its fixed historical schema in CI before fidelity and packaged-upgrade verification; a developer-local fixture is not accepted as release evidence.
+- The fixed legacy schema is archived as a versioned schema-only fixture with its original commit and content hash. Fixture generation reads that archive rather than assuming a developer's Git history is available, so source snapshots and fresh clones execute the same gate. A missing archive fails the process; it must not fall back to the current schema or any user database.
 - Current evidence and unresolved blockers live only in `CURRENT_PROGRESS_AND_DIFFICULTIES.md`; this ADR records the gate, not a release approval.

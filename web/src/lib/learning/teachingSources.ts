@@ -12,7 +12,7 @@ export async function fetchTeachingSource(url: string) {
   if (!isSafeExternalUrl(url) || new URL(url).username || new URL(url).password) throw new NodeTeachingError("资料仅接受不含凭据的公开 HTTPS 地址。");
   const result = await groundCourseSource(url, { excerptChars: 32000 });
   const title = result.title || new URL(url).hostname;
-  const blocks = result.fragments || (result.excerpt ? [{location: "已提取正文片段", text: result.excerpt.slice(0, 1800)}] : []);
+  const blocks = result.fragments || [];
   const fragments = sourceFragments(result.finalUrl || url, title, blocks);
   return { url, title, fragments, contentHash: digest(fragments), limitation: !result.ok || !fragments.length ? result.error || "没有可用的正文片段。" : "仅使用有界提取的正文；PDF 最多提取前八页，资料可达不代表内容正确。" };
 }

@@ -1,4 +1,4 @@
-const { execFileSync, spawnSync } = require("child_process");
+const { spawnSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -6,12 +6,12 @@ const { PrismaClient } = require("@prisma/client");
 const {
   checkForeignKeysWithPrisma,
   databaseUrl,
-  markHistoricalMigrationsApplied
+  markHistoricalMigrationsApplied,
+  runPrismaDbExecute
 } = require("./database-lifecycle");
 
 const webRoot = path.resolve(__dirname, "..");
-const repositoryRoot = path.resolve(webRoot, "..");
-const legacySchemaCommit = "71a0071e0e6f8a04141b24fdd74e2a53b24f94b6";
+const legacySchemaArchivePath = path.join(webRoot, "prisma", "fixtures", "legacy-pre-removal.schema.prisma");
 const fixturePath = path.join(webRoot, "prisma", "fixtures", "legacy-pre-removal.db");
 const migrationsDirectory = path.join(webRoot, "prisma", "migrations");
 const prismaCliPath = path.join(webRoot, "node_modules", "prisma", "build", "index.js");
@@ -23,22 +23,18 @@ const run = async () => {
   fs.rmSync(fixturePath, { force: true });
 
   try {
-    const legacySchema = execFileSync(
-      "git",
-      ["show", `${legacySchemaCommit}:web/prisma/schema.prisma`],
-      { cwd: repositoryRoot, encoding: "utf8" }
-    );
+    const legacySchema = fs.readFileSync(legacySchemaArchivePath, "utf8");
     fs.writeFileSync(legacySchemaPath, legacySchema, "utf8");
-    const push = spawnSync(
+    const schemaSql = spawnSync(
       process.execPath,
       [
         prismaCliPath,
-        "db",
-        "push",
-        "--schema",
+        "migrate",
+        "diff",
+        "--from-empty",
+        "--to-schema-datamodel",
         legacySchemaPath,
-        "--skip-generate",
-        "--accept-data-loss"
+        "--script"
       ],
       {
         cwd: webRoot,
@@ -46,9 +42,12 @@ const run = async () => {
         encoding: "utf8"
       }
     );
-    if (push.error || push.status !== 0) {
-      throw push.error || new Error(String(push.stderr || push.stdout));
+    if (schemaSql.error || schemaSql.status !== 0) {
+      throw schemaSql.error || new Error(`Legacy fixture schema derivation failed (${schemaSql.status}):\n${schemaSql.stderr || ""}`);
     }
+    const sqlPath=path.join(temporaryRoot,"legacy.sql");
+    fs.writeFileSync(sqlPath,schemaSql.stdout,"utf8");
+    runPrismaDbExecute({userDatabasePath:fixturePath,schemaPath:legacySchemaPath,prismaCliPath,sqlFilePath:sqlPath});
 
     const client = new PrismaClient({
       datasources: { db: { url: databaseUrl(fixturePath) } }

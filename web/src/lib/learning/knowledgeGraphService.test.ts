@@ -31,7 +31,7 @@ describe("knowledgeGraphService", () => {
     vi.clearAllMocks();
   });
 
-  it("forces newly created graph relations to remain candidates", async () => {
+  it("preserves the explicit user confirmation for an ordinary relation", async () => {
     knowledgeServiceMock.createKnowledgeRelation.mockResolvedValue({ id: "rel-1" });
 
     await createKnowledgeGraphRelation("domain-1", {
@@ -46,7 +46,7 @@ describe("knowledgeGraphService", () => {
       "domain-1",
       expect.objectContaining({
         relationType: "related",
-        status: "candidate",
+        status: "confirmed",
         evidenceStrength: "strong"
       }),
       {
@@ -56,7 +56,7 @@ describe("knowledgeGraphService", () => {
     );
   });
 
-  it("forces newly created wormholes to remain candidates", async () => {
+  it("retains an explicitly supplied historical relation status", async () => {
     knowledgeServiceMock.createKnowledgeRelation.mockResolvedValue({ id: "rel-1" });
 
     await createKnowledgeGraphRelation("domain-1", {
@@ -70,7 +70,7 @@ describe("knowledgeGraphService", () => {
       "domain-1",
       expect.objectContaining({
         relationType: "WORMHOLE",
-        status: "wormhole_candidate"
+        status: "confirmed_wormhole"
       }),
       expect.any(Object)
     );

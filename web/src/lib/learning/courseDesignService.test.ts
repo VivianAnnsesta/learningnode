@@ -52,15 +52,7 @@ describe("courseDesignService", () => {
         name: "机器学习",
         taskBrief: "任务书"
       })
-    ).toEqual([
-      "学习目标",
-      "当前水平自评",
-      "当前水平证据",
-      "预期产出类型",
-      "具体产出描述",
-      "时间或深度约束",
-      "排除范围"
-    ]);
+    ).toEqual(["学习目标"]);
   });
 
   it("rejects course research when minimum inputs are missing", () => {

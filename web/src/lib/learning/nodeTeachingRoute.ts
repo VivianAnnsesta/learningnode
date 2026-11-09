@@ -15,7 +15,7 @@ export async function teachingRoute(action: () => Promise<unknown>) {
 
 export async function readTeachingRequest(request: Request) {
   const body = await request.text();
-  if (body.length > 20000) throw new NodeTeachingError("教学请求过长。", 413);
+  if (body.length > 64000) throw new NodeTeachingError("教学请求过长。", 413);
   try { return JSON.parse(body) as unknown; }
   catch { throw new NodeTeachingError("教学请求不是有效 JSON。"); }
 }

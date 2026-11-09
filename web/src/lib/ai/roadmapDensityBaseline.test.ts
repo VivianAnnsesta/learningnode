@@ -127,11 +127,8 @@ describe("roadmap density advisory baseline", () => {
 
   it("carries the thin blueprint warning into planningWarnings for the review prompt channel", () => {
     const fixture = loadFixture("thin-units");
-    const draft = validateRoadmapSkeletonDraft(fixture.skeleton);
-
-    expect(draft.planningWarnings?.map((warning) => warning.code)).toContain(
-      "thinModuleBlueprint"
-    );
+    const warnings=checkLayeredRoadmapSkeleton(fixture.skeleton).warnings;
+    expect(warnings.map(w=>w.code)).toContain("thinModuleBlueprint");
   });
 
   it("keeps a healthy skeleton free of planningWarnings", () => {

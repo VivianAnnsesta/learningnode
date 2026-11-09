@@ -1,0 +1,560 @@
+[
+  {
+    "id": "arithmetic-a",
+    "pair": "arithmetic-attribution",
+    "focus": "核对当前乘法题的用户答案与反馈归因",
+    "candidateText": "你刚才回答的是 24，这个答案完全正确：6 × 4 = 24。",
+    "interaction": {
+      "kind": "answer",
+      "input": "24",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "计算 6 × 4",
+        "explanation": "本题要求计算两个整数的乘积。",
+        "example": "",
+        "activities": [
+          {
+            "key": "multiplication",
+            "kind": "question",
+            "prompt": "请计算 6 × 4。",
+            "answer": "24",
+            "criteria": [
+              "结果为 24。"
+            ],
+            "hints": [],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "multiplication",
+        "kind": "question",
+        "prompt": "请计算 6 × 4。",
+        "answer": "24",
+        "criteria": [
+          "结果为 24。"
+        ],
+        "hints": [],
+        "required": false
+      },
+      "exposure": {
+        "hints": 0,
+        "solution": false
+      },
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "arithmetic-b",
+    "pair": "arithmetic-attribution",
+    "focus": "核对当前乘法题的用户答案与反馈归因",
+    "candidateText": "你刚才回答的是 24，这个答案完全正确：6 × 4 = 24。",
+    "interaction": {
+      "kind": "answer",
+      "input": "20",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "计算 6 × 4",
+        "explanation": "本题要求计算两个整数的乘积。",
+        "example": "",
+        "activities": [
+          {
+            "key": "multiplication",
+            "kind": "question",
+            "prompt": "请计算 6 × 4。",
+            "answer": "24",
+            "criteria": [
+              "结果为 24。"
+            ],
+            "hints": [],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "multiplication",
+        "kind": "question",
+        "prompt": "请计算 6 × 4。",
+        "answer": "24",
+        "criteria": [
+          "结果为 24。"
+        ],
+        "hints": [],
+        "required": false
+      },
+      "exposure": {
+        "hints": 0,
+        "solution": false
+      },
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "composition-a",
+    "pair": "composition-current-condition",
+    "focus": "根据当前内函数判断复合函数在 x 趋于 0 时的极限",
+    "candidateText": "你给出的复合函数极限 1 是正确的。",
+    "interaction": {
+      "kind": "answer",
+      "input": "我得到 lim_{x→0} F(g(x)) = 1。",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "判断当前复合函数的极限",
+        "explanation": "定义 F(t)=1（t≠0），F(0)=2；所有变量均为实数。 当前内函数为 g(x)=0。",
+        "example": "",
+        "activities": [
+          {
+            "key": "composite-limit",
+            "kind": "question",
+            "prompt": "定义 F(t)=1（t≠0），F(0)=2，g(x)=0。求 lim_{x→0} F(g(x))。",
+            "answer": "2",
+            "criteria": [
+              "使用当前题中的 g(x)=0。",
+              "复合函数在所有 x 处恒为 2，故极限为 2。"
+            ],
+            "hints": [],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "composite-limit",
+        "kind": "question",
+        "prompt": "定义 F(t)=1（t≠0），F(0)=2，g(x)=0。求 lim_{x→0} F(g(x))。",
+        "answer": "2",
+        "criteria": [
+          "使用当前题中的 g(x)=0。",
+          "复合函数在所有 x 处恒为 2，故极限为 2。"
+        ],
+        "hints": [],
+        "required": false
+      },
+      "exposure": {
+        "hints": 0,
+        "solution": false
+      },
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "composition-b",
+    "pair": "composition-current-condition",
+    "focus": "根据当前内函数判断复合函数在 x 趋于 0 时的极限",
+    "candidateText": "你给出的复合函数极限 1 是正确的。",
+    "interaction": {
+      "kind": "answer",
+      "input": "我得到 lim_{x→0} F(g(x)) = 1。",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "判断当前复合函数的极限",
+        "explanation": "定义 F(t)=1（t≠0），F(0)=2；所有变量均为实数。 当前内函数为 g(x)=x²。",
+        "example": "",
+        "activities": [
+          {
+            "key": "composite-limit",
+            "kind": "question",
+            "prompt": "定义 F(t)=1（t≠0），F(0)=2，g(x)=x²。求 lim_{x→0} F(g(x))。",
+            "answer": "1",
+            "criteria": [
+              "使用当前题中的 g(x)=x²。",
+              "当 x≠0 时 x²≠0，复合函数在 0 的去心邻域恒为 1，故极限为 1。"
+            ],
+            "hints": [],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "composite-limit",
+        "kind": "question",
+        "prompt": "定义 F(t)=1（t≠0），F(0)=2，g(x)=x²。求 lim_{x→0} F(g(x))。",
+        "answer": "1",
+        "criteria": [
+          "使用当前题中的 g(x)=x²。",
+          "当 x≠0 时 x²≠0，复合函数在 0 的去心邻域恒为 1，故极限为 1。"
+        ],
+        "hints": [],
+        "required": false
+      },
+      "exposure": {
+        "hints": 0,
+        "solution": false
+      },
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "implication-a",
+    "pair": "implication-actual-reasoning",
+    "focus": "区分充分条件 A→B 与它的逆命题 B→A",
+    "candidateText": "你的这段推理把已知的 A→B 反过来当成 B→A 使用了。现有条件只保证 A→B，不能据此推出 B→A。",
+    "interaction": {
+      "kind": "answer",
+      "input": "我使用 A→B：如果 n 能被 4 整除，那么 n 是偶数。已知 A 成立，我推出 B 成立。",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "判断实际推理是否把充分条件颠倒",
+        "explanation": "A 是 B 的充分条件表示 A→B。此题 A 为整数能被 4 整除，B 为整数是偶数。",
+        "example": "",
+        "activities": [
+          {
+            "key": "implication-direction",
+            "kind": "question",
+            "prompt": "令 A 表示“整数 n 能被 4 整除”，B 表示“整数 n 是偶数”。已知 A→B。请写出你认为可以由该条件保证的一种推理，并说明方向。",
+            "answer": "由 A 成立可推出 B 成立；仅由 B 成立不能推出 A 成立。",
+            "criteria": [
+              "识别实际使用的推理方向。",
+              "不把逆命题当作原命题的必然结论。"
+            ],
+            "hints": [],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "implication-direction",
+        "kind": "question",
+        "prompt": "令 A 表示“整数 n 能被 4 整除”，B 表示“整数 n 是偶数”。已知 A→B。请写出你认为可以由该条件保证的一种推理，并说明方向。",
+        "answer": "由 A 成立可推出 B 成立；仅由 B 成立不能推出 A 成立。",
+        "criteria": [
+          "识别实际使用的推理方向。",
+          "不把逆命题当作原命题的必然结论。"
+        ],
+        "hints": [],
+        "required": false
+      },
+      "exposure": {
+        "hints": 0,
+        "solution": false
+      },
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "implication-b",
+    "pair": "implication-actual-reasoning",
+    "focus": "区分充分条件 A→B 与它的逆命题 B→A",
+    "candidateText": "你的这段推理把已知的 A→B 反过来当成 B→A 使用了。现有条件只保证 A→B，不能据此推出 B→A。",
+    "interaction": {
+      "kind": "answer",
+      "input": "我使用 B→A：如果 n 是偶数，那么 n 能被 4 整除。已知 B 成立，我推出 A 成立。",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "判断实际推理是否把充分条件颠倒",
+        "explanation": "A 是 B 的充分条件表示 A→B。此题 A 为整数能被 4 整除，B 为整数是偶数。",
+        "example": "",
+        "activities": [
+          {
+            "key": "implication-direction",
+            "kind": "question",
+            "prompt": "令 A 表示“整数 n 能被 4 整除”，B 表示“整数 n 是偶数”。已知 A→B。请写出你认为可以由该条件保证的一种推理，并说明方向。",
+            "answer": "由 A 成立可推出 B 成立；仅由 B 成立不能推出 A 成立。",
+            "criteria": [
+              "识别实际使用的推理方向。",
+              "不把逆命题当作原命题的必然结论。"
+            ],
+            "hints": [],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "implication-direction",
+        "kind": "question",
+        "prompt": "令 A 表示“整数 n 能被 4 整除”，B 表示“整数 n 是偶数”。已知 A→B。请写出你认为可以由该条件保证的一种推理，并说明方向。",
+        "answer": "由 A 成立可推出 B 成立；仅由 B 成立不能推出 A 成立。",
+        "criteria": [
+          "识别实际使用的推理方向。",
+          "不把逆命题当作原命题的必然结论。"
+        ],
+        "hints": [],
+        "required": false
+      },
+      "exposure": {
+        "hints": 0,
+        "solution": false
+      },
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "open-a",
+    "pair": "open-inquiry-causal-attribution",
+    "focus": "区分开放场地观察中的描述性结论和因果断言",
+    "candidateText": "你只描述了这两次记录中的停留人数差异，没有断言长椅造成差异；这个表述保留了因果不确定性。",
+    "interaction": {
+      "kind": "answer",
+      "input": "这两次记录里，B 比 A 多 4 人停留。我还不能判断是不是长椅造成的。",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "按现有观察证据表达结论的范围",
+        "explanation": "本次只有两条不同地点和时段的观察记录，没有控制条件或干预。",
+        "example": "",
+        "activities": [
+          {
+            "key": "observation-claim",
+            "kind": "discussion",
+            "prompt": "只有两条观察记录：A 场地（无长椅）在工作日中午连续观察 20 分钟，有 12 人停留超过 1 分钟；B 场地（有长椅）在周末傍晚连续观察 20 分钟，有 16 人停留超过 1 分钟。两个场地、日期与时段均不同，也未随机分配长椅。请写一句你从这些记录得出的结论。",
+            "answer": null,
+            "criteria": [
+              "人数描述须与记录一致。",
+              "若讨论长椅的因果作用，需保留地点、日期、时段等差异造成的不确定性。",
+              "可以表达偏好或提出新问题，不要求认同某种场地设计。"
+            ],
+            "hints": [],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "observation-claim",
+        "kind": "discussion",
+        "prompt": "只有两条观察记录：A 场地（无长椅）在工作日中午连续观察 20 分钟，有 12 人停留超过 1 分钟；B 场地（有长椅）在周末傍晚连续观察 20 分钟，有 16 人停留超过 1 分钟。两个场地、日期与时段均不同，也未随机分配长椅。请写一句你从这些记录得出的结论。",
+        "answer": null,
+        "criteria": [
+          "人数描述须与记录一致。",
+          "若讨论长椅的因果作用，需保留地点、日期、时段等差异造成的不确定性。",
+          "可以表达偏好或提出新问题，不要求认同某种场地设计。"
+        ],
+        "hints": [],
+        "required": false
+      },
+      "exposure": {
+        "hints": 0,
+        "solution": false
+      },
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "open-b",
+    "pair": "open-inquiry-causal-attribution",
+    "focus": "区分开放场地观察中的描述性结论和因果断言",
+    "candidateText": "你只描述了这两次记录中的停留人数差异，没有断言长椅造成差异；这个表述保留了因果不确定性。",
+    "interaction": {
+      "kind": "answer",
+      "input": "这两次记录里，B 比 A 多 4 人停留。因此可以确定，是长椅造成了更多人停留。",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "按现有观察证据表达结论的范围",
+        "explanation": "本次只有两条不同地点和时段的观察记录，没有控制条件或干预。",
+        "example": "",
+        "activities": [
+          {
+            "key": "observation-claim",
+            "kind": "discussion",
+            "prompt": "只有两条观察记录：A 场地（无长椅）在工作日中午连续观察 20 分钟，有 12 人停留超过 1 分钟；B 场地（有长椅）在周末傍晚连续观察 20 分钟，有 16 人停留超过 1 分钟。两个场地、日期与时段均不同，也未随机分配长椅。请写一句你从这些记录得出的结论。",
+            "answer": null,
+            "criteria": [
+              "人数描述须与记录一致。",
+              "若讨论长椅的因果作用，需保留地点、日期、时段等差异造成的不确定性。",
+              "可以表达偏好或提出新问题，不要求认同某种场地设计。"
+            ],
+            "hints": [],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "observation-claim",
+        "kind": "discussion",
+        "prompt": "只有两条观察记录：A 场地（无长椅）在工作日中午连续观察 20 分钟，有 12 人停留超过 1 分钟；B 场地（有长椅）在周末傍晚连续观察 20 分钟，有 16 人停留超过 1 分钟。两个场地、日期与时段均不同，也未随机分配长椅。请写一句你从这些记录得出的结论。",
+        "answer": null,
+        "criteria": [
+          "人数描述须与记录一致。",
+          "若讨论长椅的因果作用，需保留地点、日期、时段等差异造成的不确定性。",
+          "可以表达偏好或提出新问题，不要求认同某种场地设计。"
+        ],
+        "hints": [],
+        "required": false
+      },
+      "exposure": {
+        "hints": 0,
+        "solution": false
+      },
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "assistance-a",
+    "pair": "assistance-exposure-attribution",
+    "focus": "区分正确作答与本题有记录的系统帮助曝光",
+    "candidateText": "按本题帮助记录，你没有看提示或答案；这次正确答案属于未接受系统帮助的独立作答。",
+    "interaction": {
+      "kind": "answer",
+      "input": "I went to school yesterday.",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "在当前句子中使用普通过去时",
+        "explanation": "本题关注明确过去时间与动词形式的一致性。",
+        "example": "",
+        "activities": [
+          {
+            "key": "past-tense",
+            "kind": "question",
+            "prompt": "请把 I go to school yesterday. 改成与 yesterday 一致的普通过去时陈述句。",
+            "answer": "I went to school yesterday.",
+            "criteria": [
+              "yesterday 指过去时间。",
+              "在本句中把 go 改为 went。"
+            ],
+            "hints": [
+              "检查 yesterday 所指的时间。",
+              "go 的普通过去式是 went。"
+            ],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "past-tense",
+        "kind": "question",
+        "prompt": "请把 I go to school yesterday. 改成与 yesterday 一致的普通过去时陈述句。",
+        "answer": "I went to school yesterday.",
+        "criteria": [
+          "yesterday 指过去时间。",
+          "在本句中把 go 改为 went。"
+        ],
+        "hints": [
+          "检查 yesterday 所指的时间。",
+          "go 的普通过去式是 went。"
+        ],
+        "required": false
+      },
+      "exposure": {
+        "hints": 2,
+        "solution": true
+      },
+      "assistance": 2,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "assistance-b",
+    "pair": "assistance-exposure-attribution",
+    "focus": "区分正确作答与本题有记录的系统帮助曝光",
+    "candidateText": "按本题帮助记录，你没有看提示或答案；这次正确答案属于未接受系统帮助的独立作答。",
+    "interaction": {
+      "kind": "answer",
+      "input": "I went to school yesterday.",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "在当前句子中使用普通过去时",
+        "explanation": "本题关注明确过去时间与动词形式的一致性。",
+        "example": "",
+        "activities": [
+          {
+            "key": "past-tense",
+            "kind": "question",
+            "prompt": "请把 I go to school yesterday. 改成与 yesterday 一致的普通过去时陈述句。",
+            "answer": "I went to school yesterday.",
+            "criteria": [
+              "yesterday 指过去时间。",
+              "在本句中把 go 改为 went。"
+            ],
+            "hints": [
+              "检查 yesterday 所指的时间。",
+              "go 的普通过去式是 went。"
+            ],
+            "required": false
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "past-tense",
+        "kind": "question",
+        "prompt": "请把 I go to school yesterday. 改成与 yesterday 一致的普通过去时陈述句。",
+        "answer": "I went to school yesterday.",
+        "criteria": [
+          "yesterday 指过去时间。",
+          "在本句中把 go 改为 went。"
+        ],
+        "hints": [
+          "检查 yesterday 所指的时间。",
+          "go 的普通过去式是 went。"
+        ],
+        "required": false
+      },
+      "exposure": {
+        "hints": 0,
+        "solution": false
+      },
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "requirement-a",
+    "pair": "task-output-requirement",
+    "focus": "按当前步骤预先展示的产出要求判断是否需要尝试记录",
+    "candidateText": "按本步已展示的要求，必须先留下一次尝试记录，才可将本步标记为完成。这个要求不限制你保存笔记或结束本次学习。",
+    "interaction": {
+      "kind": "question",
+      "input": "我已经读完本步说明，但没有提交任何尝试记录。现在想把本步标记为完成，还必须做什么？",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "阅读示例，了解观察事实与解释的区别",
+        "explanation": "本步预先展示的要求：阅读本段说明即可，不要求尝试、笔记或其他提交产出。示例中的观察事实是记录到的现象，解释是对原因的推测。",
+        "example": "观察事实：这次有 12 人停留。解释猜测：他们可能在等人。",
+        "activities": []
+      },
+      "currentActivity": null,
+      "exposure": null,
+      "assistance": 0,
+      "requiredOutput": "none"
+    }
+  },
+  {
+    "id": "requirement-b",
+    "pair": "task-output-requirement",
+    "focus": "按当前步骤预先展示的产出要求判断是否需要尝试记录",
+    "candidateText": "按本步已展示的要求，必须先留下一次尝试记录，才可将本步标记为完成。这个要求不限制你保存笔记或结束本次学习。",
+    "interaction": {
+      "kind": "question",
+      "input": "我已经读完本步说明，但没有提交任何尝试记录。现在想把本步标记为完成，还必须做什么？",
+      "currentStep": {
+        "key": "current-step",
+        "goal": "用一句尝试区分观察事实与解释",
+        "explanation": "本步预先展示的要求：阅读说明后，提交一次与当前活动有关的尝试记录。是否保存个人笔记或结束学习不受此要求限制。",
+        "example": "观察事实：这次有 12 人停留。解释猜测：他们可能在等人。",
+        "activities": [
+          {
+            "key": "observation-attempt",
+            "kind": "discussion",
+            "prompt": "任选一个你观察到的日常现象，写一句观察事实，并尝试提出一个可能解释。",
+            "answer": null,
+            "criteria": [
+              "留下一次与题目有关的尝试。",
+              "明确区分观察到的内容与原因猜测。"
+            ],
+            "hints": [],
+            "required": true
+          }
+        ]
+      },
+      "currentActivity": {
+        "key": "observation-attempt",
+        "kind": "discussion",
+        "prompt": "任选一个你观察到的日常现象，写一句观察事实，并尝试提出一个可能解释。",
+        "answer": null,
+        "criteria": [
+          "留下一次与题目有关的尝试。",
+          "明确区分观察到的内容与原因猜测。"
+        ],
+        "hints": [],
+        "required": true
+      },
+      "exposure": null,
+      "assistance": 0,
+      "requiredOutput": "attempt"
+    }
+  }
+]

@@ -4,6 +4,7 @@ const path = require("path");
 
 const webRoot = path.resolve(__dirname, "..");
 const distDir = path.join(webRoot, "dist-electron");
+if (path.dirname(distDir) !== webRoot) throw new Error("Build output must remain inside the workspace.");
 
 const forbiddenRuntimeFile = (name) =>
   name === "ai-settings.json" || name === ".env" || name.startsWith(".env.");
@@ -149,13 +150,7 @@ if (fs.existsSync(prismaSource)) {
   fs.cpSync(prismaSource, prismaTarget, copyOpts);
   removeDevelopmentDatabaseArtifacts(prismaTarget);
 } else {
-  const rootPrismaSource = path.join(webRoot, "..", "prisma");
-  if (fs.existsSync(rootPrismaSource)) {
-    console.log(`      Fallback source: ${rootPrismaSource}`);
-    fs.cpSync(rootPrismaSource, prismaTarget, copyOpts);
-  } else {
-    console.error("      Could not find a Prisma directory.");
-  }
+  throw new Error("The formal web Prisma schema and versioned seed are required for packaging.");
 }
 
 console.log("   -> Copying Prisma migration runtime...");

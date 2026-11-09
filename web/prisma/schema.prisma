@@ -208,7 +208,7 @@ model LearningNode {
   moduleOrderIndex       Int?
   title                  String
   nodeType               String                   @default("knowledge")
-  status                 String                   @default("locked")
+  status                 String                   @default("available")
   objective              String?
   keyQuestion            String?
   prerequisite           String?
@@ -229,6 +229,7 @@ model LearningNode {
   progressRecords        LearningProgress[]
   routeSuggestions       RouteSuggestion[]
   teachingSessions       NodeTeachingSession[]
+  knowledgeLinks         LearningNodeKnowledgePoint[]
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
 
@@ -241,16 +242,17 @@ model LearningNode {
 
 model NodeTeachingSession {
   id                String   @id @default(cuid())
-  domainId          String
-  nodeId            String
+  domainId          String?
+  nodeId            String?
+  scopeKey          String
   contextHash       String
   lessonVersion     Int      @default(1)
   status            String   @default("ready")
   errorMessage      String?
   generationToken   String?
-  requestId         String?
+  requestId         String
   sourceRevision    Int      @default(0)
-  mapRevision       Int
+  mapRevision       Int?
   contextJson       String
   lessonJson        String
   aiCallLogId       String
@@ -259,16 +261,16 @@ model NodeTeachingSession {
   summaryJson       String   @default("{}")
   reviewJson        String?
   aiCallLogIdsJson   String   @default("[]")
-  domain            Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
-  node              LearningNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  domain            Domain?   @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  node              LearningNode? @relation(fields: [nodeId], references: [id], onDelete: SetNull)
   interactions      TeachingInteraction[]
   segments          TeachingSegment[]
   sources           TeachingSource[]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  @@unique([nodeId, contextHash, lessonVersion])
-  @@unique([nodeId, requestId])
+  @@unique([scopeKey])
+  @@unique([scopeKey, requestId])
   @@index([domainId, nodeId, createdAt])
 }
 
@@ -277,7 +279,7 @@ model TeachingInteraction {
   sessionId         String
   requestId         String
   kind              String
-  exerciseKey       String
+  exerciseKey       String?
   segmentId         String?
   segmentKey        String?
   stepKey           String?
@@ -286,6 +288,7 @@ model TeachingInteraction {
   assistance        Int
   status            String   @default("pending")
   responseJson      String?
+  generationToken   String?
   errorMessage      String?
   aiCallLogId       String?
   session           NodeTeachingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -382,9 +385,11 @@ model UnitAssessmentRecord {
 
 model KnowledgePoint {
   id              String               @id @default(cuid())
-  domainId        String
+  domainId        String?
   legacyWordId    String?              @unique
-  title           String
+  title           String               @default("")
+  recordKind      String               @default("understanding")
+  currentRevisionId String?            @unique
   language        String?
   sentenceSample  String?
   coreEssence     String?
@@ -396,7 +401,13 @@ model KnowledgePoint {
   lastReviewedAt  DateTime?
   nextReviewAt    DateTime?
   reviewIntervalDays Int?
-  domain          Domain               @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  domain          Domain?               @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  currentRevision KnowledgePointRevision? @relation("CurrentKnowledgeRevision", fields: [currentRevisionId], references: [id], onDelete: SetNull)
+  revisions       KnowledgePointRevision[] @relation("KnowledgeRevisions")
+  nodeLinks       LearningNodeKnowledgePoint[]
+  memberships     KnowledgeGraphMembership[]
+  outgoingRelations KnowledgeGraphEdge[] @relation("KnowledgeRelationFrom")
+  incomingRelations KnowledgeGraphEdge[] @relation("KnowledgeRelationTo")
   learningNodes   LearningNode[]
   graphNodes      KnowledgeGraphNode[]
   semanticCoreVersions SemanticCoreVersion[]
@@ -409,17 +420,18 @@ model KnowledgePoint {
 
 model KnowledgeGraphNode {
   id               String               @id @default(cuid())
-  domainId         String
+  domainId         String?
   knowledgePointId String?
   title            String
   nodeType         String               @default("knowledge")
   status           String               @default("candidate")
   positionX        Float?
   positionY        Float?
-  domain           Domain               @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  domain           Domain?               @relation(fields: [domainId], references: [id], onDelete: SetNull)
   knowledgePoint   KnowledgePoint?      @relation(fields: [knowledgePointId], references: [id], onDelete: SetNull)
   outgoingEdges    KnowledgeGraphEdge[]  @relation("KnowledgeGraphEdgeFrom")
   incomingEdges    KnowledgeGraphEdge[]  @relation("KnowledgeGraphEdgeTo")
+  memberships      KnowledgeGraphMembership[]
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
 
@@ -427,11 +439,45 @@ model KnowledgeGraphNode {
   @@index([knowledgePointId])
 }
 
+model KnowledgePointRevision {
+  id               String @id @default(cuid())
+  knowledgePointId String
+  sequence         Int
+  title            String
+  body             String
+  sourceType       String
+  sourcesJson      String @default("[]")
+  knowledgePoint   KnowledgePoint @relation("KnowledgeRevisions", fields: [knowledgePointId], references: [id], onDelete: Cascade)
+  currentFor       KnowledgePoint? @relation("CurrentKnowledgeRevision")
+  createdAt        DateTime @default(now())
+  @@unique([knowledgePointId, sequence])
+}
+
+model LearningNodeKnowledgePoint {
+  nodeId           String
+  knowledgePointId String
+  node             LearningNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  knowledgePoint   KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  @@id([nodeId, knowledgePointId])
+}
+
+model KnowledgeGraphMembership {
+  groupNodeId      String
+  knowledgePointId String
+  groupNode        KnowledgeGraphNode @relation(fields: [groupNodeId], references: [id], onDelete: Cascade)
+  knowledgePoint   KnowledgePoint @relation(fields: [knowledgePointId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  @@id([groupNodeId, knowledgePointId])
+}
+
 model KnowledgeGraphEdge {
   id               String             @id @default(cuid())
-  domainId         String
-  fromNodeId       String
-  toNodeId         String
+  domainId         String?
+  fromNodeId       String?
+  toNodeId         String?
+  fromKnowledgePointId String?
+  toKnowledgePointId String?
   relationType     String
   detail           String?
   status           String             @default("candidate")
@@ -441,24 +487,27 @@ model KnowledgeGraphEdge {
   applicability    String?
   misuseRisk       String?
   legacyVariantsJson String?
-  domain           Domain             @relation(fields: [domainId], references: [id], onDelete: Cascade)
-  fromNode         KnowledgeGraphNode  @relation("KnowledgeGraphEdgeFrom", fields: [fromNodeId], references: [id], onDelete: Cascade)
-  toNode           KnowledgeGraphNode  @relation("KnowledgeGraphEdgeTo", fields: [toNodeId], references: [id], onDelete: Cascade)
+  domain           Domain?             @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  fromNode         KnowledgeGraphNode?  @relation("KnowledgeGraphEdgeFrom", fields: [fromNodeId], references: [id], onDelete: SetNull)
+  toNode           KnowledgeGraphNode?  @relation("KnowledgeGraphEdgeTo", fields: [toNodeId], references: [id], onDelete: SetNull)
+  fromKnowledgePoint KnowledgePoint? @relation("KnowledgeRelationFrom", fields: [fromKnowledgePointId], references: [id], onDelete: Restrict)
+  toKnowledgePoint KnowledgePoint? @relation("KnowledgeRelationTo", fields: [toKnowledgePointId], references: [id], onDelete: Restrict)
   createdAt        DateTime           @default(now())
 
   @@index([domainId])
   @@index([fromNodeId])
   @@index([toNodeId])
-  @@unique([domainId, fromNodeId, toNodeId, relationType])
+  @@unique([fromKnowledgePointId, toKnowledgePointId, relationType])
 }
 
 model LearningProgress {
   id          String        @id @default(cuid())
-  domainId    String
+  domainId    String?
   nodeId      String?
   status      String
   reason      String?
-  domain      Domain        @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  payloadJson String        @default("{}")
+  domain      Domain?        @relation(fields: [domainId], references: [id], onDelete: SetNull)
   node        LearningNode?  @relation(fields: [nodeId], references: [id], onDelete: SetNull)
   createdAt   DateTime      @default(now())
 

@@ -15,15 +15,6 @@ const securityVerificationEnabled = process.env.ELECTRON_VERIFY_SECURITY === "1"
 
 app.setName("Antigravity");
 app.disableHardwareAcceleration();
-app.commandLine.appendSwitch("disable-gpu");
-app.commandLine.appendSwitch("disable-gpu-compositing");
-app.commandLine.appendSwitch("disable-gpu-rasterization");
-app.commandLine.appendSwitch("disable-direct-composition");
-app.commandLine.appendSwitch("disable-features", "Vulkan,UseSkiaRenderer");
-app.commandLine.appendSwitch("use-angle", "swiftshader");
-app.commandLine.appendSwitch("use-gl", "swiftshader");
-app.commandLine.appendSwitch("enable-unsafe-swiftshader");
-app.commandLine.appendSwitch("in-process-gpu");
 
 const localAppDataDir =
   process.env.LOCALAPPDATA ||
@@ -39,6 +30,11 @@ const userDataDir = app.isPackaged
 
 app.setPath("userData", userDataDir);
 fs.mkdirSync(userDataDir, { recursive: true });
+const startupLogPath = path.join(userDataDir, "backend-error.log");
+const logStartupFailure = (error) => {
+  try { fs.appendFileSync(startupLogPath, `[STARTUP ${new Date().toISOString()}]: ${error.stack || error.message || String(error)}\n`); }
+  catch (logError) { console.error("Failed to preserve startup error:", logError.message); }
+};
 
 const runtimeVerificationResultPath =
   process.env.ELECTRON_VERIFY_RESULT ||
@@ -66,6 +62,7 @@ const writeRuntimeVerificationResult = (payload) => {
 };
 
 process.on("uncaughtException", (error) => {
+  logStartupFailure(error);
   if (app.isReady()) {
     dialog.showErrorBox("程序启动错误", error.stack || error.message);
   }
@@ -107,6 +104,17 @@ const ensureDatabase = async () => {
   const serverDir = path.join(process.resourcesPath, "app-server");
   const { ensureTeachingDatabase } = require(path.join(serverDir, "scripts", "teaching-database.js"));
   return ensureTeachingDatabase({ userDataDir: dataDir, serverDir });
+};
+
+const projectHistorySources = () => {
+  const projectWebRoot = app.isPackaged
+    ? path.resolve(path.dirname(process.execPath), "..", "..")
+    : __dirname;
+  // A portable build may sit inside the original project. Offer its old library
+  // for explicit read-only viewing; never use it as the new installation seed.
+  if (!fs.existsSync(path.join(projectWebRoot, "scripts", "teaching-database.js")) ||
+      !fs.existsSync(path.join(projectWebRoot, "prisma", "schema.prisma"))) return [];
+  return [path.join(projectWebRoot, "prisma", "dev.db")];
 };
 
 const waitForServer = (url) =>
@@ -226,12 +234,10 @@ const startServer = async () => {
     );
   }
 
-  const logPath = isProd
-    ? path.join(process.resourcesPath, "..", "backend-error.log")
-    : path.join(__dirname, "backend-error.log");
+  const logPath = startupLogPath;
 
   try {
-    fs.writeFileSync(logPath, "=== Backend Server Log Started ===\n");
+    fs.appendFileSync(logPath, `=== Backend Server Started ${new Date().toISOString()} ===\n`);
   } catch (error) {
     console.error("Failed to init log file:", error);
   }
@@ -246,6 +252,7 @@ const startServer = async () => {
     HOSTNAME: "127.0.0.1",
     ENGLISHNODE_LOCAL_API_TOKEN: crypto.randomBytes(32).toString("base64url"),
     AI_SETTINGS_PATH: path.join(app.getPath("userData"), "ai-settings.json"),
+    ENGLISHNODE_LEGACY_DATABASE_PATHS: process.env.ENGLISHNODE_LEGACY_DATABASE_PATHS || JSON.stringify(projectHistorySources()),
     NODE_ENV: isProd ? "production" : "development",
     DATABASE_URL: dbUrl,
     NODE_PATH: isProd ? path.join(serverDir, "node_modules") : undefined,
@@ -394,6 +401,7 @@ const createWindow = async () => {
       mainWindow.webContents.openDevTools();
     }
   } catch (error) {
+    logStartupFailure(error);
     console.error("createWindow error:", error);
     if (runtimeVerificationEnabled) {
       writeRuntimeVerificationResult({

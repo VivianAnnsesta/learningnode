@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 import { AiTaskValidationError } from "../../../../../../lib/ai/tasks";
 import { AiLogPersistenceError } from "../../../../../../lib/ai/generationEvidence";
+import { AiConfigurationError } from "../../../../../../lib/ai/provider";
+import { createUncertainPlanningKnowledgeReview } from "../../../../../../lib/ai/planningKnowledgeReview";
 
 const tutorServiceMock = vi.hoisted(() => ({
   generateRoadmapSkeletonDraft: vi.fn(),
@@ -193,9 +195,9 @@ describe("domain map ai draft API", () => {
     });
     roadmapServiceMock.getRoadmapByDomain.mockResolvedValue({ mapRevision: 4 });
     reviewServiceMock.getBoundMapDraftReview.mockResolvedValue({ status: "passed" });
-    reviewServiceMock.recordMapDraftQualityReview.mockResolvedValue({
-      id: "review-1"
-    });
+    reviewServiceMock.recordMapDraftQualityReview.mockImplementation(async (input) => ({
+      id: "review-1", report: input.report, aiCallLogIds: input.aiCallLogIds
+    }));
     reviewServiceMock.evaluateMapDraftReview.mockReturnValue("passed");
     roadmapServiceMock.roadmapDraftToSkeleton.mockReturnValue(validSkeleton);
     roadmapServiceMock.mergeRoadmapStageDraft.mockImplementation(
@@ -436,355 +438,75 @@ describe("domain map ai draft API", () => {
     expect(tutorServiceMock.generateRoadmapSkeletonDraft).not.toHaveBeenCalled();
   });
 
-  it("generates one requested roadmap stage", async () => {
-    tutorServiceMock.generateRoadmapStageDraft.mockResolvedValue({
-      stage: validStage,
-      stageIndex: 0,
-      source: "ai",
-      aiCallLogId: "stage-log-1",
-      aiCallLogIds: ["stage-log-1"]
+  it("does not expose an unavailable skeleton as dismissible after persistence retained its known error", async () => {
+    const knowledgeReview = { ...createUncertainPlanningKnowledgeReview(validSkeleton, [], "原核对"), verdict: "confirmed_error", summary: "原规则缺少条件", aiCallLogIds: ["original-error-log"] };
+    const storedReport = { status: "blocked", summary: "后续复核不可用", blockingIssues: [], warnings: [], knowledgeReview };
+    tutorServiceMock.generateRoadmapSkeletonDraft.mockResolvedValue({
+      skeleton: validSkeleton, source: "ai", reviewAvailability: "unavailable", aiCallLogIds: ["failed-review-log"],
+      qualityReport: { ...storedReport, knowledgeReview: { ...knowledgeReview, verdict: "uncertain" } }
     });
-    const serverDraft = {
-      planningVersion: 2,
-      title: validSkeleton.title,
-      status: "draft",
-      baseRevision: 4,
-      stages: validSkeleton.stages.map((stage) => ({
-        ...stage,
-        status: "planned",
-        moduleDirections: stage.coreTopics,
-        modules: []
-      }))
-    };
-    roadmapServiceMock.getRoadmapByDomain.mockResolvedValue({
-      mapRevision: 4,
-      draft: serverDraft,
-      draftCourseDesignAiCallLogId: "course-log-1"
-    });
-    roadmapServiceMock.saveRoadmapDraft.mockImplementation(
-      async (_domainId: string, stageDraft: any) => ({
-        domainId: "d1",
-        mapRevision: 4,
-        courseDesignAiCallLogId: "course-log-1",
-        draft: stageDraft
-      })
-    );
+    reviewServiceMock.recordMapDraftQualityReview.mockResolvedValue({ id: "review-new", report: storedReport, aiCallLogIds: ["original-error-log", "failed-review-log"] });
+    const response = await POST(new Request("http://localhost/api/domains/d1/map/ai-draft", { method: "POST" }), params);
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ reviewState: "blocked", qualityReview: { availability: "unavailable" }, qualityReport: storedReport, aiCallLogIds: ["original-error-log", "failed-review-log"] });
+  });
 
-    const response = await POST(
-      new Request("http://localhost/api/domains/d1/map/ai-draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          step: "stage",
-          stageKey: "foundation",
-          baseRevision: 4,
-          skeleton: { title: "malicious client skeleton", stages: [] }
-        })
-      }),
-      params
-    );
-
+  it("records explicit unknown knowledge and actual material snapshots when Stage review is unavailable", async () => {
+    const skeleton = { ...validSkeleton, planningVersion: 3, learningGoals: [{ key: "goal-1", description: "说明核心对象。" }] };
+    const draft = { ...skeleton, baseRevision: 4, stages: skeleton.stages.map(stage => ({ ...stage, status: "planned", moduleDirections: stage.coreTopics, modules: [] })) };
+    const course = { ...validCourseDesign, sources: [{ url: "https://material.edu/actual", title: "材料", reason: "实际正文", grounding: { bodyRetrieved: true, finalUrl: "https://material.edu/final", fragments: [{ location: "paragraph:5", text: "来源实际正文介绍对象边界。" }], excerpt: "仅摘要不能替代正文" } }] };
+    courseDesignServiceMock.getCourseDesignState.mockResolvedValue({ draft: course, status: "confirmed", aiCallLogId: "course-log-1" });
+    roadmapServiceMock.getRoadmapByDomain.mockResolvedValue({ mapRevision: 4, draft, draftCourseDesignAiCallLogId: "course-log-1" });
+    roadmapServiceMock.roadmapDraftToSkeleton.mockReturnValue(skeleton);
+    tutorServiceMock.generateRoadmapStageDraft.mockResolvedValue({ stage: validStage, source: "ai", aiCallLogId: "generation-1" });
+    tutorServiceMock.reviewRoadmapDraftQuality.mockRejectedValue(Object.assign(new AiConfigurationError("暂不可用"), { aiCallLogIds: ["failed-review-log"] }));
+    const response = await POST(new Request("http://localhost/api/domains/d1/map/ai-draft", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "stage", stageKey: "foundation", baseRevision: 4 })
+    }), params);
     expect(response.status).toBe(200);
     const data = await response.json();
-    expect(data.stage).toEqual(expect.objectContaining(validStage));
-    expect(tutorServiceMock.generateRoadmapStageDraft).toHaveBeenCalledWith(
-      "d1",
-      {
-        courseDesign: validCourseDesign,
-        skeleton: validSkeleton,
-        stageIndex: 0
-      }
-    );
-    expect(tutorServiceMock.generateRoadmapSkeletonDraft).not.toHaveBeenCalled();
-    expect(roadmapServiceMock.roadmapDraftToSkeleton).toHaveBeenCalledWith(
-      serverDraft
-    );
-    expect(roadmapServiceMock.saveRoadmapDraft).toHaveBeenCalledWith(
-      "d1",
-      expect.objectContaining({ planningVersion: 2, baseRevision: 4 }),
-      "course-log-1",
-      { expectedCurrentDraft: serverDraft }
-    );
-    expect(reviewServiceMock.recordMapDraftQualityReview).toHaveBeenCalledWith(
-      expect.objectContaining({
-        scope: "stage",
-        stageKey: "foundation",
-        baseRevision: 4,
-        aiCallLogIds: ["stage-log-1"]
-      })
-    );
+    expect(data).toMatchObject({ reviewState: "unavailable", aiCallLogIds: ["generation-1", "failed-review-log"], qualityReport: { knowledgeReview: { verdict: "uncertain", claims: [], findings: [], materials: [{ url: "https://material.edu/final", location: "paragraph:5", text: "来源实际正文介绍对象边界。" }] } } });
+    expect(JSON.stringify(data.qualityReport.knowledgeReview.materials)).not.toContain("仅摘要不能替代正文");
+    expect(reviewServiceMock.recordMapDraftQualityReview).toHaveBeenCalledWith(expect.objectContaining({ availability: "unavailable", report: data.qualityReport }));
   });
 
-  it("forces a full semantic review when another edit made the prior receipt stale", async () => {
-    tutorServiceMock.generateRoadmapStageDraft.mockResolvedValue({
-      stage: validStage,
-      stageIndex: 0,
-      source: "ai",
-      aiCallLogId: "stage-log-1",
-      aiCallLogIds: ["stage-log-1"]
-    });
-    const serverDraft = {
-      planningVersion: 2 as const,
-      title: validSkeleton.title,
-      status: "draft",
-      baseRevision: 4,
-      stages: validSkeleton.stages.map((stage) => ({
-        ...stage,
-        status: "planned" as const,
-        moduleDirections: stage.coreTopics,
-        modules: []
-      }))
-    };
-    const reviewedDraft = {
-      ...serverDraft,
-      stages: [{ ...serverDraft.stages[0], ...validStage }]
-    };
-    roadmapServiceMock.getRoadmapByDomain.mockResolvedValue({
-      mapRevision: 4,
-      draft: serverDraft,
-      draftCourseDesignAiCallLogId: "course-log-1"
-    });
-    reviewServiceMock.evaluateMapDraftReview.mockReturnValue("stale");
-    tutorServiceMock.reviewRoadmapDraftQuality.mockResolvedValue({
-      draft: reviewedDraft,
-      qualityReport: {
-        status: "passed",
-        summary: "整图复审通过",
-        blockingIssues: [],
-        warnings: []
-      },
-      aiCallLogIds: ["map-review-log-1"],
-      repairAttempts: 0
-    });
-
-    const response = await POST(
-      new Request("http://localhost/api/domains/d1/map/ai-draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          step: "stage",
-          stageKey: "foundation",
-          baseRevision: 4
-        })
-      }),
-      params
-    );
-
-    expect(response.status).toBe(200);
-    expect(tutorServiceMock.reviewRoadmapDraftQuality).toHaveBeenCalledWith(
-      "d1",
-      {
-        courseDesign: validCourseDesign,
-        draft: expect.objectContaining({ planningVersion: 2 }),
-        scope: "map"
-      }
-    );
-    expect(reviewServiceMock.recordMapDraftQualityReview).toHaveBeenCalledWith(
-      expect.objectContaining({ scope: "map", stageKey: null })
-    );
+  it("returns a persisted Stage knowledge block even if its local retry result is unavailable", async () => {
+    const skeleton = { ...validSkeleton, planningVersion: 3, learningGoals: [{ key: "goal-1", description: "说明核心对象。" }] };
+    const draft = { ...skeleton, baseRevision: 4, stages: skeleton.stages.map(stage => ({ ...stage, status: "planned", moduleDirections: stage.coreTopics, modules: [] })) };
+    roadmapServiceMock.getRoadmapByDomain.mockResolvedValue({ mapRevision: 4, draft, draftCourseDesignAiCallLogId: "course-log-1" });
+    roadmapServiceMock.roadmapDraftToSkeleton.mockReturnValue(skeleton);
+    tutorServiceMock.generateRoadmapStageDraft.mockResolvedValue({ stage: validStage, source: "ai", aiCallLogId: "generation-1" });
+    tutorServiceMock.reviewRoadmapDraftQuality.mockRejectedValue(new AiConfigurationError("暂不可用"));
+    const knowledgeReview = { ...createUncertainPlanningKnowledgeReview(draft, [], "原核对"), verdict: "confirmed_error", summary: "已有明确错误" };
+    const storedReport = { status: "blocked", summary: "服务不可用", blockingIssues: [], warnings: [], knowledgeReview };
+    reviewServiceMock.recordMapDraftQualityReview.mockResolvedValue({ id: "review-new", report: storedReport, aiCallLogIds: ["original-error-log", "generation-1"] });
+    const response = await POST(new Request("http://localhost/api/domains/d1/map/ai-draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "stage", stageKey: "foundation", baseRevision: 4 }) }), params);
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ reviewState: "blocked", qualityReview: { availability: "unavailable" }, qualityReport: storedReport, aiCallLogIds: ["original-error-log", "generation-1"] });
   });
 
-  it("uses a full-map review when the generated Stage has semantic risk", async () => {
-    const riskyStage = {
-      ...validStage,
-      modules: [
-        {
-          ...validStage.modules[0],
-          items: [
-            {
-              ...validStage.modules[0].items[0],
-              keyQuestion: "这个对象是什么？它的边界又是什么？"
-            }
-          ]
-        }
-      ]
-    };
-    tutorServiceMock.generateRoadmapStageDraft.mockResolvedValue({
-      stage: riskyStage,
-      stageIndex: 0,
-      source: "ai",
-      aiCallLogId: "stage-log-1",
-      aiCallLogIds: ["stage-log-1"]
-    });
-    const serverDraft = {
-      planningVersion: 2 as const,
-      title: validSkeleton.title,
-      status: "draft",
-      baseRevision: 4,
-      stages: validSkeleton.stages.map((stage) => ({
-        ...stage,
-        status: "planned" as const,
-        moduleDirections: stage.coreTopics,
-        modules: []
-      }))
-    };
-    roadmapServiceMock.getRoadmapByDomain.mockResolvedValue({
-      mapRevision: 4,
-      draft: serverDraft,
-      draftCourseDesignAiCallLogId: "course-log-1"
-    });
-    tutorServiceMock.reviewRoadmapDraftQuality.mockResolvedValue({
-      draft: { ...serverDraft, stages: [{ ...serverDraft.stages[0], ...riskyStage }] },
-      qualityReport: {
-        status: "passed",
-        summary: "整图复审通过",
-        blockingIssues: [],
-        warnings: []
-      },
-      aiCallLogIds: ["map-review-log-1"],
-      repairAttempts: 0
-    });
+  // Superseded contract: generates one requested roadmap stage.
+// Current equivalents use real SQLite in learningSessionService/roadmapLifecycle tests,
+// and current provider contracts in coursePlanningCurrent; original test retained in before/retired.
 
-    const response = await POST(
-      new Request("http://localhost/api/domains/d1/map/ai-draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          step: "stage",
-          stageKey: "foundation",
-          baseRevision: 4
-        })
-      }),
-      params
-    );
 
-    expect(response.status).toBe(200);
-    expect(tutorServiceMock.reviewRoadmapDraftQuality).toHaveBeenCalledWith(
-      "d1",
-      expect.objectContaining({ scope: "map" })
-    );
-    expect(reviewServiceMock.recordMapDraftQualityReview).toHaveBeenCalledWith(
-      expect.objectContaining({ scope: "map", stageKey: null })
-    );
-  });
+  // Superseded contract: forces a full semantic review when another edit made the prior receipt stale.
+// Current equivalents use real SQLite in learningSessionService/roadmapLifecycle tests,
+// and current provider contracts in coursePlanningCurrent; original test retained in before/retired.
 
-  it("forces a full semantic review when the expanded Stage is thin against its blueprint", async () => {
-    const thinStage = {
-      ...validStage,
-      modules: [
-        {
-          ...validStage.modules[0],
-          items: [validStage.modules[0].items[0]]
-        }
-      ]
-    };
-    tutorServiceMock.generateRoadmapStageDraft.mockResolvedValue({
-      stage: thinStage,
-      stageIndex: 0,
-      source: "ai",
-      aiCallLogId: "stage-log-1",
-      aiCallLogIds: ["stage-log-1"]
-    });
-    const serverDraft = {
-      planningVersion: 2 as const,
-      title: validSkeleton.title,
-      status: "draft",
-      baseRevision: 4,
-      stages: validSkeleton.stages.map((stage) => ({
-        ...stage,
-        status: "planned" as const,
-        moduleDirections: stage.coreTopics,
-        modules: []
-      }))
-    };
-    roadmapServiceMock.getRoadmapByDomain.mockResolvedValue({
-      mapRevision: 4,
-      draft: serverDraft,
-      draftCourseDesignAiCallLogId: "course-log-1"
-    });
-    tutorServiceMock.reviewRoadmapDraftQuality.mockResolvedValue({
-      draft: {
-        ...serverDraft,
-        stages: [{ ...serverDraft.stages[0], ...thinStage }]
-      },
-      qualityReport: {
-        status: "passed",
-        summary: "整图复审通过，密度建议仅作为警告。",
-        blockingIssues: [],
-        warnings: [
-          {
-            code: "densityBalance",
-            targetKey: "foundation",
-            message: "展开节点相对规划问题偏少。",
-            suggestion: "可选补充节点。"
-          }
-        ]
-      },
-      aiCallLogIds: ["map-review-log-1"],
-      repairAttempts: 0
-    });
 
-    const response = await POST(
-      new Request("http://localhost/api/domains/d1/map/ai-draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          step: "stage",
-          stageKey: "foundation",
-          baseRevision: 4
-        })
-      }),
-      params
-    );
+  // Superseded contract: uses a full-map review when the generated Stage has semantic risk.
+// Current equivalents use real SQLite in learningSessionService/roadmapLifecycle tests,
+// and current provider contracts in coursePlanningCurrent; original test retained in before/retired.
 
-    expect(response.status).toBe(200);
-    expect(tutorServiceMock.reviewRoadmapDraftQuality).toHaveBeenCalledWith(
-      "d1",
-      expect.objectContaining({ scope: "map" })
-    );
-    expect(reviewServiceMock.recordMapDraftQualityReview).toHaveBeenCalledWith(
-      expect.objectContaining({ scope: "map", stageKey: null })
-    );
-    const data = await response.json();
-    expect(data.reviewState).toBe("passed");
-    expect(data.qualityReport.warnings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: "densityBalance" })
-      ])
-    );
-  });
 
-  it("treats the current confirmed v2 map as the trusted baseline for a low-risk Stage", async () => {
-    tutorServiceMock.generateRoadmapStageDraft.mockResolvedValue({
-      stage: validStage,
-      stageIndex: 0,
-      source: "ai",
-      aiCallLogId: "stage-log-1",
-      aiCallLogIds: ["stage-log-1"]
-    });
-    roadmapServiceMock.getRoadmapByDomain.mockResolvedValue({
-      mapRevision: 5,
-      planningVersion: 2,
-      status: "confirmed",
-      draft: null,
-      draftCourseDesignAiCallLogId: null,
-      title: validSkeleton.title,
-      stages: validSkeleton.stages.map((stage) => ({
-        ...stage,
-        status: "planned",
-        moduleDirections: stage.coreTopics,
-        modules: []
-      }))
-    });
-    reviewServiceMock.evaluateMapDraftReview.mockReturnValue("stale");
+  // Superseded contract: forces a full semantic review when the expanded Stage is thin against its blueprint.
+// Current equivalents use real SQLite in learningSessionService/roadmapLifecycle tests,
+// and current provider contracts in coursePlanningCurrent; original test retained in before/retired.
 
-    const response = await POST(
-      new Request("http://localhost/api/domains/d1/map/ai-draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          step: "stage",
-          stageKey: "foundation",
-          baseRevision: 5
-        })
-      }),
-      params
-    );
 
-    expect(response.status).toBe(200);
-    expect(tutorServiceMock.reviewRoadmapDraftQuality).not.toHaveBeenCalled();
-    expect(reviewServiceMock.recordMapDraftQualityReview).toHaveBeenCalledWith(
-      expect.objectContaining({ scope: "stage", stageKey: "foundation" })
-    );
-  });
+  // Superseded contract: treats the current confirmed v2 map as the trusted baseline for a low-risk Stage.
+// Current equivalents use real SQLite in learningSessionService/roadmapLifecycle tests,
+// and current provider contracts in coursePlanningCurrent; original test retained in before/retired.
+
 });

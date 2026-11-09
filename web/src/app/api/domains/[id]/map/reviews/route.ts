@@ -36,7 +36,8 @@ export async function POST(
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       throw new Error("复核请求必须是 JSON 对象。");
     }
-    const options = payload as { scope?: unknown; stageKey?: unknown };
+    const options = payload as { scope?: unknown; stageKey?: unknown; feedback?: unknown };
+    if (options.feedback !== undefined && (typeof options.feedback !== "string" || options.feedback.length > 6000)) throw new Error("修订意见必须是6000字符以内的文字。");
     if (options.stageKey !== undefined && (typeof options.stageKey !== "string" || !options.stageKey.trim())) {
       throw new Error("请提供有效的目标 Stage key。");
     }
@@ -98,7 +99,8 @@ export async function POST(
       courseDesign: courseDesignState.draft,
       draft: roadmap.draft,
       scope,
-      stageKey
+      stageKey,
+      feedback: typeof options.feedback === "string" ? options.feedback : null
     });
     const saved = await saveRoadmapDraft(
       domainId,
@@ -116,11 +118,12 @@ export async function POST(
       report: reviewed.qualityReport,
       aiCallLogIds: reviewed.aiCallLogIds
     });
+    const report = receipt.report;
 
-    if (reviewed.qualityReport.status === "blocked") {
+    if (report.status === "blocked" || report.knowledgeReview?.verdict === "confirmed_error") {
       return Response.json(
         {
-          error: `MAP_QUALITY_BLOCKED: ${reviewed.qualityReport.summary}`,
+          error: `MAP_QUALITY_BLOCKED: ${report.knowledgeReview?.verdict === "confirmed_error" ? report.knowledgeReview.summary : report.summary}`,
           draft: saved.draft,
           mapRevision: saved.mapRevision,
           reviewState: "blocked",
@@ -128,8 +131,8 @@ export async function POST(
             id: receipt.id,
             availability: "available"
           },
-          qualityReport: reviewed.qualityReport,
-          aiCallLogIds: reviewed.aiCallLogIds,
+          qualityReport: report,
+          aiCallLogIds: receipt.aiCallLogIds,
           repairAttempts: reviewed.repairAttempts
         },
         { status: 422 }
@@ -144,8 +147,8 @@ export async function POST(
         id: receipt.id,
         availability: "available"
       },
-      qualityReport: reviewed.qualityReport,
-      aiCallLogIds: reviewed.aiCallLogIds,
+      qualityReport: report,
+      aiCallLogIds: receipt.aiCallLogIds,
       repairAttempts: reviewed.repairAttempts
     });
   } catch (error) {
@@ -167,6 +170,8 @@ export async function POST(
           }
         ]
       };
+      const failure = aiFailureReference(error);
+      const failureLogIds = [...new Set([...(failure.aiCallLogIds || []), ...(failure.aiCallLogId ? [failure.aiCallLogId] : [])])];
       const receipt = await recordMapDraftQualityReview({
         domainId,
         scope: unavailableContext.scope,
@@ -176,21 +181,23 @@ export async function POST(
         courseDesignAiCallLogId:
           unavailableContext.courseDesignAiCallLogId,
         report,
-        aiCallLogIds: [],
+        aiCallLogIds: failureLogIds,
         availability: "unavailable"
       });
+      const knowledgeBlocked = receipt.report.knowledgeReview?.verdict === "confirmed_error";
       return Response.json({
+        ...(knowledgeBlocked ? { error: `MAP_QUALITY_BLOCKED: ${receipt.report.knowledgeReview!.summary}` } : {}),
         draft: unavailableContext.roadmap.draft,
         mapRevision: unavailableContext.roadmap.mapRevision,
-        reviewState: "unavailable",
-        qualityReport: report,
+        reviewState: knowledgeBlocked ? "blocked" : "unavailable",
+        qualityReport: receipt.report,
         qualityReview: {
           id: receipt.id,
           availability: "unavailable"
         },
-        aiCallLogIds: [],
+        aiCallLogIds: receipt.aiCallLogIds,
         repairAttempts: 0
-      });
+      }, { status: knowledgeBlocked ? 422 : 200 });
     }
     const status =
       error instanceof AiLogPersistenceError

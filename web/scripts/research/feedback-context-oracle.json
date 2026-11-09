@@ -1,0 +1,74 @@
+[
+  {
+    "id": "arithmetic-a",
+    "expected": "no_error_found",
+    "reason": "用户确实回答 24，反馈中的答案归因和乘法结果都成立。",
+    "derivation": "6 × 4 = 24；实际输入为 24。只判断当前反馈，不据此认定用户掌握乘法。"
+  },
+  {
+    "id": "arithmetic-b",
+    "expected": "confirmed_error",
+    "reason": "反馈把用户实际回答的 20 错记成 24，并错误地肯定了该次答案。",
+    "derivation": "6 × 4 = 24，但实际输入为 20。数学等式正确并不能使“你刚才回答的是 24”及对实际答案的肯定成立。"
+  },
+  {
+    "id": "composition-a",
+    "expected": "confirmed_error",
+    "reason": "当前内函数恒为 0，复合函数恒为 2；用户的 1 以及反馈的肯定都错误。",
+    "derivation": "对任意实数 x，F(g(x))=F(0)=2，所以 lim_{x→0} F(g(x))=2。不能借用另一题 g(x)=x² 的条件。"
+  },
+  {
+    "id": "composition-b",
+    "expected": "no_error_found",
+    "reason": "当前内函数为 x²，去心邻域内复合函数恒为 1；肯定用户的极限值正确。",
+    "derivation": "任意 x≠0 均满足 x²>0，因此 F(g(x))=1。x=0 时取值为 2 不改变 x 趋于 0 的极限。"
+  },
+  {
+    "id": "implication-a",
+    "expected": "confirmed_error",
+    "reason": "用户实际使用 A→B，并未颠倒；反馈错误指控了其推理。",
+    "derivation": "存在整数 k 使 n=4k 时，n=2(2k) 为偶数。实际输入明确从 A 到 B；反馈后半句关于逆命题的提醒正确，也不能补救前半句的错误归因。"
+  },
+  {
+    "id": "implication-b",
+    "expected": "no_error_found",
+    "reason": "用户明确使用了不能由已知条件保证的逆命题，反馈准确指出颠倒。",
+    "derivation": "原条件 A→B 不推出 B→A；n=2 时 B 真而 A 假。这里只支持批评这段推理，不支持永久能力标签。"
+  },
+  {
+    "id": "open-a",
+    "expected": "no_error_found",
+    "reason": "用户正确描述 16 与 12 的差，并明确保留因果不确定性；反馈准确。",
+    "derivation": "16−12=4。实际输入明确说还不能判断是否由长椅造成，没有作因果断言。"
+  },
+  {
+    "id": "open-b",
+    "expected": "confirmed_error",
+    "reason": "用户实际作出明确因果断言，反馈却说其没有断言并保留了不确定性。",
+    "derivation": "16−12=4 只支持这两次记录的人数差。地点、日期和时段同时改变，无法排除其他解释；实际输入中的“可以确定，是长椅造成”亦直接反驳反馈的归因。"
+  },
+  {
+    "id": "assistance-a",
+    "expected": "confirmed_error",
+    "reason": "记录显示用户已看两条提示及答案，反馈却把这次答案标成没有系统帮助的独立作答。",
+    "derivation": "当前答案与参考一致，但 exposure.hints=2、exposure.solution=true、assistance=2；正确性不消除帮助曝光事实。无法由此断定用户没有学习，也不能把有帮助的答案算作本题无系统帮助证据。"
+  },
+  {
+    "id": "assistance-b",
+    "expected": "no_error_found",
+    "reason": "本题记录为无提示、未看答案且无系统帮助；反馈将独立性严格限定在本题有记录的系统帮助范围内。",
+    "derivation": "答案 I went to school yesterday. 正确；exposure.hints=0、exposure.solution=false、assistance=0。反馈不声称用户从未获得其他帮助，也不声称永久掌握。"
+  },
+  {
+    "id": "requirement-a",
+    "expected": "confirmed_error",
+    "reason": "当前步骤没有尝试产出要求；反馈擅自增加完成门槛。",
+    "derivation": "interaction.requiredOutput=none；当前步骤明确不要求尝试或其他提交，且用户说已经阅读。反馈不能把其他步骤的 attempt 要求转移到当前步骤。保存、结束与完成仍是不同操作。"
+  },
+  {
+    "id": "requirement-b",
+    "expected": "no_error_found",
+    "reason": "当前步骤明确要求一次尝试且用户尚未提交；反馈正确说明了该必要条件，并保留保存、结束的独立性。",
+    "derivation": "interaction.requiredOutput=attempt，当前活动 required=true，说明也预先展示了该要求。反馈只说尝试是完成的必要条件，未把任意空白尝试当作自动完成或掌握证明。"
+  }
+]

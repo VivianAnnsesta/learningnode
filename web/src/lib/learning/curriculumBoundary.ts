@@ -1,6 +1,6 @@
 import { AiTaskValidationError } from "../ai/validationEvidence";
 import type { ConceptLearningUnit, KnowledgeBoundary, ConceptProfile, ContentContribution, CourseContentQuestion, LearningGoal, ConceptReference, RoadmapModuleBlueprint } from "./roadmapPlanningTypes";
-import { dimensions, type DimensionKey } from "./teachingDimensions";
+import { type DimensionKey } from "./teachingDimensions";
 import { prerequisiteContinuityRules } from "./teachingPrerequisites";
 
 const object = (value: unknown): Record<string, unknown> => {
@@ -45,8 +45,7 @@ export function parseContentContributions(value: unknown): ContentContribution[]
     if (!/^[a-zA-Z0-9_-]{1,100}$/.test(contentQuestionKey)) throw new AiTaskValidationError("分工需要有效的内容问题标识。");
     const requirementIndices = data.requirementIndices;
     if (!Array.isArray(requirementIndices) || !requirementIndices.length || requirementIndices.length > 100 || requirementIndices.some(i => !Number.isSafeInteger(i) || i < 0) || new Set(requirementIndices).size !== requirementIndices.length) throw new AiTaskValidationError("分工 requirementIndices 需要非空、不重复的零基整数下标。");
-    const dimensionKeys = data.dimensionKeys;
-    if (!Array.isArray(dimensionKeys) || !dimensionKeys.length || dimensionKeys.some(key => typeof key !== "string" || !Object.hasOwn(dimensions, key)) || new Set(dimensionKeys).size !== dimensionKeys.length) throw new AiTaskValidationError("分工 dimensionKeys 需要非空、不重复的有效九维标识。");
+    const dimensionKeys: DimensionKey[] = []; // fixed teaching dimensions are retained only by historical readers
     return { contentQuestionKey, requirementIndices: requirementIndices as number[], dimensionKeys: dimensionKeys as DimensionKey[], contribution: text(data.contribution, "本节点具体贡献") };
   });
   if (new Set(result.map(c => c.contentQuestionKey)).size !== result.length) throw new AiTaskValidationError("同一处教学分工不能重复登记内容问题，请合并下标、维度和贡献说明。");
@@ -60,7 +59,7 @@ export function scopedContentQuestions(questions: CourseContentQuestion[], contr
     if (!matches.length) return [];
     const selectedIndices = new Set(matches.flatMap(c => c.requirementIndices));
     const selectedDimensions = new Set(matches.flatMap(c => c.dimensionKeys));
-    if ([...selectedIndices].some(i => !Number.isSafeInteger(i) || i < 0 || i >= question.contentRequirements.length) || [...selectedDimensions].some(key => !question.dimensionKeys.includes(key))) throw new AiTaskValidationError(`内容问题 ${question.key} 的分工已不属于当前确认的内容清单，请重新校验地图。`);
+    if ([...selectedIndices].some(i => !Number.isSafeInteger(i) || i < 0 || i >= question.contentRequirements.length)) throw new AiTaskValidationError(`内容问题 ${question.key} 的分工已不属于当前确认的内容清单，请重新校验地图。`);
     const requirementIndices = question.contentRequirements.map((_, index) => index).filter(index => selectedIndices.has(index));
     return [{ ...question, contentRequirements: requirementIndices.map(index => question.contentRequirements[index]), requirementIndices, dimensionKeys: question.dimensionKeys.filter(key => selectedDimensions.has(key)), contribution: [...new Set(matches.map(c => c.contribution))].join("；") }];
   });
@@ -85,7 +84,7 @@ export function validateContentContributions(input: { learningGoals?: LearningGo
         const question = registry.get(contribution.contentQuestionKey);
         const fail = (code: string, message: string) => { throw new AiTaskValidationError(message, [{ code, path, message, stageKey: stage.key, questionKey: contribution.contentQuestionKey }]); };
         if (!question || !assignedContent.has(contribution.contentQuestionKey)) fail("unassigned_content_contribution", `节点 ${ownerKey} 的分工只能引用已分配给它的课程内容问题：${contribution.contentQuestionKey}。`);
-        if (contribution.requirementIndices.some(index => index >= question!.contentRequirements.length) || contribution.dimensionKeys.some(key => !question!.dimensionKeys.includes(key))) fail("invalid_content_contribution_scope", `节点 ${ownerKey} 的分工下标或维度不属于问题 ${contribution.contentQuestionKey} 的已确认清单。`);
+        if (contribution.requirementIndices.some(index => index >= question!.contentRequirements.length)) fail("invalid_content_contribution_scope", `节点 ${ownerKey} 的分工下标或维度不属于问题 ${contribution.contentQuestionKey} 的已确认清单。`);
       }
       const missing = [...assignedContent].filter(key => !supplied.some(c => c.contentQuestionKey === key));
       if (required && missing.length) {
@@ -123,18 +122,18 @@ export function validateLearningUnitOwnership(stages: { modules?: { items?: { ke
 }
 
 export const knowledgeBoundaryShape = '{"version":1,"assumedKnowledge":["specific entry knowledge assumed from the task; empty when no foundation is assumed"],"newKnowledge":["knowledge this course adds at the agreed depth"]}';
-export const contentContributionShape = '{"contentQuestionKey":"one assigned registry key","requirementIndices":[0],"dimensionKeys":["definition"],"contribution":"the concrete part this node teaches; select only its assigned requirements and dimensions"}';
+export const contentContributionShape = '{"contentQuestionKey":"one assigned registry key","requirementIndices":[0],"contribution":"the concrete part this node teaches; select only its assigned requirements"}';
 export const learningUnitShape = `{"version":2,"newKnowledge":"explicit related knowledge taught together at the agreed depth","assumedKnowledge":["agreed entry foundation used directly, not new course knowledge"],"teachingTasks":["concrete explanation, judgment or use; name any necessary knowledge introduced BEFORE using it"],"example":"a representative example using only these foundations, actual prerequisites and knowledge taught here","references":[{"key":"another supplied concept key; omit this object when none","purpose":"brief recall, comparison or application; not a second full lesson"}],"contentContributions":[${contentContributionShape}]}`;
 export const conceptReferenceShape = `{"key":"exact known concept key","planningQuestionKeys":["current-stage question key"],"problemRole":"role in this Stage whole problem","contentContributions":[${contentContributionShape}]}`;
 export const curriculumBoundaryRules = `
 COURSE FOUNDATIONS AND COMPLETE LEARNING UNITS:
 - Distinguish assumed entry knowledge from the NEW knowledge of this course using the task, learner starting level and agreed depth. Foundations are reviewable assumptions, never certified mastery. Do not automatically turn them into stages, content requirements or nodes. If the user explicitly requests relearning something, that request wins; explain conflicts rather than silently excluding requested content.
 - Stop downward decomposition at the agreed foundations. Do not exclude a new advanced property merely because its object has a familiar name. For a calculus learner with high-school foundations, basic functions, intervals and elementary algebra are ordinarily used directly; limits and genuinely new analysis remain teachable content.
-- Each node owns a coherent teaching unit at this depth. Related concepts, principles or methods MAY be taught together when their meanings, conditions, differences and uses are made explicit. State the included new knowledge in learningUnit.newKnowledge, teachingTasks and a representative example. Never demand splitting solely because several concepts are present. A broad title without actual teaching responsibilities remains insufficient. Nine dimensions serve understanding and can share motivations/cases across the related knowledge.
+- Each node owns a coherent teaching unit at this depth. Related concepts, principles or methods MAY be taught together when their meanings, conditions, differences and uses are made explicit. State the included new knowledge in learningUnit.newKnowledge, teachingTasks and a representative example. Never demand splitting solely because several concepts are present. A broad title without actual teaching responsibilities remains insufficient. Arrange explanations, examples, comparisons or attempts according to the actual problem; do not enforce fixed dimensions or segment counts.
 - Across the course, keep one primary owner for the same new knowledge. Compare meanings and aliases, reuse stable keys via conceptReferences across modules/stages, and use learningUnit.references to explain recall/comparison/application of other supplied nodes. References NEVER create prerequisite edges. Use prerequisiteKeys only when learning genuinely depends on that node.
 - Assumed foundations are used directly in lessons and briefly clarified only when needed or requested. Never create fake node keys for them. Existing content questions may cover several nodes; each node covers only the part supported by its own newKnowledge and teachingTasks.
-- New learningUnit objects use version=2. For EACH assigned course content question, contentContributions declares contentQuestionKey, nonempty requirementIndices (zero-based indices into the confirmed contentRequirements), nonempty dimensionKeys (a subset of that question's dimensions), and a concrete contribution. Multiple nodes share a question by taking different parts; NEVER make each repeat every requirement or dimension. Preserve the registry and its indices. If an old course has no content-question registry, use an empty contentContributions array.
-- New conceptReferences also declare contentContributions for their current-stage assignments; this adds explicit confirmed responsibilities without silently editing the source node. Existing version=2 responsibilities and explicit reference contributions must survive repair; do not downgrade to version=1. Legacy version=1 remains readable without guessing contributions. Missing whole-course dimensions from still-unexpanded stages are a coverage status, not a reason to demand every present node teach everything.
+- New learningUnit objects use version=2. For EACH assigned course content question, contentContributions declares contentQuestionKey, nonempty requirementIndices (zero-based indices into the confirmed contentRequirements), and a concrete contribution. Multiple nodes share a question by taking different parts; NEVER make each repeat every requirement. Preserve the registry and its indices. If an old course has no content-question registry, use an empty contentContributions array.
+- New conceptReferences also declare contentContributions for their current-stage assignments; this adds explicit confirmed responsibilities without silently editing the source node. Existing version=2 responsibilities and explicit reference contributions must survive repair; do not downgrade to version=1. Legacy version=1 remains readable without guessing contributions. Missing whole-course requirements from still-unexpanded stages are a coverage status, not a reason to demand every present node teach everything.
 - Check that examples use the agreed foundations, supplied necessary prerequisites or knowledge taught in this lesson. Ordinary overlap, reasonable alternatives and naming ambiguity remain suggestions; only evidenced serious defects under the existing policy block. Never expand course depth to eliminate all suggestions.
 ${prerequisiteContinuityRules}
 - In planning, use the existing prerequisite text to state WHAT knowledge is needed and WHERE its actual teaching tasks provide it. When teaching necessary background in this node, include a concrete prior-to-use teachingTasks entry. For prerequisiteKeys, inspect the referenced node's actual scope and teachingTasks, not just its title. The matched teaching may be planned rather than generated; never call it already learned. Do not add a formal node solely for a short in-lesson explanation.

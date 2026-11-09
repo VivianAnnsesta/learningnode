@@ -24,6 +24,9 @@ import {
 } from "./tasks";
 
 describe("parseJsonObjectFromModel", () => {
+  it("rejects an unfinished outer JSON object even with complete objects inside",()=>{
+    expect(()=>parseJsonObjectFromModel('{"modules":[{"title":"完成的内部对象"}],"rest":')).toThrow("最外层");
+  });
   it("parses a fenced JSON object", () => {
     expect(parseJsonObjectFromModel('```json\n{"ok":true}\n```')).toEqual({
       ok: true
@@ -188,6 +191,7 @@ describe("validateTaskBriefDraft", () => {
     expect(
       validateTaskBriefDraft({
         taskBrief: "",
+        guide: {overview:"解释领域", representativeQuestions:["代表问题"], suggestions:{}},
         summary: "先明确边界",
         successCriteria: ["能复述目标", "", "能说明评估方式"],
         risks: ["范围过大", null]
@@ -195,6 +199,7 @@ describe("validateTaskBriefDraft", () => {
     ).toEqual({
       taskBrief: expect.stringContaining("学习目标"),
       summary: "先明确边界",
+      guide: expect.objectContaining({overview:"解释领域"}),
       successCriteria: ["能复述目标", "能说明评估方式"],
       risks: ["范围过大"]
     });
@@ -214,7 +219,7 @@ describe("validateTaskBriefDraft", () => {
 });
 
 describe("validateCourseDesignDraft", () => {
-  it("requires repair to populate concrete source objects instead of only rewriting prose", () => {
+  it("requires concrete candidate sources without pretending unavailable search or bodies were verified", () => {
     const prompt = buildCourseDesignRepairPrompt({
       domain: { name: "TypeScript React", goal: "Build a typed app." },
       draft: validateCourseDesignDraft({
@@ -230,8 +235,9 @@ describe("validateCourseDesignDraft", () => {
       missing: ["sources"]
     });
 
-    expect(prompt).toContain("return 2-5 concrete HTTPS source objects");
-    expect(prompt).toContain("Updating sourceBasis alone is not a repair");
+    expect(prompt).toContain("Use web search only if an actual search tool is available");
+    expect(prompt).toContain("Suggesting a URL does not fetch its body");
+    expect(prompt).toContain("Updating sourceBasis alone must not invent evidence");
     expect(prompt).toContain('"sources": [');
     expect(prompt).toContain("Do not include qualityGate");
   });
@@ -258,7 +264,7 @@ describe("validateCourseDesignDraft", () => {
     ).toEqual({ passed: true, missing: [] });
   });
 
-  it("fails the quality gate when source links are missing", () => {
+  it("allows a disclosed source gap without inventing citations", () => {
     const draft = validateCourseDesignDraft({
       taskBriefSnapshot: "学习目标：建立框架。",
       globalExplanation: {
@@ -270,8 +276,8 @@ describe("validateCourseDesignDraft", () => {
       sources: []
     });
 
-    expect(draft.qualityGate.passed).toBe(false);
-    expect(draft.qualityGate.missing).toContain("sources");
+    expect(draft.qualityGate.passed).toBe(true);
+    expect(draft.sources).toEqual([]);
   });
 
   it("fails the quality gate when sources cite only institutional homepages", () => {
@@ -293,7 +299,7 @@ describe("validateCourseDesignDraft", () => {
     });
 
     expect(draft.qualityGate.passed).toBe(false);
-    expect(draft.qualityGate.missing).toContain("specific source url");
+    expect(draft.qualityGate.missing).toContain("non-placeholder source url");
   });
 
   it("accepts a focused documentation site whose content lives at its root", () => {
@@ -356,7 +362,7 @@ describe("validateCourseDesignDraft", () => {
       ]
     });
 
-    expect(draft.qualityGate.missing).toContain("specific source url");
+    expect(draft.qualityGate.missing).toContain("non-placeholder source url");
   });
 
   it("fails the quality gate when sources contain placeholder-like URLs", () => {
@@ -400,7 +406,7 @@ describe("validateCourseDesignDraft", () => {
     });
 
     expect(draft.qualityGate.passed).toBe(false);
-    expect(draft.qualityGate.missing).toContain("specific source url");
+    expect(draft.qualityGate.missing).toContain("unsafe source url");
   });
 });
 
@@ -457,7 +463,7 @@ describe("validateRoadmapSkeletonDraft", () => {
           }
         ]
       })
-    ).toEqual({
+    ).toMatchObject({
       title: "Calculus skeleton",
       status: "draft",
       stages: [

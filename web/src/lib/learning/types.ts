@@ -98,8 +98,6 @@ export type HintLevel = (typeof hintLevels)[number];
 
 export const domainStatuses = [
   "active",
-  "paused",
-  "completed",
   "archived"
 ] as const;
 
@@ -184,15 +182,9 @@ export const diagnosticAnswerResultLabels: Record<
 };
 
 export const learningNodeStatuses = [
-  "locked",
   "available",
-  "next",
   "in_progress",
-  "completed",
-  "mastered",
-  "needs_review",
-  "suggested",
-  "skipped"
+  "completed"
 ] as const;
 
 export type LearningNodeStatus = (typeof learningNodeStatuses)[number];
@@ -210,15 +202,9 @@ export const learningNodeTypes = [
 export type LearningNodeType = (typeof learningNodeTypes)[number];
 
 export const learningNodeStatusLabels: Record<LearningNodeStatus, string> = {
-  locked: "未解锁",
   available: "可学习",
-  next: "下一步",
   in_progress: "学习中",
-  completed: "已完成",
-  mastered: "已掌握",
-  needs_review: "待复习",
-  suggested: "建议加入",
-  skipped: "已跳过"
+  completed: "已完成"
 };
 
 export const learningNodeTypeLabels: Record<LearningNodeType, string> = {
@@ -244,10 +230,10 @@ export const routeSuggestionStatusLabels: Record<RouteSuggestionStatus, string> 
     rejected: "已拒绝"
   };
 
-export const domainStatusLabels: Record<DomainStatus, string> = {
-  active: "进行中",
-  paused: "已暂停",
-  completed: "已完成",
+export const domainStatusLabels: Record<string, string> = {
+  active: "活动领域",
+  paused: "历史状态：已暂停",
+  completed: "历史状态：已完成",
   archived: "已归档"
 };
 

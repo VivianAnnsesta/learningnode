@@ -33,31 +33,4 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
-  let payload: RelationInput;
-
-  try {
-    payload = await request.json();
-  } catch {
-    return Response.json({ error: "无效的 JSON。" }, { status: 400 });
-  }
-
-  const canvasId = payload.canvasId?.trim() || "";
-
-  try {
-    const relation = await createKnowledgeRelation(canvasId, payload, {
-      defaultStatus: "candidate",
-      defaultWormholeStatus: "wormhole_candidate"
-    });
-    return Response.json({ relation });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "创建关系失败。";
-    const status =
-      error instanceof KnowledgeRelationError
-        ? error.code === "target_not_found"
-          ? 404
-          : 400
-        : 500;
-    return Response.json({ error: message }, { status });
-  }
-}
+export async function POST() { return Response.json({error:"兼容写入已退役，请使用个人记录与关系入口。"},{status:410}); }

@@ -14,6 +14,7 @@ export type LearningDomainInput = {
   outputTarget?: string | null;
   taskBrief?: string | null;
   status?: string | null;
+  planningInput?: {materials:string;feedback:string};
 };
 
 const learningDomainSelect = {
@@ -58,6 +59,7 @@ export interface LearningDomainDto {
   outputTarget: string | null;
   taskBrief: string | null;
   entryGuide: {draft: import("../ai/tasks").TaskBriefDraft;aiCallLogId:string} | null;
+  planningInput: {materials:string;feedback:string} | null;
   taskBriefConfirmedAt: Date | null;
   roadmapTitle: string | null;
   roadmapStatus: string;
@@ -69,6 +71,9 @@ export interface LearningDomainDto {
   createdAt: Date;
   updatedAt: Date;
 }
+
+function readGuide(value: string | null | undefined): Record<string, unknown> { try { const parsed=JSON.parse(value || "{}"); return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}; } catch { return {}; } }
+function validatePlanningInput(input: LearningDomainInput) { if (input.planningInput && (typeof input.planningInput.materials !== "string" || typeof input.planningInput.feedback !== "string" || input.planningInput.materials.length > 24000 || input.planningInput.feedback.length > 6000)) throw new Error("规划资料或意见格式无效。"); }
 
 const normalizeOptional = (value?: string | null) => {
   const next = value?.trim();
@@ -109,7 +114,8 @@ function toLearningDomainDto(domain: LearningDomainRecord): LearningDomainDto {
     outputType: domain.outputType,
     outputTarget: domain.outputTarget,
     taskBrief: domain.taskBrief,
-    entryGuide: domain.entryGuideJson ? JSON.parse(domain.entryGuideJson) : null,
+    entryGuide: domain.entryGuideJson ? readGuide(domain.entryGuideJson) as LearningDomainDto["entryGuide"] : null,
+    planningInput: (readGuide(domain.entryGuideJson).planningInput || null) as LearningDomainDto["planningInput"],
     taskBriefConfirmedAt: domain.taskBriefConfirmedAt,
     roadmapTitle: domain.roadmapTitle,
     roadmapStatus: domain.roadmapStatus,
@@ -151,7 +157,9 @@ export async function createLearningDomain(
     throw new Error("学习领域名称不能为空");
   }
 
+  validatePlanningInput(input);
   const status = normalizeStatus(input.status) ?? "active";
+  if (input.status && !normalizeStatus(input.status)) throw new Error("领域状态只能是活动或归档；课程完成由实际路线任务计算。");
 
   return prisma.$transaction(async (tx) => {
     const domain = await tx.domain.create({
@@ -166,6 +174,7 @@ export async function createLearningDomain(
         outputType: normalizeOptional(input.outputType),
         outputTarget: normalizeOptional(input.outputTarget),
         taskBrief: normalizeOptional(input.taskBrief),
+        ...(input.planningInput?{entryGuideJson:JSON.stringify({planningInput:input.planningInput})}:{}),
         status
       },
       select: learningDomainSelect
@@ -217,7 +226,7 @@ export async function updateLearningDomain(
     data.status = status;
   }
 
-  if (Object.keys(data).length === 0) {
+  if (Object.keys(data).length === 0 && input.planningInput === undefined) {
     throw new Error("未提供可更新字段");
   }
 
@@ -225,7 +234,7 @@ export async function updateLearningDomain(
     const suppliedResearchInputKeys = courseResearchInputKeys.filter(
       (key) => input[key] !== undefined
     );
-    const previous = suppliedResearchInputKeys.length
+    const previous = suppliedResearchInputKeys.length || input.planningInput !== undefined
       ? await tx.domain.findUnique({
           where: { id },
           select: {
@@ -242,10 +251,12 @@ export async function updateLearningDomain(
             courseDesignDraft: true,
             roadmapDraftJson: true,
             mapRevision: true
+            ,entryGuideJson:true
           }
         })
       : null;
-    const planningInputsChanged = suppliedResearchInputKeys.some((key) => {
+    if(input.planningInput!==undefined){if(typeof input.planningInput.materials!=="string"||typeof input.planningInput.feedback!=="string"||input.planningInput.materials.length>24000||input.planningInput.feedback.length>6000)throw new Error("规划资料或意见格式无效。允许保存实际资料，不要求提供基础证明。");data.entryGuideJson=JSON.stringify({...readGuide(previous?.entryGuideJson),planningInput:input.planningInput});}
+    const planningInputsChanged = (input.planningInput!==undefined && JSON.stringify(JSON.parse(previous?.entryGuideJson||"{}").planningInput)!==JSON.stringify(input.planningInput)) || suppliedResearchInputKeys.some((key) => {
       const previousValue = previous?.[key];
       const nextValue = input[key];
       return normalizeOptional(previousValue) !== normalizeOptional(nextValue);
@@ -280,18 +291,6 @@ export async function updateLearningDomain(
 
     if (!planningInputsChanged || !hasPlanningArtifacts) {
       return toLearningDomainDto(updated);
-    }
-
-    if (hasMapArtifact) {
-      await tx.learningNode.updateMany({
-        where: {
-          domainId: id,
-          status: {
-            notIn: ["completed", "mastered", "skipped"]
-          }
-        },
-        data: { status: "needs_review" }
-      });
     }
 
     const invalidatedArtifacts = [
@@ -339,6 +338,6 @@ export async function confirmTaskBrief(id: string): Promise<LearningDomainDto> {
 
 export async function deleteLearningDomain(id: string) {
   await prisma.$transaction(async (tx) => {
-    await tx.domain.delete({ where: { id } });
+    await tx.domain.update({ where: { id }, data: {status:"archived"} });
   });
 }

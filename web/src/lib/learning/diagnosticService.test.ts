@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  createDiagnosticSession,
   getDiagnosticSession,
-  listDiagnosticSessions,
-  saveDiagnosticAnswer
+  listDiagnosticSessions
 } from "./diagnosticService";
 
 const prismaMock = vi.hoisted(() => ({
@@ -100,182 +98,17 @@ describe("diagnosticService", () => {
     });
   });
 
-  it("rejects missing domain when creating a diagnostic session", async () => {
-    prismaMock.domain.findUnique.mockResolvedValue(null);
 
-    await expect(createDiagnosticSession("d1", {})).rejects.toThrow(
-      "学习领域不存在"
-    );
-  });
 
-  it("creates a session with normalized usable questions only", async () => {
-    prismaMock.domain.findUnique.mockResolvedValue({
-      id: "d1",
-      name: "English"
-    });
-    prismaMock.diagnosticSession.create.mockResolvedValue(buildSessionRecord());
-    prismaMock.learningNode.findMany.mockResolvedValue([{ id: "item-1" }]);
 
-    await createDiagnosticSession("d1", {
-      summary: "  intro  ",
-      questions: [
-        {
-          prompt: "  什么是语义核心？ ",
-          questionType: " concept ",
-          expectedAnswer: "  聚焦定义与边界 ",
-          roadmapItemId: " item-1 "
-        },
-        {
-          prompt: "   "
-        }
-      ]
-    });
 
-    expect(prismaMock.diagnosticSession.create).toHaveBeenCalledWith({
-      data: {
-        domainId: "d1",
-        title: "English 诊断",
-        status: "draft",
-        summary: "intro",
-        questions: {
-          create: [
-            {
-              prompt: "什么是语义核心？",
-              questionType: "concept",
-              expectedAnswer: "聚焦定义与边界",
-              learningNodeId: "item-1",
-              orderIndex: 0
-            }
-          ]
-        }
-      },
-      include: {
-        questions: {
-          orderBy: { orderIndex: "asc" },
-          include: {
-            learningNode: {
-              select: { id: true, title: true, status: true }
-            },
-            answers: {
-              orderBy: { createdAt: "desc" },
-              take: 1
-            }
-          }
-        }
-      }
-    });
-  });
 
-  it("rejects diagnostic questions that reference a node outside the Domain", async () => {
-    prismaMock.domain.findUnique.mockResolvedValue({ id: "d1", name: "English" });
-    prismaMock.learningNode.findMany.mockResolvedValue([]);
 
-    await expect(
-      createDiagnosticSession("d1", {
-        questions: [{ prompt: "forged", roadmapItemId: "domain-b-node" }]
-      })
-    ).rejects.toThrow("诊断题引用的学习节点不属于该领域或不存在");
-    expect(prismaMock.diagnosticSession.create).not.toHaveBeenCalled();
-  });
 
-  it("rejects empty answers", async () => {
-    await expect(
-      saveDiagnosticAnswer("q1", { response: "   " })
-    ).rejects.toThrow("回答不能为空");
-  });
 
-  it("rejects missing diagnostic question", async () => {
-    prismaMock.diagnosticQuestion.findUnique.mockResolvedValue(null);
 
-    await expect(
-      saveDiagnosticAnswer("q1", { response: "answer" })
-    ).rejects.toThrow("诊断题不存在");
-  });
 
-  it("creates an unevaluated user answer even if evaluation fields are supplied", async () => {
-    prismaMock.diagnosticQuestion.findUnique.mockResolvedValue({ id: "q1" });
-    prismaMock.diagnosticAnswer.create.mockResolvedValue({ id: "a1" });
 
-    await saveDiagnosticAnswer("q1", {
-      response: "  my answer ",
-      assessment: "  partial ",
-      result: " solid "
-    });
 
-    expect(prismaMock.diagnosticAnswer.create).toHaveBeenCalledWith({
-      data: {
-        questionId: "q1",
-        response: "my answer",
-        assessment: null,
-        result: "unreviewed"
-      }
-    });
-  });
 
-  it("falls back to allowed question types and keeps answers unevaluated", async () => {
-    prismaMock.domain.findUnique.mockResolvedValue({
-      id: "d1",
-      name: "English"
-    });
-    prismaMock.diagnosticSession.create.mockResolvedValue(buildSessionRecord());
-    prismaMock.diagnosticQuestion.findUnique.mockResolvedValue({ id: "q1" });
-    prismaMock.diagnosticAnswer.create.mockResolvedValue({ id: "a1" });
-
-    await createDiagnosticSession("d1", {
-      questions: [
-        {
-          prompt: "diagnostic prompt",
-          questionType: "invalid-type"
-        }
-      ]
-    });
-
-    expect(prismaMock.diagnosticSession.create).toHaveBeenLastCalledWith({
-      data: {
-        domainId: "d1",
-        title: "English \u8bca\u65ad",
-        status: "draft",
-        summary: null,
-        questions: {
-          create: [
-            {
-              prompt: "diagnostic prompt",
-              questionType: "concept",
-              expectedAnswer: null,
-              learningNodeId: null,
-              orderIndex: 0
-            }
-          ]
-        }
-      },
-      include: {
-        questions: {
-          orderBy: { orderIndex: "asc" },
-          include: {
-            learningNode: {
-              select: { id: true, title: true, status: true }
-            },
-            answers: {
-              orderBy: { createdAt: "desc" },
-              take: 1
-            }
-          }
-        }
-      }
-    });
-
-    await saveDiagnosticAnswer("q1", {
-      response: "answer",
-      result: "invalid-result"
-    });
-
-    expect(prismaMock.diagnosticAnswer.create).toHaveBeenLastCalledWith({
-      data: {
-        questionId: "q1",
-        response: "answer",
-        assessment: null,
-        result: "unreviewed"
-      }
-    });
-  });
 });

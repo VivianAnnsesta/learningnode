@@ -1,19 +1,22 @@
 import type { ConceptProfile, ConceptReference, LearningGoal, StageProblem } from "./roadmapPlanningTypes";
 import { parseLearningUnit, parseContentContributions } from "./curriculumBoundary";
 import type { AiValidationIssue } from "../ai/validationEvidence";
-import { dimensions, type DimensionKey } from "./teachingDimensions";
+import type { DimensionKey } from "./teachingDimensions"; // historical metadata only
 const record = (v: unknown): Record<string,unknown> => v && typeof v === "object" && !Array.isArray(v)?v as Record<string,unknown>:{};
 const text = (v:unknown) => typeof v === "string"?v.trim():"";
 export const planningStrings = (v:unknown):string[] => Array.isArray(v)?[...new Set(v.map(text).filter(Boolean))]:[];
 export function parseConcept(v:unknown):ConceptProfile { const d=record(v); const learningUnit=parseLearningUnit(d.learningUnit); return {name:text(d.name),aliases:planningStrings(d.aliases),scope:text(d.scope),problemRole:text(d.problemRole),...(learningUnit ? {learningUnit} : {})}; }
 export function parseProblem(v:unknown):StageProblem { const d=record(v);return {question:text(d.question),steps:planningStrings(d.steps)}; }
 export function parseGoals(v:unknown):LearningGoal[] {
-  return (Array.isArray(v)?v:[]).map(raw => {
+  return (Array.isArray(v)?v:[]).map((raw, goalIndex) => {
     const d=record(raw);
     return {key:text(d.key),description:text(d.description), ...(d.contentQuestions !== undefined ? {
-      contentQuestions:(Array.isArray(d.contentQuestions)?d.contentQuestions:[]).map(rawQuestion => {
+      contentQuestions:(Array.isArray(d.contentQuestions)?d.contentQuestions:[]).map((rawQuestion, questionIndex) => {
         const q=record(rawQuestion);
-        return {key:text(q.key),question:text(q.question),contentRequirements:planningStrings(q.contentRequirements),dimensionKeys:planningStrings(q.dimensionKeys) as DimensionKey[]};
+        if (q.importance !== undefined && q.importance !== "required" && q.importance !== "optional") {
+          throw new ConceptPlanningValidationError([{code:"invalid_content_importance",path:`learningGoals[${goalIndex}].contentQuestions[${questionIndex}].importance`,questionKey:text(q.key),message:"内容问题 importance 只能为 required 或 optional；旧计划未记录时保持未知。"}]);
+        }
+        return {key:text(q.key),question:text(q.question),...(q.importance !== undefined ? {importance:q.importance as "required" | "optional"} : {}),contentRequirements:planningStrings(q.contentRequirements),dimensionKeys:planningStrings(q.dimensionKeys) as DimensionKey[]};
       })
     } : {})};
   });
@@ -36,7 +39,7 @@ export function resolveContentCoverage(input: {learningGoals?:LearningGoal[];sta
     for(const [index,q] of (goal.contentQuestions || []).entries()) {
       const path=`learningGoals[${goalIndex}].contentQuestions[${index}]`;
       if(!/^[a-zA-Z0-9_-]{1,100}$/.test(q.key) || registry.has(q.key)) issues.push({code:"invalid_content_question_key",path:`${path}.key`,message:"课程内容问题需要唯一且非空的稳定标识。"});
-      if(!q.question || !q.contentRequirements.length || !q.dimensionKeys.length || q.dimensionKeys.some(key=>!Object.hasOwn(dimensions,key))) issues.push({code:"invalid_content_question",path,message:"内容问题需要具体问题、材料说明要求和有效九维安排。"});
+      if(!q.question || !q.contentRequirements.length) issues.push({code:"invalid_content_question",path,message:"内容问题需要具体问题和材料说明要求。"});
       registry.set(q.key,{goalKey:goal.key,question:q});
     }
   }
@@ -55,6 +58,8 @@ export function resolveContentCoverage(input: {learningGoals?:LearningGoal[];sta
         q.question=found.question.question;
         q.contentRequirements=[...found.question.contentRequirements];
         q.dimensionKeys=[...found.question.dimensionKeys];
+        if (found.question.importance !== undefined) q.importance=found.question.importance;
+        else delete q.importance;
         q.checkableOutcome=found.question.contentRequirements.join("；");
         q.goalKeys=[found.goalKey];
         moduleGoals.add(found.goalKey); stageGoals.add(found.goalKey);

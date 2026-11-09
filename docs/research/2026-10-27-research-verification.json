@@ -1,0 +1,185 @@
+{
+  "date": "2026-10-27",
+  "scope": "Research artifacts and finite illustrative calculations; not production testing or learning efficacy",
+  "file_count": 6,
+  "files": [
+    {
+      "path": "docs/research/2026-10-27-ai-teaching-research.md",
+      "sha256": "2491aeb2d17e391344a87130c9d9cbaf1287cdbf1b05ad9eaf42fcabfd3a32be",
+      "local_links": [
+        {
+          "target": "../../CURRENT_PROGRESS_AND_DIFFICULTIES.md",
+          "exists": true
+        },
+        {
+          "target": "2026-10-27-ai-tutoring-evidence.md",
+          "exists": true
+        },
+        {
+          "target": "2026-10-27-learning-mechanisms-evidence.md",
+          "exists": true
+        },
+        {
+          "target": "2026-10-27-teaching-current-state-audit.md",
+          "exists": true
+        },
+        {
+          "target": "2026-10-27-ai-teaching-worked-examples.md",
+          "exists": true
+        },
+        {
+          "target": "2026-10-27-ai-teaching-evaluation-protocol.md",
+          "exists": true
+        },
+        {
+          "target": "2026-09-06-learning-methodology.md",
+          "exists": true
+        },
+        {
+          "target": "2026-09-06-learning-methodology-review.md",
+          "exists": true
+        },
+        {
+          "target": "2026-09-06-learning-system-reassessment.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "path": "docs/research/2026-10-27-ai-tutoring-evidence.md",
+      "sha256": "6f6e9334d19766433d552361473839d1d74e0a976424d9011e6fc38cdc6ca458",
+      "local_links": []
+    },
+    {
+      "path": "docs/research/2026-10-27-learning-mechanisms-evidence.md",
+      "sha256": "449536adbf97d562b04eb0f491ee6ddbf791c9439b00871bc5f2195677f31dfd",
+      "local_links": [
+        {
+          "target": "2026-09-06-learning-methodology.md",
+          "exists": true
+        },
+        {
+          "target": "2026-09-06-learning-methodology-review.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "path": "docs/research/2026-10-27-teaching-current-state-audit.md",
+      "sha256": "1d612cc860d5aa961f8a1955e00a8e39d3886a71ed8b301993b4c662d5065edf",
+      "local_links": [
+        {
+          "target": "../../web/test-results/final-core-blank-2026-10-10-1791623160555/AUDIT-STAGE-011.md",
+          "exists": true
+        },
+        {
+          "target": "../../web/test-results/final-core-blank-2026-10-10-1791623160555/AUDIT-DATA-CHAIN.md",
+          "exists": true
+        },
+        {
+          "target": "../../web/test-results/reliability-verified-empty-2026-10-10-1791617868526/AUDIT-PART-3.md",
+          "exists": true
+        },
+        {
+          "target": "../../web/test-results/reliability-complete-final-empty-2026-10-09-1791615468937/FEEDBACK-ACTION-FAILURE-AUDIT.md",
+          "exists": true
+        },
+        {
+          "target": "../../web/test-results/final-core-blank-2026-10-10-1791623160555/AUDIT-DATA-CHAIN.md",
+          "exists": true
+        },
+        {
+          "target": "../../CURRENT_PROGRESS_AND_DIFFICULTIES.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "path": "docs/research/2026-10-27-ai-teaching-worked-examples.md",
+      "sha256": "9dce4ca6e16bc8657e3a4a18865419e06cfddbf71bbb2d4bfee058d1a70c0af0",
+      "local_links": [
+        {
+          "target": "2026-10-27-ai-teaching-research.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "path": "docs/research/2026-10-27-ai-teaching-evaluation-protocol.md",
+      "sha256": "4bc19eeb96bbc63aeafdf28f2b7e310ee6f66334fd6171546adf848729821d93",
+      "local_links": [
+        {
+          "target": "2026-10-27-ai-teaching-research.md",
+          "exists": true
+        },
+        {
+          "target": "2026-10-27-ai-teaching-worked-examples.md",
+          "exists": true
+        }
+      ]
+    }
+  ],
+  "missing_local_links": [],
+  "example_checks": {
+    "M1_constant_inner_values": [
+      "2",
+      "2",
+      "2",
+      "2",
+      "2",
+      "2"
+    ],
+    "M2_squared_inner_values": [
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1"
+    ],
+    "M4_constant_outer_inner_at_limit": [
+      "1",
+      "1",
+      "1",
+      "1",
+      "1",
+      "1"
+    ],
+    "M5_nonconstant_outer_near_limit_example": {
+      "t": "1/10",
+      "F(t)=1+t": "11/10"
+    },
+    "M6_exhaustive_truth_table": [
+      {
+        "H": false,
+        "C": false,
+        "H_implies_C": true,
+        "H_and_notC_implies_C": true
+      },
+      {
+        "H": false,
+        "C": true,
+        "H_implies_C": true,
+        "H_and_notC_implies_C": true
+      },
+      {
+        "H": true,
+        "C": false,
+        "H_implies_C": false,
+        "H_and_notC_implies_C": false
+      },
+      {
+        "H": true,
+        "C": true,
+        "H_implies_C": true,
+        "H_and_notC_implies_C": true
+      }
+    ]
+  },
+  "limits": [
+    "Finite rational substitution does not prove a general limit theorem; the report gives algebraic arguments and a textbook source.",
+    "Truth-table check is exhaustive only for the stated two-proposition identity.",
+    "No real AI provider comparison, learner trial, expert certification, or database mutation was performed.",
+    "Subagent review is editorial checking by AI, not independent human subject-matter certification."
+  ]
+}
