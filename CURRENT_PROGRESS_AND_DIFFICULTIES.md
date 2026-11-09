@@ -2,6 +2,16 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第四批已发布[草稿PR #4](https://github.com/VivianAnnsesta/learningnode/pull/4)，首轮源HEAD `3b9dd8dada5f21b6edfa2788e9c489ada64ef364`。两套[专项PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42600823733)/[专项push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42600769136)均11文件/178测试及13页面通过；两套完整unit均113文件/968测试通过，含新13项SQLite/HTTP及2项迁移。完整[push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42600769078)页面23过/9原配置跳过/1失败，[PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42600823938)22过/9跳过/2失败，desktop均未执行，当前不合并。旧分页用例删除主题后仍期待静默清空条件，与ADR0030冲突，正改为验证失效条件保留/空结果、用户明确清除后再执行原分页与数据不变断言；PR另有探索入口URL原5秒断言失败，正读取真实trace核因，不放宽门禁或重跑旧失败。
+
+官方29空白seed已从push专项工件13666285106取回：ZIP SHA256 `d8c9e3c9cf85220eb1cff84a5557b3b8529852d53a8c9c3c399d95b264e58bcb`等于工件digest，绑定上述run/head；seed SHA256 `0ade6591a708733d12adc28a9136968ed5c9f817f69651edc42b2799e1d107c9`、495616字节等于官方报告。26业务表全空，29个迁移checksum与远端LF Git blob逐项相符，SavedKnowledgeView七字段/版本默认1/无外键、aliases默认[]、FK0/integrity ok；root另用内存SQLite独立核验。原28 seed保留在ignored后已复制官方29原字节到源码，尚待增量发布；真实用户库/原index/旧迁移未变。失败日志及哈希索引在 `web/test-results/knowledge-views-2026-11-09/`，官方工件和独立核验在 `web/test-results/saved-views-migration-2026-11-09/official-seed-42600769136/`。
+
+PR浏览器官方工件13665439670已核验ZIP digest后读取：真实探索POST成功并携带正确记录/修订/问题/returnTo，目标页面GET为200；URL断言最后采样仍是记录页，紧接失败后的frame已是该POST创建的会话URL。trace支持导航/冷编译与5秒采样重叠，未完成的会话API请求不算失败响应，也不据此声称无限期正常。回归补充点击前注册精确创建回应及对应会话页面回应、校验200并等待页面响应结束，再执行原5秒URL断言；保留60秒总门、来源修订/返回和删除关系数据断言，生产代码不变。两个页面文件独立TypeScript、full-product定向ESLint及全项目encoding通过；此修复与失效主题回归尚待新头实际CI。
+
+### 第四批过程记录
+
+以下保留对应提交当时状态；最新失败、seed与待验以上方源HEAD记录为准。
+
 第四批依据[ADR 0030](docs/adr/0030-saved-knowledge-views-and-date-filters.md)实现来源/日期筛选、命名保存检索视图和只读显示字段。目标/当前差异：公共合同、配置模型/CAS、界面及回归已接通，尚未完成本批真实SQLite、迁移、页面或桌面验收；日期指记录创建/更新时间，视图不复制内容或改变学习事实。真实用户库、原index和旧迁移不动；旧27→28回归固定历史边界，新28→29保真及官方29 seed仍待CI，不复用上一批成功覆盖本批未验证状态。
 
 本批全项目typecheck/lint/encoding、Prisma schema validate及脚本/YAML静态检查通过；6个纯文件136/136通过，含58公共配置/日期和33导航规则，新增4条页面文件独立TypeScript通过。UI六组合成API交互及两张已目视检查截图在 `web/test-results/obsidian-views-2026-11-09/ui-preview/`，覆盖点击时配置快照、迟到打开保护、双CAS、草稿领域、跨日重置和菜单错误隔离；另有外部删除404后主动刷新列表的独立交互及第三张截图通过，pageerror为0。root/协作审读新增页面测试后补了删除冲突前的菜单就绪等待，保持原断言/时限；这些仍不是真实数据库/E2E证据。

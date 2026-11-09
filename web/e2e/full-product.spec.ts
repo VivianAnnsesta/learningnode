@@ -16,7 +16,15 @@ test('分页读取：较早学习与主题记录能从真实页面找到，不�
   const before={sessions:await db.nodeTeachingSession.count(),records:await db.knowledgePoint.count(),ai:await db.aiCallLog.count()};
   await page.goto('/learning/sessions');await expect(page.getByRole('link',{name:`分页旧学习 ${key} 0`,exact:true})).toHaveCount(0);await page.getByRole('button',{name:'继续查看更早的学习',exact:true}).click();await expect(page.getByRole('link',{name:`分页旧学习 ${key} 0`,exact:true})).toBeVisible();
   await page.goto('/learning/knowledge');await expect(page.getByRole('link',{name:`分页旧记录 ${key} 0`,exact:true})).toHaveCount(0);await page.getByLabel('筛选主题').selectOption(group.id);await expect(page.getByRole('link',{name:`分页旧记录 ${key} 0`,exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'删除主题，保留记录',exact:true}).click();await expect(page.getByLabel('筛选主题')).toHaveValue('');await page.getByRole('button',{name:'继续查看更早的记录',exact:true}).click();await expect(page.getByRole('link',{name:`分页旧记录 ${key} 0`,exact:true})).toBeVisible();
+  const deletedTopic=page.waitForResponse(r=>r.request().method()==='DELETE'&&new URL(r.url()).pathname===`/api/knowledge-collections/${group.id}`);
+  await page.getByRole('button',{name:'删除主题，保留记录',exact:true}).click();expect((await deletedTopic).status()).toBe(200);
+  await expect(page.getByLabel('筛选主题')).toHaveValue(group.id);
+  const recordList=page.getByRole('region',{name:'个人记录列表'});
+  await expect(recordList.getByText(/^条件不可用：/)).toBeVisible();
+  await expect(recordList.getByRole('link',{name:`分页旧记录 ${key} 0`,exact:true})).toHaveCount(0);
+  await expect(recordList.getByRole('button',{name:'继续查看更早的记录',exact:true})).toHaveCount(0);
+  await page.getByLabel('筛选主题').selectOption('');
+  await page.getByRole('button',{name:'继续查看更早的记录',exact:true}).click();await expect(page.getByRole('link',{name:`分页旧记录 ${key} 0`,exact:true})).toBeVisible();
   expect(await db.nodeTeachingSession.count()).toBe(before.sessions);expect(await db.knowledgePoint.count()).toBe(before.records);expect(await db.aiCallLog.count()).toBe(before.ai);
 });
 test('路线任务：反馈实际活动、输入恢复、保存与完成分开',async({page})=>{
@@ -86,8 +94,19 @@ test('个人记录：独立保存、修订、主题和普通关系可使用',asy
   const relation=await db.knowledgeGraphEdge.findFirstOrThrow({where:{fromKnowledgePointId:id,toKnowledgePointId:mathRecord.id}});expect(relation.status).toBe('confirmed');
   await page.getByText('修订联系说明',{exact:true}).click();await page.getByLabel('修订联系：公共空间的疑问与极值与边界').fill('只作结构类比，需要分别验证各领域条件。');await page.getByRole('button',{name:'确认修改联系说明'}).click();await expect.poll(async()=>(await db.knowledgeGraphEdge.findUniqueOrThrow({where:{id:relation.id}})).detail).toBe('只作结构类比，需要分别验证各领域条件。');
   await page.reload();await expect(page.getByText(/只作结构类比，需要分别验证/).first()).toBeVisible();
-  await page.getByLabel('记录探索问题').fill('为什么比较不能替代证明？');await page.getByRole('button',{name:'开始探索并保留记录来源'}).click();await expect(page).toHaveURL(/learning\/sessions\//);
-  const session=await db.nodeTeachingSession.findUniqueOrThrow({where:{id:page.url().split('/').at(-1)!}});expect(session.nodeId).toBeNull();expect(JSON.parse(session.contextJson).record.revisionId).toBe(revisions[1].id);
+  await page.getByLabel('记录探索问题').fill('为什么比较不能替代证明？');
+  const explorationCreated=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/learning-sessions'&&r.request().postDataJSON()?.knowledgePointId===id);
+  const explorationPage=page.waitForResponse(async r=>{
+    if(r.request().method()!=='GET'||!new URL(r.url()).pathname.startsWith('/learning/sessions/'))return false;
+    const created=(await(await explorationCreated).json()).session;
+    return new URL(r.url()).pathname===`/learning/sessions/${created.id}`;
+  });
+  await page.getByRole('button',{name:'开始探索并保留记录来源'}).click();
+  const createdResponse=await explorationCreated;expect(createdResponse.status()).toBe(200);
+  const createdSession=(await createdResponse.json()).session;
+  const loadedExploration=await explorationPage;expect(loadedExploration.status()).toBe(200);expect(await loadedExploration.finished()).toBeNull();
+  await expect(page).toHaveURL(/learning\/sessions\//);
+  const session=await db.nodeTeachingSession.findUniqueOrThrow({where:{id:page.url().split('/').at(-1)!}});expect(session.id).toBe(createdSession.id);expect(session.nodeId).toBeNull();expect(JSON.parse(session.contextJson).record.revisionId).toBe(revisions[1].id);
   await page.getByRole('link',{name:'返回之前的学习位置'}).click();await expect(page).toHaveURL(new RegExp(id));
   await page.getByRole('button',{name:'删除联系，保留两条记录'}).click();await expect.poll(()=>db.knowledgeGraphEdge.count({where:{id:relation.id}})).toBe(0);
   expect(await db.knowledgePoint.count({where:{id:{in:[id,mathRecord.id]}}})).toBe(2);
