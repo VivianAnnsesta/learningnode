@@ -26,6 +26,18 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm install --global npm@11.17.0
       - run: npm ci
+      - run: npx prisma generate
+      - run: node scripts/create-seed-database.js
+        id: empty_seed
+      - uses: actions/upload-artifact@v6
+        if: steps.empty_seed.outcome == 'success'
+        with:
+          name: versioned-empty-seed
+          path: |
+            web/prisma/seed.db
+            web/test-results/empty-seed-validation.json
+          if-no-files-found: error
+          retention-days: 7
       - run: npm run audit:release
       - run: npm run lint
       - run: npm run typecheck

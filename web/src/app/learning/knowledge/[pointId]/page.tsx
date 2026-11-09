@@ -8,16 +8,18 @@ import { RecordContextPanel } from "../../../components/RecordContextPanel";
 import { RecordNeighborhood } from "../../../components/RecordNeighborhood";
 import { RecordReferencePicker } from "../../../components/RecordReferencePicker";
 import { RecordReferencePreview } from "../../../components/RecordReferencePreview";
-import { isRecordSnapshot, readRecordJson, recordKindLabels, recordReferenceKey, recordReferenceLabel, recordSourceInputs, recordSourceLabels, relationKindLabels, sameRecordSource, type RecordChoice, type RecordSnapshot } from "../../../components/recordDiscoveryTypes";
+import { RecordMentionsPanel } from "../../../components/RecordMentionsPanel";
+import { isRecordSnapshot, readRecordJson, recordAliasesInput, recordKindLabels, recordReferenceKey, recordReferenceLabel, recordSourceInputs, recordSourceLabels, relationKindLabels, sameRecordSource, type RecordChoice, type RecordSnapshot } from "../../../components/recordDiscoveryTypes";
 import { knowledgeRecordHref, knowledgeReturnView } from "../../../components/knowledgeNavigation";
 
 type Point = {
   id: string; title: string; body: string; kind: string; currentRevisionId: string;
   sourceType: string; sources: unknown[]; domainIds: string[];
+  aliases?: string[];
   nodes: { id: string; domainId: string; title: string }[];
   collections: { id: string; title: string }[];
 };
-type Revision = { id: string; sequence: number; title: string; body: string; sourceType: string; sources: unknown[]; createdAt: string };
+type Revision = { id: string; sequence: number; title: string; body: string; sourceType: string; sources: unknown[]; createdAt: string; aliases?: string[] };
 type Relation = { id: string; fromTitle: string; toTitle: string; type: string; detail: string; status: string; aiAssessment: string | null };
 type PointData = { knowledgePoint: Point; revisions: Revision[]; relations: Relation[] };
 type Group = { id: string; title: string };
@@ -38,6 +40,7 @@ function KnowledgePageContent() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [aliasesText, setAliasesText] = useState("");
   const [kind, setKind] = useState("note");
   const [draftRevisionId, setDraftRevisionId] = useState("");
   const [draftSources, setDraftSources] = useState<unknown[]>([]);
@@ -63,6 +66,7 @@ function KnowledgePageContent() {
 
   const hydrateDraft = (record: Point) => {
     setTitle(record.title); setBody(record.body); setKind(record.kind);
+    setAliasesText((record.aliases || []).join("\n"));
     setDraftRevisionId(record.currentRevisionId); setDraftSources(record.sources);
     setSavedSources(record.sources); setSourcesChanged(false);
   };
@@ -136,6 +140,8 @@ function KnowledgePageContent() {
       <SectionPanel aria-label="修订个人记录">
         <h2 className="text-xl">修订个人记录</h2>
         <input aria-label="记录标题" className="workshop-input w-full" disabled={unavailable} value={title} onChange={event => setTitle(event.target.value)} />
+        <label className="block">别名（每行一个，可选）<textarea aria-label="记录别名" className="workshop-input mt-2 min-h-20 w-full" rows={3} disabled={unavailable} value={aliasesText} onChange={event => setAliasesText(event.target.value)} placeholder={"例如：conditional probability\nCP"} /></label>
+        <p className="text-sm">最多20个别名，每个最多80个字符。修改后需要确认保存；清空后保存会移除当前别名，旧修订仍保留。</p>
         <textarea aria-label="修订记录内容" className="workshop-input min-h-40 w-full" disabled={unavailable} value={body} onChange={event => setBody(event.target.value)} />
         <select aria-label="记录类型" className="workshop-input" disabled={unavailable} value={kind} onChange={event => setKind(event.target.value)}>{Object.entries(recordKindLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         <details onToggle={event => setPickerOpen(event.currentTarget.open)}><summary>添加记录引用</summary>{pickerOpen && <RecordReferencePicker key={id} pointId={id} selected={draftRecords} disabled={unavailable} onAdd={addSource} onPendingChange={setPickerHashing} />}</details>
@@ -144,17 +150,18 @@ function KnowledgePageContent() {
           return <article key={key} aria-label={`草稿引用：${source.title} · ${range}`} className="rounded-lg border p-3"><p>{source.title} · {range} · {isSaved ? "已有引用" : "新增引用，尚未保存"}</p><details><summary>{source.selector ? "预览所选段落原文" : "预览所选修订原文"}</summary><RecordReferencePreview source={source} /></details>{!isSaved && <button className="underline" disabled={unavailable} onClick={() => setDraftSources(previous => previous.filter(value => !isRecordSnapshot(value) || recordReferenceKey(value) !== key))}>取消新增引用“{source.title}”{source.selector ? `的${range}` : ""}</button>}</article>;
         })}</div>
         <ActionButton disabled={unavailable || pickerHashing || !title.trim() || !body.trim()} onClick={async () => {
-          let sources;
-          try { sources = sourcesChanged ? recordSourceInputs(draftSources, savedSources) : undefined; }
+          let sources, aliases;
+          try { aliases = recordAliasesInput(aliasesText); sources = sourcesChanged ? recordSourceInputs(draftSources, savedSources) : undefined; }
           catch (cause) { setError(cause instanceof Error ? cause.message : "无法保存引用，请回看最新来源。"); return; }
           const sourceType = point.sourceType === "accepted_ai" || point.sourceType === "excerpt" ? point.sourceType : "user";
-          const result = await mutate(`/api/knowledge-points/${encodeURIComponent(id)}`, { title, body, kind, sourceType, ...(sourceType === "accepted_ai" ? { acceptAiContent: true } : {}), expectedRevisionId: draftRevisionId, ...(sources ? { sources } : {}) }, "PATCH");
+          const result = await mutate(`/api/knowledge-points/${encodeURIComponent(id)}`, { title, body, kind, aliases, sourceType, ...(sourceType === "accepted_ai" ? { acceptAiContent: true } : {}), expectedRevisionId: draftRevisionId, ...(sources ? { sources } : {}) }, "PATCH");
           if (result && currentId.current === id) { hydrateDraft(result.knowledgePoint); setMessage("已保存新修订，原内容和引用快照仍可回看。"); }
         }}>确认保存新修订</ActionButton>
         <p>当前内容来源：{recordSourceLabels[point.sourceType] || "来源未注明"}。添加引用和保存修订不会完成学习任务或创建语义联系。</p>
+        <p className="text-sm">当前已保存别名：{point.aliases?.join("、") || "无"}</p>
         {draftRevisionId !== point.currentRevisionId && <div className="space-y-3 rounded-lg border border-amber-300 p-3">
           <p role="status" className="text-amber-800">记录已有较新修订，你的编辑草稿仍保留。请比较并合并内容，再明确选择新的保存基础。</p>
-          <details><summary>比较最新保存的内容</summary><p>{point.title}</p><p className="whitespace-pre-wrap">{point.body}</p></details>
+          <details><summary>比较最新保存的内容</summary><p>{point.title}</p><p>最新别名：{point.aliases?.join("、") || "无"}</p><p className="whitespace-pre-wrap">{point.body}</p></details>
           <ActionButton variant="secondary" disabled={unavailable} onClick={() => {
             const sources = [...point.sources];
             for (const source of draftSources) {
@@ -163,11 +170,12 @@ function KnowledgePageContent() {
             }
             if (sources.length > 30) { setError("合并后来源超过30个，请先取消不需要的新增引用。"); return; }
             setDraftRevisionId(point.currentRevisionId); setDraftSources(sources); setSavedSources(point.sources); setSourcesChanged(true);
-            setMessage("正文草稿和新增引用已保留，已有来源采用最新修订。请检查后保存。");
+            setMessage("正文、别名草稿和新增引用已保留，已有来源采用最新修订。请检查后保存。");
           }}>已合并，使用最新修订作为保存基础</ActionButton>
         </div>}
       </SectionPanel>
       <RecordContextPanel key={`context-${id}`} pointId={id} refresh={refresh} returnTo={sourceView} />
+      <RecordMentionsPanel key={`mentions-${id}`} pointId={id} revisionId={point.currentRevisionId || null} refresh={refresh} returnTo={sourceView} />
       <RecordNeighborhood key={`neighborhood-${id}`} pointId={id} refresh={refresh} returnTo={sourceView} />
       <SectionPanel>
         <h2 className="text-xl">引用与主题</h2>
@@ -200,7 +208,7 @@ function KnowledgePageContent() {
       </SectionPanel>
       <SectionPanel>
         <h2 className="text-xl">修订与原始来源</h2>
-        {revisions.map(revision => <details key={revision.id}><summary>修订 {revision.sequence} · {revision.title} · {revision.sourceType}</summary><p className="whitespace-pre-wrap">{revision.body}</p><p>{new Date(revision.createdAt).toLocaleString()}</p>{revision.sources.filter(isRecordSnapshot).map(source => <article key={recordReferenceKey(source)} aria-label={`历史引用：${source.title} · ${recordReferenceLabel(source)}`} className="my-3 rounded-lg border p-3"><p>引用：{source.title} · {recordReferenceLabel(source)}</p><RecordReferencePreview source={source} /><Link className="underline" href={knowledgeRecordHref(source.knowledgePointId,sourceView)}>打开记录当前版本</Link></article>)}<details><summary>查看完整来源快照</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(revision.sources, null, 2)}</pre></details></details>)}
+        {revisions.map(revision => <details key={revision.id}><summary>修订 {revision.sequence} · {revision.title} · {revision.sourceType}</summary><p className="whitespace-pre-wrap">{revision.body}</p><p>该修订别名：{revision.aliases?.join("、") || "无"}</p><p>{new Date(revision.createdAt).toLocaleString()}</p>{revision.sources.filter(isRecordSnapshot).map(source => <article key={recordReferenceKey(source)} aria-label={`历史引用：${source.title} · ${recordReferenceLabel(source)}`} className="my-3 rounded-lg border p-3"><p>引用：{source.title} · {recordReferenceLabel(source)}</p><RecordReferencePreview source={source} /><Link className="underline" href={knowledgeRecordHref(source.knowledgePointId,sourceView)}>打开记录当前版本</Link></article>)}<details><summary>查看完整来源快照</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(revision.sources, null, 2)}</pre></details></details>)}
       </SectionPanel>
     </>}
   </AppShell>;

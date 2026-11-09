@@ -14,28 +14,45 @@ import { historyRecordSnapshot } from "./historyService";
 import { listPage } from "./listPage";
 import { titleOrderedPersonalKnowledgeIds } from "./personalKnowledgeDiscovery";
 import { isRecordReferenceSnapshot, recordReferenceKey, verifyParagraphSelector } from "./recordReferences";
+import { compareRecordIds, compareRecordTitles, matchRecordSearch, readRecordAliases, recordAliases } from "./recordNames";
 const kinds = ["note", "question", "example", "experience", "excerpt", "understanding"];
 const symmetric = new Set(["related", "analogy", "contrast"]);
 const contentInclude = { currentRevision: true, nodeLinks: { include: { node: { select: { id: true, domainId: true, title: true } } } }, memberships: { include: { groupNode: { select: { id: true, title: true, domainId: true } } } }, graphNodes: { select: { domainId: true } } } satisfies Prisma.KnowledgePointInclude;
 function present(point: Prisma.KnowledgePointGetPayload<{
     include: typeof contentInclude;
-}>) { return { id: point.id, domainId: point.domainId, title: point.currentRevision?.title || point.title, body: point.currentRevision?.body || point.userUnderstanding || point.coreEssence || "", kind: point.recordKind, currentRevisionId: point.currentRevisionId, sourceType: point.currentRevision?.sourceType || "legacy_unknown", sources: parseSaved(point.currentRevision?.sourcesJson, []), createdAt: point.createdAt, updatedAt: point.updatedAt, nodes: point.nodeLinks.map(x => x.node), collections: point.memberships.map(x => x.groupNode), domainIds: [...new Set([point.domainId, ...point.nodeLinks.map(x => x.node.domainId), ...point.graphNodes.map(x => x.domainId), ...point.memberships.map(x => x.groupNode.domainId)].filter((x): x is string => !!x))] }; }
+}>) { return { id: point.id, domainId: point.domainId, title: point.currentRevision ? point.currentRevision.title : point.title, body: point.currentRevision ? point.currentRevision.body : point.userUnderstanding || point.coreEssence || "", aliases: readRecordAliases(point.currentRevision?.aliasesJson), kind: point.recordKind, currentRevisionId: point.currentRevisionId, sourceType: point.currentRevision?.sourceType || "legacy_unknown", sources: parseSaved(point.currentRevision?.sourcesJson, []), createdAt: point.createdAt, updatedAt: point.updatedAt, nodes: point.nodeLinks.map(x => x.node), collections: point.memberships.map(x => x.groupNode), domainIds: [...new Set([point.domainId, ...point.nodeLinks.map(x => x.node.domainId), ...point.graphNodes.map(x => x.domainId), ...point.memberships.map(x => x.groupNode.domainId)].filter((x): x is string => !!x))] }; }
 export async function listPersonalKnowledge(q = "", domainId?: string, options:{offset?:unknown;limit?:unknown;collectionId?:string;kind?:string;sort?:string}={}) {
     const page=listPage(options.offset,options.limit,300);
     if(options.kind&&!kinds.includes(options.kind))throw new NodeTeachingError("记录类型筛选无效。");
     if(options.sort&&!["updated_desc","title_asc"].includes(options.sort))throw new NodeTeachingError("记录排序方式无效。");
-    const where:Prisma.KnowledgePointWhereInput={...(domainId?{OR:[{domainId},{nodeLinks:{some:{node:{domainId}}}},{graphNodes:{some:{domainId}}},{memberships:{some:{groupNode:{domainId}}}}]}:{}),...(options.collectionId?{memberships:{some:{groupNodeId:options.collectionId}}}:{}),...(options.kind?{recordKind:options.kind}:{}),...(q?{AND:[{OR:[{currentRevision:{title:{contains:q}}},{currentRevision:{body:{contains:q}}},{title:{contains:q}}]}]}:{})};
+    const where:Prisma.KnowledgePointWhereInput={...(domainId?{OR:[{domainId},{nodeLinks:{some:{node:{domainId}}}},{graphNodes:{some:{domainId}}},{memberships:{some:{groupNode:{domainId}}}}]}:{}),...(options.collectionId?{memberships:{some:{groupNodeId:options.collectionId}}}:{}),...(options.kind?{recordKind:options.kind}:{})};
+    if(q)return prisma.$transaction(async tx=>{
+        const matches:{id:string;title:string;updatedAt:Date}[]=[];
+        let cursor:string|undefined;
+        for(;;){
+            const rows=await tx.knowledgePoint.findMany({where:{AND:[where,...(cursor?[{id:{gt:cursor}}]:[])]},orderBy:{id:"asc"},take:128,select:{id:true,title:true,userUnderstanding:true,coreEssence:true,updatedAt:true,currentRevision:{select:{title:true,body:true,aliasesJson:true}}}});
+            for(const row of rows){
+                const content={title:row.currentRevision?row.currentRevision.title:row.title,body:row.currentRevision?row.currentRevision.body:row.userUnderstanding||row.coreEssence||"",aliases:readRecordAliases(row.currentRevision?.aliasesJson)};
+                if(matchRecordSearch(content,q).matches)matches.push({id:row.id,title:content.title,updatedAt:row.updatedAt});
+            }
+            if(rows.length<128)break;
+            cursor=rows[rows.length-1].id;
+        }
+        const ids=matches.sort((a,b)=>(options.sort==="title_asc"?compareRecordTitles(a.title,b.title):b.updatedAt.getTime()-a.updatedAt.getTime())||compareRecordIds(a.id,b.id)).slice(page.offset,page.offset+page.limit).map(row=>row.id);
+        const points=await tx.knowledgePoint.findMany({where:{id:{in:ids}},include:contentInclude}),byId=new Map(points.map(point=>[point.id,point]));
+        return {knowledgePoints:ids.map(id=>{const point=present(byId.get(id)!);return{...point,matchedAliases:matchRecordSearch(point,q).matchedAliases};}),page:{...page,total:matches.length,nextOffset:page.offset+ids.length<matches.length?page.offset+ids.length:null}};
+    },{timeout:30000});
     if(options.sort==="title_asc")return prisma.$transaction(async tx=>{
-        const ids=await titleOrderedPersonalKnowledgeIds(q,domainId,{...page,collectionId:options.collectionId,kind:options.kind},tx);
+        const ids=await titleOrderedPersonalKnowledgeIds(domainId,{...page,collectionId:options.collectionId,kind:options.kind},tx);
         const [points,total]=await Promise.all([tx.knowledgePoint.findMany({where:{id:{in:ids.map(row=>row.id)}},include:contentInclude}),tx.knowledgePoint.count({where})]);
         const byId=new Map(points.map(point=>[point.id,point]));
-        return {knowledgePoints:ids.map(row=>present(byId.get(row.id)!)),page:{...page,total,nextOffset:page.offset+points.length<total?page.offset+points.length:null}};
+        return {knowledgePoints:ids.map(row=>({...present(byId.get(row.id)!),matchedAliases:[]})),page:{...page,total,nextOffset:page.offset+points.length<total?page.offset+points.length:null}};
     });
     const [points,total]=await prisma.$transaction([prisma.knowledgePoint.findMany({where,include:contentInclude,orderBy:[{updatedAt:"desc"},{id:"asc"}],skip:page.offset,take:page.limit}),prisma.knowledgePoint.count({where})]);
-    return {knowledgePoints:points.map(present),page:{...page,total,nextOffset:page.offset+points.length<total?page.offset+points.length:null}};
+    return {knowledgePoints:points.map(point=>({...present(point),matchedAliases:[]})),page:{...page,total,nextOffset:page.offset+points.length<total?page.offset+points.length:null}};
 }
 export async function getPersonalKnowledge(id: string) { const p = await prisma.knowledgePoint.findUnique({ where: { id }, include: contentInclude }); if (!p)
-    throw new NodeTeachingError("个人记录不存在。", 404); const revisions = await prisma.knowledgePointRevision.findMany({ where: { knowledgePointId: id }, orderBy: { sequence: "desc" } }); const relations = await prisma.knowledgeGraphEdge.findMany({ where: { OR: [{ fromKnowledgePointId: id }, { toKnowledgePointId: id }] }, include: { fromKnowledgePoint: { include: { currentRevision: true } }, toKnowledgePoint: { include: { currentRevision: true } } } }); return { knowledgePoint: present(p), revisions: revisions.map(r => ({ ...r, sources: parseSaved(r.sourcesJson, []) })), relations: relations.map(relationView) }; }
+    throw new NodeTeachingError("个人记录不存在。", 404); const revisions = await prisma.knowledgePointRevision.findMany({ where: { knowledgePointId: id }, orderBy: { sequence: "desc" } }); const relations = await prisma.knowledgeGraphEdge.findMany({ where: { OR: [{ fromKnowledgePointId: id }, { toKnowledgePointId: id }] }, include: { fromKnowledgePoint: { include: { currentRevision: true } }, toKnowledgePoint: { include: { currentRevision: true } } } }); return { knowledgePoint: present(p), revisions: revisions.map(r => ({ ...r, aliases: readRecordAliases(r.aliasesJson), sources: parseSaved(r.sourcesJson, []) })), relations: relations.map(relationView) }; }
 async function sourceSnapshots(v: unknown) {
     if (v === undefined)
         return [];
@@ -104,10 +121,10 @@ async function sourceSnapshots(v: unknown) {
         return true;
     });
 }
-function recordInput(v: unknown) { const d = teachingObject(v); const kind = String(d.kind || "understanding"); if (!kinds.includes(kind))
+function recordInput(v: unknown) { const d = teachingObject(v); let aliases:string[];try{aliases=recordAliases(d.aliases);}catch(error){throw new NodeTeachingError(error instanceof Error?error.message:"别名列表无效。");} const kind = String(d.kind || "understanding"); if (!kinds.includes(kind))
     throw new NodeTeachingError("记录类型无效。"); const sourceType = String(d.sourceType || "user"); if (!["user", "accepted_ai", "excerpt"].includes(sourceType))
     throw new NodeTeachingError("来源分类无效。"); if (sourceType === "accepted_ai" && d.acceptAiContent !== true)
-    throw new NodeTeachingError("请明确接受 AI 内容后再保存。"); return { d, title: teachingText(d.title, "记录标题", 500), body: teachingText(d.body, "个人内容", 24000), kind, sourceType }; }
+    throw new NodeTeachingError("请明确接受 AI 内容后再保存。"); return { d, title: teachingText(d.title, "记录标题", 500), body: teachingText(d.body, "个人内容", 24000), aliases, kind, sourceType }; }
 async function addReferences(tx: Prisma.TransactionClient, id: string, d: Record<string, unknown>) {
     if (Array.isArray(d.nodeIds)) {
         for (const nodeId of d.nodeIds) {
@@ -129,8 +146,8 @@ async function addReferences(tx: Prisma.TransactionClient, id: string, d: Record
     }
 }
 export async function createPersonalKnowledge(value: unknown) {
-    const {d,title,body,kind,sourceType}=recordInput(value),requestId=teachingText(d.requestId,"保存请求标识",160);
-    const auditId=`record-save:${digest(requestId)}`,inputHash=digest({title,body,kind,sourceType,domainId:d.domainId||null,nodeIds:d.nodeIds||[],domainIds:d.domainIds||[],sessionId:d.sessionId||null,sources:d.sources||[]});
+    const {d,title,body,aliases,kind,sourceType}=recordInput(value),requestId=teachingText(d.requestId,"保存请求标识",160);
+    const auditId=`record-save:${digest(requestId)}`,inputHash=digest({title,body,kind,sourceType,domainId:d.domainId||null,nodeIds:d.nodeIds||[],domainIds:d.domainIds||[],sessionId:d.sessionId||null,sources:d.sources||[],...(aliases.length?{aliases}:{})});
     const prior=await prisma.learningProgress.findUnique({where:{id:auditId}});
     if(prior){const p=parseSaved<{inputHash:string;knowledgePointId:string}>(prior.payloadJson,{} as {inputHash:string;knowledgePointId:string});if(p.inputHash!==inputHash)throw new NodeTeachingError("此保存标识已用于另一份内容。",409);return getPersonalKnowledge(p.knowledgePointId);}
     const sources=await sourceSnapshots(d.sources);
@@ -140,7 +157,7 @@ export async function createPersonalKnowledge(value: unknown) {
         const session=d.sessionId?await tx.nodeTeachingSession.findUnique({where:{id:String(d.sessionId)}}):null;
         if(d.sessionId&&!session)throw new NodeTeachingError("关联学习会话不存在。");
         const point=await tx.knowledgePoint.create({data:{domainId:typeof d.domainId==="string"?d.domainId:null,recordKind:kind,masteryStatus:"seen"}});
-        const revision=await tx.knowledgePointRevision.create({data:{knowledgePointId:point.id,sequence:1,title,body,sourceType,sourcesJson:JSON.stringify(sources)}});
+        const revision=await tx.knowledgePointRevision.create({data:{knowledgePointId:point.id,sequence:1,title,body,aliasesJson:JSON.stringify(aliases),sourceType,sourcesJson:JSON.stringify(sources)}});
         await tx.knowledgePoint.update({where:{id:point.id},data:{currentRevisionId:revision.id}});await addReferences(tx,point.id,d);
         await tx.learningProgress.create({data:{id:auditId,domainId:session?.domainId||point.domainId,nodeId:session?.nodeId||null,status:"record_saved",payloadJson:JSON.stringify({requestId,inputHash,sessionId:session?.id||null,knowledgePointId:point.id,revisionId:revision.id})}});
         return point.id;
@@ -182,10 +199,27 @@ async function revisionSourceSnapshots(id: string, d: Record<string, unknown>) {
     }
     return result;
 }
-export async function revisePersonalKnowledge(id: string, value: unknown) { const { d, title, body, kind, sourceType } = recordInput(value), sources = await revisionSourceSnapshots(id, d); await prisma.$transaction(async (tx) => { const point = await tx.knowledgePoint.findUnique({ where: { id } }); if (!point)
-    throw new NodeTeachingError("个人记录不存在。", 404); if (typeof d.expectedRevisionId !== "string" || point.currentRevisionId !== d.expectedRevisionId)
-    throw new NodeTeachingError("记录已有新修订，请回看并合并自己的内容。", 409); const latest = await tx.knowledgePointRevision.findFirst({ where: { knowledgePointId: id }, orderBy: { sequence: "desc" } }); const r = await tx.knowledgePointRevision.create({ data: { knowledgePointId: id, sequence: (latest?.sequence || 0) + 1, title, body, sourceType, sourcesJson: JSON.stringify(d.sources === undefined ? parseSaved(latest?.sourcesJson, []) : sources) } }); if (!(await tx.knowledgePoint.updateMany({ where: { id, currentRevisionId: d.expectedRevisionId }, data: { currentRevisionId: r.id, recordKind: kind } })).count)
-    throw new NodeTeachingError("另一个窗口已保存新版本。", 409); await addReferences(tx, id, d); }); return getPersonalKnowledge(id); }
+export async function revisePersonalKnowledge(id: string, value: unknown) {
+    const { d, title, body, aliases, kind, sourceType } = recordInput(value), sources = await revisionSourceSnapshots(id, d);
+    await prisma.$transaction(async tx => {
+        const point = await tx.knowledgePoint.findUnique({ where: { id } });
+        if (!point) throw new NodeTeachingError("个人记录不存在。", 404);
+        if (typeof d.expectedRevisionId !== "string" || point.currentRevisionId !== d.expectedRevisionId)
+            throw new NodeTeachingError("记录已有新修订，请回看并合并自己的内容。", 409);
+        const current = await tx.knowledgePointRevision.findFirst({ where: { id: d.expectedRevisionId, knowledgePointId: id } });
+        if (!current) throw new NodeTeachingError("当前修订不存在或不属于这条记录。", 409);
+        const latest = await tx.knowledgePointRevision.findFirst({ where: { knowledgePointId: id }, orderBy: { sequence: "desc" } });
+        const revision = await tx.knowledgePointRevision.create({ data: {
+            knowledgePointId: id, sequence: (latest?.sequence || 0) + 1, title, body, sourceType,
+            aliasesJson: d.aliases === undefined ? current.aliasesJson : JSON.stringify(aliases),
+            sourcesJson: d.sources === undefined ? current.sourcesJson : JSON.stringify(sources)
+        } });
+        if (!(await tx.knowledgePoint.updateMany({ where: { id, currentRevisionId: d.expectedRevisionId }, data: { currentRevisionId: revision.id, recordKind: kind } })).count)
+            throw new NodeTeachingError("另一个窗口已保存新版本。", 409);
+        await addReferences(tx, id, d);
+    });
+    return getPersonalKnowledge(id);
+}
 export async function linkPersonalKnowledge(id: string, value: unknown) { const d = teachingObject(value); if (!await prisma.knowledgePoint.findUnique({ where: { id } }))
     throw new NodeTeachingError("记录不存在。", 404); await prisma.$transaction(tx => addReferences(tx, id, d)); return getPersonalKnowledge(id); }
 export async function deletePersonalKnowledge(id: string, value: unknown) { const d = teachingObject(value); if (d.confirmPermanent !== true)

@@ -2,6 +2,16 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第三批依据[ADR 0029](docs/adr/0029-revisioned-record-aliases-and-mentions.md)实施个人记录别名与记录级未引用提及：别名随不可覆盖修订维护，搜索统一字面Unicode匹配，候选只读其他当前正文并按来源记录计数。新字段、前向迁移、服务/界面及回归已接通，尚未完成本批真实数据库、迁移、页面和桌面验收；不能用第二批成功代替第三批证据。真实用户库和旧迁移不动；当前版本化seed仍保留原27版字节，由CI正式生成/验证28版后取回更新，不能把手工SQL或未通过的生成过程写成正式seed成功。
+
+本批全项目typecheck、lint、encoding通过；名称/来源/导航/别名输入5个纯文件合计67/67通过，新增3条页面文件独立TypeScript检查通过。另有5组合成API浏览器交互和已目视检查截图在 `web/test-results/obsidian-aliases-2026-11-09/ui-preview/`，包括三入口命中提示、候选分页/来源跳转/明确引用、409草稿保留、清空/历史和重试；原mock导航/announcer定位问题保留。这些不能当作新10项SQLite/HTTP、2项迁移或真实E2E已通过。本批React清单审读未见新增异步覆盖草稿、未确认写入或HTML执行问题；真实长库性能、迁移与原生引擎结果继续待CI。
+
+数据支先按 ADR 0005 明确隔离验证顺序：新增前向字段后，在 CI 测试前显式生成client并从版本化baseline/迁移重建空白seed；补充含非空个人修订、多个来源及当前指针的27→28备份优先升级保真。当前旧seed只读核验为27迁移、25业务表全空、FK0、integrity ok。工作区最后一条历史迁移为CRLF，其旧seed checksum与原字节一致而发布树为LF；保留该旧seed和审计，不修改历史SQL或用户库ledger，新seed以规范化发布字节核验。本机AppControl仍阻止原生query engine，SQL-only副本验证与CI真实migrate deploy必须分别记证据，均尚未计作本批通过。
+
+本机数据支已完成generate/validate、全项目静态、4个脚本语法及两workflow YAML检查；原生2项迁移回归在首次请求被query-engine DLL的Application Control阻止，0业务expect执行。正式seed生成器的隔离LF投影尝试在db execute子进程报 `spawn UNKNOWN`，未到生成验证，不把该错误直接归因于DLL。Python只在ignored副本检查新DDL、默认空数组/NULL拒绝、4个旧修订/多段来源/指针及其他业务字段保留、备份与FK0，旧27 ledger不变；明确不是Prisma或正式seed成功。完整证据在 `web/test-results/aliases-migration-2026-11-09/`。引用选择器与新提及接口对无当前修订的历史记录统一显示不可用，不再引导无法兑现的直接保存。
+
+第二批收尾文档源 `98c3826824d624faeb1bfc8a61bf45673bb03f3b` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42582216912)已全部真实成功：847测试、17页面通过/9原配置跳过及完整桌面门禁，代码树相对已验证985源仅2个Markdown不同。第三批共享名称规则初版19项中18过，唯一失败为夹具错置U+E000与全宽A排序；Python SQLite3.49.1实际排序确认UTF8比较器正确，修夹具后19/19。原诊断及JSON在 `web/test-results/record-names-2026-11-09/`；这不是目标Prisma内嵌SQLite的证据，集成套件还须核对目标排序与新迁移。
+
 第二批段落级固定引用已通过本轮既定门禁并合并 GitHub main：[PR #2](https://github.com/VivianAnnsesta/learningnode/pull/2)，合并提交 `4afe2339edf432aa641261805b03fb1133d14cdc`。已验证源 HEAD 为 `98509f11e1d22179496e9ef9af7286049ea501f8`。全文与同修订多个完整段落可同时引用，重复文字按原文位置区分；选择先进入可撤销草稿，明确保存后能从当前/历史/反向引用回看固定原文，源记录后来修订不会移动旧摘录。服务端校验真实修订、完整段落、Unicode与哈希，沿用保留来源、并发冲突和返回原视图边界。
 
 本批[完整 PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42580595104)与[完整 push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42580589498)均真实成功：106文件/847测试，完整页面17通过/9按原配置跳过；Prisma校验、归档旧schema夹具及迁移保真；Electron42.11.16打包、空白seed运行、旧库升级和安全交互均通过，外键违例0。[专项 PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42580595109)与[专项 push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42580589496)均57/57及6/6页面通过。首次详情导航补充精确回应/URL同步后的完整流程两边均通过，原超时和持久化断言保留；旧失败未重跑或抹除，不推断当时未捕获的DOM状态。完整CI实际上传 `full-browser-evidence`，日志及原失败保存在 `web/test-results/paragraph-references-2026-11-08/`。

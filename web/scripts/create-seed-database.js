@@ -1,12 +1,13 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const {
-  checkForeignKeysWithPrisma,
   markHistoricalMigrationsApplied,
   runPrismaDbExecute,
   runPrismaMigrateDeploy
 } = require("./database-lifecycle");
 const { PrismaClient } = require("@prisma/client");
+const { validateEmptySeedDatabase } = require("./seed-validation");
 
 const webRoot = path.resolve(__dirname, "..");
 const seedDatabasePath = path.join(webRoot, "prisma", "seed.db");
@@ -48,35 +49,17 @@ const main = async () => {
     schemaPath,
     prismaCliPath
   });
-  const violations = await checkForeignKeysWithPrisma({
-    userDatabasePath: seedDatabasePath,
-    PrismaClient
-  });
-  if (violations.length > 0) {
-    throw new Error(`Seed database foreign-key check failed with ${violations.length} violation(s).`);
-  }
-
-  const client = new PrismaClient({
-    datasources: { db: { url: `file:${seedDatabasePath.replace(/\\/g, "/")}` } }
-  });
-  try {
-    await client.domain.findMany({
-      take: 1,
-      select: { roadmapDraftJson: true, mapRevision: true }
-    });
-    const counts = await Promise.all([
-      client.domain.count(),
-      client.unit.count(),
-      client.learningNode.count(),
-      client.knowledgePoint.count(),
-      client.knowledgeGraphEdge.count()
-    ]);
-    if (counts.some((count) => count !== 0)) {
-      throw new Error(`Seed database contains user data: ${counts.join(", ")}`);
-    }
-  } finally {
-    await client.$disconnect();
-  }
+  const validation = await validateEmptySeedDatabase({ databasePath: seedDatabasePath, migrationsDirectory, PrismaClient });
+  const reportPath = path.join(webRoot, "test-results", "empty-seed-validation.json");
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+  fs.writeFileSync(reportPath, JSON.stringify({
+    generator: "scripts/create-seed-database.js",
+    sourceCommit: process.env.GITHUB_SHA || null,
+    seedSha256: crypto.createHash("sha256").update(fs.readFileSync(seedDatabasePath)).digest("hex"),
+    seedBytes: fs.statSync(seedDatabasePath).size,
+    ...validation
+  }, null, 2), "utf8");
+  console.log(JSON.stringify({ emptySeedValidation: validation }));
   removeSeedSidecars();
   console.log(`Created empty versioned seed database: ${seedDatabasePath}`);
 };

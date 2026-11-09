@@ -1,4 +1,5 @@
 import { isRecordReferenceSnapshot, paragraphSelectorInput, referenceParagraphs, type RecordReferenceSnapshot } from "../../lib/learning/recordReferences";
+import { recordAliases } from "../../lib/learning/recordNames";
 
 export type RecordSnapshot = RecordReferenceSnapshot;
 export { recordReferenceKey, recordReferenceQuote } from "../../lib/learning/recordReferences";
@@ -10,7 +11,21 @@ export type RecordChoice = {
   kind: string;
   currentRevisionId: string | null;
   sourceType: string;
+  aliases?: string[];
+  matchedAliases?: string[];
 };
+
+/** Form input is one display name per line; matching and normalization belong to the API. */
+export function recordAliasesInput(text: string): string[] {
+  const aliases = text.split(/\r\n|\r|\n/).map(alias => alias.trim()).filter(Boolean);
+  recordAliases(aliases);
+  return aliases;
+}
+
+export function recordAliasSummary(record: Pick<RecordChoice, "aliases" | "matchedAliases">): string | null {
+  if (record.matchedAliases?.length) return `匹配别名：${record.matchedAliases.join("、")}`;
+  return record.aliases?.length ? `别名：${record.aliases.join("、")}` : null;
+}
 
 export const recordKindLabels: Record<string, string> = {
   note: "笔记", question: "疑问", understanding: "理解",

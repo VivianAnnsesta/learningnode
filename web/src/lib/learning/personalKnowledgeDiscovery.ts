@@ -3,6 +3,7 @@ import { prisma } from "../prisma";
 import { listPage } from "./listPage";
 import { NodeTeachingError } from "./nodeTeaching";
 import { isRecordReferenceSnapshot, type RecordReferenceSnapshot } from "./recordReferences";
+import { compareRecordIds, readRecordAliases, recordMention, recordNames } from "./recordNames";
 export type { RecordReferenceSnapshot } from "./recordReferences";
 
 function recordReferences(json: string | null | undefined): RecordReferenceSnapshot[] {
@@ -135,9 +136,8 @@ export async function getPersonalKnowledgeNeighborhood(id: string, rawDepth?: un
   });
 }
 
-export async function titleOrderedPersonalKnowledgeIds(q: string, domainId: string | undefined, options: { offset: number; limit: number; collectionId?: string; kind?: string }, client: Pick<Prisma.TransactionClient, "$queryRaw"> = prisma) {
+export async function titleOrderedPersonalKnowledgeIds(domainId: string | undefined, options: { offset: number; limit: number; collectionId?: string; kind?: string }, client: Pick<Prisma.TransactionClient, "$queryRaw"> = prisma) {
   const filters: Prisma.Sql[] = [];
-  if (q) filters.push(Prisma.sql`(r.title LIKE '%' || ${q} || '%' OR r.body LIKE '%' || ${q} || '%' OR p.title LIKE '%' || ${q} || '%')`);
   if (options.kind) filters.push(Prisma.sql`p.recordKind = ${options.kind}`);
   if (options.collectionId) filters.push(Prisma.sql`EXISTS (SELECT 1 FROM KnowledgeGraphMembership m WHERE m.knowledgePointId = p.id AND m.groupNodeId = ${options.collectionId})`);
   if (domainId) filters.push(Prisma.sql`(p.domainId = ${domainId}
@@ -147,6 +147,37 @@ export async function titleOrderedPersonalKnowledgeIds(q: string, domainId: stri
   return client.$queryRaw<{ id: string }[]>(Prisma.sql`
     SELECT p.id FROM KnowledgePoint p LEFT JOIN KnowledgePointRevision r ON r.id = p.currentRevisionId
     WHERE ${filters.length ? Prisma.join(filters, " AND ") : Prisma.sql`1=1`}
-    ORDER BY COALESCE(NULLIF(r.title, ''), p.title) COLLATE NOCASE ASC, p.id ASC
+    ORDER BY (CASE WHEN r.id IS NOT NULL THEN r.title ELSE p.title END) COLLATE NOCASE ASC, p.id ASC
     LIMIT ${options.limit} OFFSET ${options.offset}`);
+}
+
+export async function getPersonalKnowledgeMentions(id: string, options: { offset?: unknown; limit?: unknown } = {}) {
+  const page = listPage(options.offset, options.limit, 20);
+  return prisma.$transaction(async tx => {
+    const point = await tx.knowledgePoint.findUnique({ where: { id }, select: { id: true, title: true, currentRevision: { select: { id: true, title: true, aliasesJson: true } } } });
+    if (!point) throw new NodeTeachingError("个人记录不存在。", 404);
+    const target = { id: point.id, title: point.currentRevision ? point.currentRevision.title : point.title, revisionId: point.currentRevision?.id || null, names: point.currentRevision ? recordNames(point.currentRevision.title, readRecordAliases(point.currentRevision.aliasesJson)) : [] };
+    if (!point.currentRevision) return { target, mentions: { items: [], page: { ...page, total: 0, nextOffset: null } }, unavailableReason: "这条历史记录没有可引用的当前修订，未引用提及暂不可用。" };
+    const matches: { id: string; updatedAt: Date }[] = [];
+    let cursor: string | undefined;
+    for (;;) {
+      const ids = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
+        SELECT p.id FROM KnowledgePoint p JOIN KnowledgePointRevision r ON r.id = p.currentRevisionId
+        WHERE p.id <> ${id} AND NOT ${backlinkPredicate(id)} ${cursor ? Prisma.sql`AND p.id > ${cursor}` : Prisma.empty}
+        ORDER BY p.id ASC LIMIT 128`);
+      const rows = await tx.knowledgePoint.findMany({ where: { id: { in: ids.map(row => row.id) } }, select: { id: true, updatedAt: true, currentRevision: { select: { body: true } } } });
+      for (const row of rows) if (row.currentRevision && recordMention(row.currentRevision.body, target.names)) matches.push({ id: row.id, updatedAt: row.updatedAt });
+      if (ids.length < 128) break;
+      cursor = ids[ids.length - 1].id;
+    }
+    const ids = matches.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || compareRecordIds(a.id, b.id)).slice(page.offset, page.offset + page.limit).map(row => row.id);
+    const rows = await tx.knowledgePoint.findMany({ where: { id: { in: ids } }, select: { id: true, currentRevision: { select: { id: true, title: true, body: true } } } }), byId = new Map(rows.map(row => [row.id, row]));
+    const items = ids.map(sourceId => {
+      const source = byId.get(sourceId);
+      const mention = source?.currentRevision && recordMention(source.currentRevision.body, target.names);
+      if (!source?.currentRevision || !mention) throw new NodeTeachingError("提及读取状态已变化，请重试。", 503);
+      return { id: source.id, title: source.currentRevision.title, revisionId: source.currentRevision.id, ...mention };
+    });
+    return { target, mentions: { items, page: { ...page, total: matches.length, nextOffset: page.offset + ids.length < matches.length ? page.offset + ids.length : null } } };
+  }, { timeout: 30000 });
 }

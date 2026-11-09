@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActionButton } from "./ui";
-import { readRecordJson, recordKindLabels, recordReferenceKey, type RecordChoice, type RecordSnapshot } from "./recordDiscoveryTypes";
+import { readRecordJson, recordAliasSummary, recordKindLabels, recordReferenceKey, type RecordChoice, type RecordSnapshot } from "./recordDiscoveryTypes";
 import { paragraphSelector, referenceParagraphs, type ReferenceParagraph } from "../../lib/learning/recordReferences";
 
 type Results = { knowledgePoints: RecordChoice[]; page: { total: number; nextOffset: number | null } };
@@ -126,7 +126,7 @@ export function RecordReferencePicker({ pointId, selected, disabled, onAdd, onPe
   const shownRecords = loadedQuery === search.trim() ? records : [];
   return <div className="space-y-3">
     <label className="block">查找要引用的个人记录
-      <input aria-label="搜索要引用的记录" className="workshop-input mt-2 w-full" value={search} onChange={event => setSearch(event.target.value)} placeholder="按标题或正文查找，可以继续读取更早的记录" />
+      <input aria-label="搜索要引用的记录" className="workshop-input mt-2 w-full" value={search} onChange={event => setSearch(event.target.value)} placeholder="按标题、正文或别名查找，可以继续读取更早的记录" />
     </label>
     <p className="text-sm">选择后先加入当前编辑草稿，点击“确认保存新修订”才会保存引用。引用保留所选版本的原文。</p>
     {error && <div role="alert"><p>{error}</p><ActionButton variant="secondary" onClick={() => void load()}>重试查找引用记录</ActionButton></div>}
@@ -136,12 +136,13 @@ export function RecordReferencePicker({ pointId, selected, disabled, onAdd, onPe
         const alreadySelected = !!record.currentRevisionId && selectedKeys.has(recordReferenceKey({ knowledgePointId: record.id, revisionId: record.currentRevisionId }));
         return <article key={record.id} className="rounded-lg border p-3">
           <p className="font-medium">{record.title} <span className="text-sm font-normal">· {recordKindLabels[record.kind] || record.kind}</span></p>
+          {recordAliasSummary(record) && <p className="text-sm">{recordAliasSummary(record)}</p>}
           <p className="whitespace-pre-wrap text-sm">{record.body.slice(0, 180)}</p>
           <ActionButton variant="secondary" disabled={selectionDisabled || !!pendingKey || !record.currentRevisionId || alreadySelected} onClick={() => {
             if (record.currentRevisionId) onAdd({ kind: "record", knowledgePointId: record.id, revisionId: record.currentRevisionId, title: record.title, body: record.body, sourceType: record.sourceType });
           }}>{alreadySelected ? `已加入“${record.title}”` : `引用“${record.title}”`}</ActionButton>
           {record.currentRevisionId && <ParagraphChoices key={`${record.id}:${record.currentRevisionId}`} record={record} selected={selected} disabled={selectionDisabled} pendingKey={pendingKey} onSelect={selectParagraph} />}
-          {!record.currentRevisionId && <p className="text-sm">旧记录尚无可引用修订，可先打开并保存个人修订。</p>}
+          {!record.currentRevisionId && <p className="text-sm">这条历史记录没有可引用的当前修订，引用选择暂不可用。</p>}
         </article>;
       })}
     </div>
