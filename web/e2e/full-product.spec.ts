@@ -96,15 +96,15 @@ test('个人记录：独立保存、修订、主题和普通关系可使用',asy
   await page.reload();await expect(page.getByText(/只作结构类比，需要分别验证/).first()).toBeVisible();
   await page.getByLabel('记录探索问题').fill('为什么比较不能替代证明？');
   const explorationCreated=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/learning-sessions'&&r.request().postDataJSON()?.knowledgePointId===id);
-  const explorationPage=page.waitForResponse(async r=>{
-    if(r.request().method()!=='GET'||!new URL(r.url()).pathname.startsWith('/learning/sessions/'))return false;
+  const explorationData=page.waitForResponse(async r=>{
+    if(r.request().method()!=='GET'||!new URL(r.url()).pathname.startsWith('/api/learning-sessions/'))return false;
     const created=(await(await explorationCreated).json()).session;
-    return new URL(r.url()).pathname===`/learning/sessions/${created.id}`;
+    return new URL(r.url()).pathname===`/api/learning-sessions/${created.id}`;
   });
   await page.getByRole('button',{name:'开始探索并保留记录来源'}).click();
   const createdResponse=await explorationCreated;expect(createdResponse.status()).toBe(200);
   const createdSession=(await createdResponse.json()).session;
-  const loadedExploration=await explorationPage;expect(loadedExploration.status()).toBe(200);expect(await loadedExploration.finished()).toBeNull();
+  const loadedExploration=await explorationData;expect(loadedExploration.status()).toBe(200);expect((await loadedExploration.json()).session.id).toBe(createdSession.id);
   await expect(page).toHaveURL(/learning\/sessions\//);
   const session=await db.nodeTeachingSession.findUniqueOrThrow({where:{id:page.url().split('/').at(-1)!}});expect(session.id).toBe(createdSession.id);expect(session.nodeId).toBeNull();expect(JSON.parse(session.contextJson).record.revisionId).toBe(revisions[1].id);
   await page.getByRole('link',{name:'返回之前的学习位置'}).click();await expect(page).toHaveURL(new RegExp(id));

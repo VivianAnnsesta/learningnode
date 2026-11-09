@@ -171,7 +171,12 @@ test("视图菜单失败不阻断记录，更新与删除冲突保留设置并�
   expect((await (await request.get(viewPath(view.id))).json()).view.version).toBe(2);
   await menu.getByRole("button", { name: "采用最新版本作为更新基础", exact: true }).click();
   await expect(page.getByLabel("视图名称")).toHaveValue(localTitle);
+  const updatedView = page.waitForResponse(r => r.request().method() === "PATCH" && new URL(r.url()).pathname === viewPath(view.id) && r.request().postDataJSON()?.expectedVersion === 2);
   await menu.getByRole("button", { name: "更新当前视图", exact: true }).click();
+  const updatedResponse = await updatedView; expect(updatedResponse.status()).toBe(200);
+  const updated = (await updatedResponse.json()).view;
+  const localConfig = config(key); localConfig.filters.sourceType = "user";
+  expect(updated.version).toBe(3); expect(updated.title).toBe(localTitle); expect(updated.config).toEqual(localConfig);
   await expect(menu.getByText("检索视图已保存，记录内容没有改变。", { exact: true })).toBeVisible();
   const saved = (await (await request.get(viewPath(view.id))).json()).view;
   expect(saved.version).toBe(3); expect(saved.title).toBe(localTitle); expect(saved.config.filters.sourceType).toBe("user");
