@@ -24,6 +24,13 @@ const validateEmptySeedDatabase = async ({ databasePath, migrationsDirectory, Pr
     if (!aliases || Number(aliases.notnull) !== 1 || String(aliases.dflt_value).trim() !== "'[]'") {
       throw new Error("Versioned seed must contain a non-null aliasesJson column defaulting to [].");
     }
+    const recordDateColumns = ["recordDate", "recordDateTimeZone"];
+    if (recordDateColumns.some(name => {
+      const column = aliasesColumns.find(item => item.name === name);
+      return !column || String(column.type).toUpperCase() !== "TEXT" || Number(column.notnull) !== 0 || Number(column.pk) !== 0 || column.dflt_value !== null;
+    })) throw new Error("Versioned seed must contain both nullable record-date TEXT columns without a default.");
+    const immutable = await client.$queryRawUnsafe("SELECT sql FROM sqlite_master WHERE type='trigger' AND name='KnowledgePointRevision_immutable'");
+    if (immutable.length !== 1 || !immutable[0].sql.includes("BEFORE UPDATE ON") || !immutable[0].sql.includes("Knowledge revisions are immutable")) throw new Error("The revision immutability trigger must remain enabled for date fields.");
     const expectedConfigurationColumns = { id: "TEXT", title: "TEXT", schemaVersion: "INTEGER", configJson: "TEXT", version: "INTEGER", createdAt: "DATETIME", updatedAt: "DATETIME" };
     for (const table of ["SavedKnowledgeView", "KnowledgeRecordTemplate"]) {
       const columns = await client.$queryRawUnsafe('PRAGMA table_info("' + table + '")');
@@ -59,7 +66,7 @@ const validateEmptySeedDatabase = async ({ databasePath, migrationsDirectory, Pr
     if (violations.length > 0) throw new Error(`Seed database foreign-key check failed with ${violations.length} violation(s).`);
     const integrity = await client.$queryRawUnsafe("PRAGMA integrity_check");
     if (integrity.length !== 1 || Object.values(integrity[0])[0] !== "ok") throw new Error("Seed integrity check failed.");
-    return { businessCounts, migrationCount: ledger.length, checksumsMatch: true, aliasesDefault: "[]", savedViewSchemaVersionDefault: 1, savedViewVersionDefault: 1, savedViewColumns: Object.keys(expectedConfigurationColumns), recordTemplateSchemaVersionDefault: 1, recordTemplateVersionDefault: 1, recordTemplateColumns: Object.keys(expectedConfigurationColumns), foreignKeyViolations: 0, integrity: "ok" };
+    return { businessCounts, migrationCount: ledger.length, checksumsMatch: true, aliasesDefault: "[]", recordDateColumns, recordDateColumnsNullable: true, recordDateDefaultsNull: true, revisionImmutabilityTriggerPresent: true, savedViewSchemaVersionDefault: 1, savedViewVersionDefault: 1, savedViewColumns: Object.keys(expectedConfigurationColumns), recordTemplateSchemaVersionDefault: 1, recordTemplateVersionDefault: 1, recordTemplateColumns: Object.keys(expectedConfigurationColumns), foreignKeyViolations: 0, integrity: "ok" };
   } finally {
     await client.$disconnect();
   }

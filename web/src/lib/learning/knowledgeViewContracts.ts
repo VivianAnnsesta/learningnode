@@ -1,10 +1,15 @@
+import { createCivilDayFormatter, parseCalendarMonth } from "./civilDateContracts";
+import { parseAssignedRecordDate, readAssignedRecordDate } from "./recordDateContracts";
+
 export const knowledgeRecordKinds = ["note", "question", "understanding", "example", "experience", "excerpt"] as const;
 export const knowledgeSourceTypes = ["user", "accepted_ai", "excerpt", "legacy_user", "legacy_ai_or_unknown", "legacy_unknown"] as const;
-export const knowledgeDisplayFields = ["summary", "kind", "sourceType", "aliases", "domains", "collections", "createdAt", "updatedAt"] as const;
+export const knowledgeDisplayFields = ["summary", "kind", "sourceType", "aliases", "domains", "collections", "createdAt", "updatedAt", "recordDate"] as const;
 export const defaultKnowledgeDisplayFields = ["summary", "aliases", "collections"] as const;
 export type KnowledgeSourceType = typeof knowledgeSourceTypes[number];
 export type KnowledgeDisplayField = typeof knowledgeDisplayFields[number];
-type DateCommon = { field: "created" | "updated"; timeZone: string };
+export type KnowledgeDateField = "created" | "updated" | "recorded";
+type DateCommon = { field: KnowledgeDateField; timeZone: string };
+export type KnowledgeDateRecord = { createdAt: Date | string | number; updatedAt: Date | string | number; recordDate?: unknown; recordDateTimeZone?: unknown; recordDateUnavailableReason?: string };
 export type KnowledgeDateFilter = DateCommon & ({ mode: "all" } | { mode: "range"; from?: string; to?: string } | { mode: "last_days"; days: number });
 export type KnowledgeDateWindow = DateCommon & { from: string | null; to: string | null };
 export type KnowledgeViewFilters = { q: string; domainId: string; collectionId: string; kind: "" | typeof knowledgeRecordKinds[number]; sourceType: "" | KnowledgeSourceType; sort: "updated_desc" | "title_asc"; date: KnowledgeDateFilter };
@@ -50,7 +55,7 @@ export function parseKnowledgeDateFilter(value: unknown): KnowledgeDateFilter {
   keys(input, ["mode", "field", "timeZone", "from", "to", "days"]);
   const mode = input.mode === undefined ? "all" : input.mode;
   const field = input.field === undefined ? "updated" : input.field;
-  if (field !== "created" && field !== "updated") throw new Error("日期依据无效。");
+  if (field !== "created" && field !== "updated" && field !== "recorded") throw new Error("日期依据无效。");
   const common: DateCommon = { field, timeZone: zone(input.timeZone) };
   const has = (key: string) => input[key] !== undefined && input[key] !== "";
   if (mode === "all") {
@@ -94,7 +99,7 @@ export function parseKnowledgeViewConfig(value: unknown): KnowledgeViewConfig {
 }
 export function defaultKnowledgeViewConfig(): KnowledgeViewConfig { return parseKnowledgeViewConfig({}); }
 
-const queryNames = ["q", "domainId", "collectionId", "kind", "sort", "sourceType", "dateField", "dateMode", "dateFrom", "dateTo", "dateDays", "timeZone", "fields"] as const;
+const queryNames = ["q", "domainId", "collectionId", "kind", "sort", "sourceType", "dateField", "dateMode", "dateFrom", "dateTo", "dateDays", "timeZone", "fields", "calendarMonth"] as const;
 export function knowledgeViewConfigFromQuery(params: URLSearchParams, options: { allowPagination?: boolean } = {}): KnowledgeViewConfig {
   const seen = new Set<string>();
   for (const [name, value] of params) {
@@ -106,9 +111,10 @@ export function knowledgeViewConfigFromQuery(params: URLSearchParams, options: {
   const explicit = (key: string) => params.has(key) ? params.get(key)! : undefined;
   const date = { mode: explicit("dateMode"), field: explicit("dateField"), timeZone: explicit("timeZone"), from: get("dateFrom"), to: get("dateTo"), days: params.has("dateDays") ? Number(params.get("dateDays")) : undefined };
   const fields = explicit("fields");
+  if (params.has("calendarMonth")) parseCalendarMonth(params.get("calendarMonth"));
   return parseKnowledgeViewConfig({ filters: { q: get("q"), domainId: get("domainId"), collectionId: get("collectionId"), kind: get("kind"), sourceType: get("sourceType"), sort: get("sort"), date }, ...(fields !== undefined ? { displayFields: fields === "none" ? [] : fields.split(",") } : {}) });
 }
-export function knowledgeViewConfigToQuery(value: KnowledgeViewConfig): URLSearchParams {
+export function knowledgeViewConfigToQuery(value: KnowledgeViewConfig, options: { calendarMonth?: string } = {}): URLSearchParams {
   const { filters, displayFields } = parseKnowledgeViewConfig(value), result = new URLSearchParams();
   for (const name of ["q", "domainId", "collectionId", "kind", "sort", "sourceType"] as const) if (filters[name] && !(name === "sort" && filters.sort === "updated_desc")) result.set(name, filters[name]);
   const date = filters.date;
@@ -118,30 +124,35 @@ export function knowledgeViewConfigToQuery(value: KnowledgeViewConfig): URLSearc
   if (date.mode === "last_days") result.set("dateDays", String(date.days));
   if (date.timeZone !== "UTC") result.set("timeZone", date.timeZone);
   if (JSON.stringify(displayFields) !== JSON.stringify(defaultKnowledgeDisplayFields)) result.set("fields", displayFields.length ? displayFields.join(",") : "none");
+  if (options.calendarMonth !== undefined) result.set("calendarMonth", parseCalendarMonth(options.calendarMonth));
   return result;
 }
 
 export function createKnowledgeDateMatcher(value: KnowledgeDateFilter, now = new Date()) {
   const filter = parseKnowledgeDateFilter(value);
-  if (filter.mode === "all") return { window: null, matches: (_record: { createdAt: Date | string | number; updatedAt: Date | string | number }) => true };
-  const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: filter.timeZone, calendar: "gregory", numberingSystem: "latn", year: "numeric", month: "2-digit", day: "2-digit" });
-  const day = (value: Date | string | number) => {
-    const date = value instanceof Date ? value : new Date(value);
-    if (!Number.isFinite(date.getTime())) throw new Error("记录日期无效。");
-    const parts = formatter.formatToParts(date), part = (name: Intl.DateTimeFormatPartTypes) => parts.find(value => value.type === name)!.value;
-    return `${part("year").padStart(4, "0")}-${part("month")}-${part("day")}`;
+  let formatter: ReturnType<typeof createCivilDayFormatter> | undefined;
+  const day = (value: Date | string | number) => { formatter ||= createCivilDayFormatter(filter.timeZone); return formatter(value); };
+  const dateOf = (record: KnowledgeDateRecord): string | null => {
+    if (filter.field !== "recorded") return day(filter.field === "created" ? record.createdAt : record.updatedAt);
+    if (record.recordDateUnavailableReason) return null;
+    if (record.recordDate && typeof record.recordDate === "object") {
+      try { return parseAssignedRecordDate(record.recordDate)?.date || null; } catch { return null; }
+    }
+    return readAssignedRecordDate(record.recordDate ?? null, record.recordDateTimeZone ?? null).recordDate?.date || null;
   };
+  if (filter.mode === "all") return { window: null, matches: (_record: KnowledgeDateRecord) => true, dateOf };
   let from: string | null = null, to: string | null = null;
   if (filter.mode === "range") { from = filter.from || null; to = filter.to || null; }
   else {
     to = day(now);
+    if (!to) throw new Error("当前日期超出支持范围。");
     const start = new Date(`${to}T12:00:00.000Z`);
     start.setUTCDate(start.getUTCDate() - filter.days + 1);
     from = start.getUTCFullYear() < 1 ? "0001-01-01" : start.toISOString().slice(0, 10);
   }
   const window: KnowledgeDateWindow = { field: filter.field, timeZone: filter.timeZone, from, to };
-  return { window, matches: (record: { createdAt: Date | string | number; updatedAt: Date | string | number }) => {
-    const value = day(filter.field === "created" ? record.createdAt : record.updatedAt);
-    return (!from || value >= from) && (!to || value <= to);
+  return { window, dateOf, matches: (record: KnowledgeDateRecord) => {
+    const value = dateOf(record);
+    return value !== null && (!from || value >= from) && (!to || value <= to);
   } };
 }

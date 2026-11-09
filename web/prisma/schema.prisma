@@ -448,6 +448,8 @@ model KnowledgePointRevision {
   sourceType       String
   sourcesJson      String @default("[]")
   aliasesJson      String @default("[]")
+  recordDate       String?
+  recordDateTimeZone String?
   knowledgePoint   KnowledgePoint @relation("KnowledgeRevisions", fields: [knowledgePointId], references: [id], onDelete: Cascade)
   currentFor       KnowledgePoint? @relation("CurrentKnowledgeRevision")
   createdAt        DateTime @default(now())

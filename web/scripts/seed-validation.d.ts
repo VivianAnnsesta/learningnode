@@ -5,6 +5,10 @@ export interface EmptySeedValidation {
   migrationCount: number;
   checksumsMatch: boolean;
   aliasesDefault: string;
+  recordDateColumns: string[];
+  recordDateColumnsNullable: boolean;
+  recordDateDefaultsNull: boolean;
+  revisionImmutabilityTriggerPresent: boolean;
   savedViewSchemaVersionDefault: number;
   savedViewVersionDefault: number;
   savedViewColumns: string[];

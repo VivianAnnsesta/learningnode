@@ -7,10 +7,10 @@ import { recordKindLabels, recordSourceLabels } from "./recordDiscoveryTypes";
 
 export const knowledgeFieldLabels: Record<string, string> = {
   summary: "摘要", kind: "记录类型", sourceType: "内容来源", aliases: "别名",
-  domains: "所属领域", collections: "主题", createdAt: "创建日期", updatedAt: "记录更新日期"
+  domains: "所属领域", collections: "主题", createdAt: "创建日期", updatedAt: "记录更新日期", recordDate: "本人记录日期"
 };
 type Option = { id: string; name?: string; title?: string };
-type DateDraft = { field: "created" | "updated"; mode: "all" | "range" | "last_days"; timeZone: string; from: string; to: string; days: string };
+type DateDraft = { field: KnowledgeDateFilter["field"]; mode: "all" | "range" | "last_days"; timeZone: string; from: string; to: string; days: string };
 function dateDraft(date: KnowledgeDateFilter): DateDraft {
   return { field: date.field, mode: date.mode, timeZone: date.timeZone, from: date.mode === "range" ? date.from || "" : "", to: date.mode === "range" ? date.to || "" : "", days: date.mode === "last_days" ? String(date.days) : "7" };
 }
@@ -54,15 +54,16 @@ export function KnowledgeViewFilters({ config, domains, collections, metadataRea
     </div>
     <fieldset className="space-y-3 rounded-lg border p-3">
       <legend className="px-1 font-medium">日期筛选</legend>
-      <p className="text-sm">日期表示记录创建或记录更新时间，不代表实际学习日期。按指定时区比较日历日期，范围包含起止两日。</p>
+      <p className="text-sm">本人记录日期是当前修订中本人指定的字面日期；创建、更新日期来自系统时间。它们不代表实际学习日期。范围包含起止两日。</p>
       <div className="flex flex-wrap gap-3">
-        <label>日期依据 <select aria-label="日期依据" className="workshop-input" value={draft.field} onChange={event => changeDate("field", event.target.value)}><option value="created">记录创建日期</option><option value="updated">记录更新日期</option></select></label>
+        <label>日期依据 <select aria-label="日期依据" className="workshop-input" value={draft.field} onChange={event => changeDate("field", event.target.value)}><option value="created">记录创建日期</option><option value="updated">记录更新日期</option><option value="recorded">本人指定记录日期</option></select></label>
         <label>日期范围 <select aria-label="日期范围" className="workshop-input" value={draft.mode} onChange={event => changeDate("mode", event.target.value)}><option value="all">不限日期</option><option value="range">固定日期范围</option><option value="last_days">最近N天</option></select></label>
         <label>日期时区 <input aria-label="日期时区" className="workshop-input" value={draft.timeZone} onChange={event => changeDate("timeZone", event.target.value)} placeholder="UTC 或 America/Los_Angeles" /></label>
         {draft.mode === "range" && <><label>起始日期 <input aria-label="起始日期" type="date" className="workshop-input" value={draft.from} onChange={event => changeDate("from", event.target.value)} /></label><label>结束日期 <input aria-label="结束日期" type="date" className="workshop-input" value={draft.to} onChange={event => changeDate("to", event.target.value)} /></label></>}
         {draft.mode === "last_days" && <label>最近天数 <input aria-label="最近天数" type="number" min={1} max={3660} step={1} className="workshop-input w-28" value={draft.days} onChange={event => changeDate("days", event.target.value)} /></label>}
       </div>
       {draft.mode === "last_days" && <p className="text-sm">包含所选时区的今天；保存后每天会按同一规则重新计算。</p>}
+      {draft.field === "recorded" && <p className="text-sm">本人指定日期不随浏览时区移动；未指定或日期不可用的记录不匹配日期范围。不限日期时仍可阅读它们。</p>}
       {dateError && <p role="alert" className="text-rose-700">{dateError}</p>}
       <div className="flex flex-wrap gap-3"><ActionButton variant="secondary" onClick={() => {
         onDateDraftEdit();

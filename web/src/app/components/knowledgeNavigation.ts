@@ -1,7 +1,7 @@
 import { knowledgeViewConfigFromQuery, knowledgeViewConfigToQuery, type KnowledgeViewConfig } from "../../lib/learning/knowledgeViewContracts";
 
 export const PERSONAL_KNOWLEDGE_PATH = "/learning/knowledge";
-const filterNames = ["q", "domainId", "collectionId", "kind", "sourceType", "sort", "dateField", "dateMode", "dateFrom", "dateTo", "dateDays", "timeZone", "fields"] as const;
+const filterNames = ["q", "domainId", "collectionId", "kind", "sourceType", "sort", "dateField", "dateMode", "dateFrom", "dateTo", "dateDays", "timeZone", "fields", "calendarMonth"] as const;
 const controlCharacters = /[\u0000-\u001f\u007f]/;
 type KnowledgeFilters = Partial<Record<typeof filterNames[number], string>>;
 
@@ -13,13 +13,13 @@ export function normalizeKnowledgeView(value: unknown): string | null {
   try { url = new URL(value, "http://knowledge.invalid"); } catch { return null; }
   if (url.origin !== "http://knowledge.invalid" || url.pathname !== PERSONAL_KNOWLEDGE_PATH || url.hash) return null;
   let canonical: URLSearchParams;
-  try { canonical = knowledgeViewConfigToQuery(knowledgeViewConfigFromQuery(url.searchParams)); } catch { return null; }
+  try { canonical = knowledgeViewConfigToQuery(knowledgeViewConfigFromQuery(url.searchParams), { calendarMonth: url.searchParams.get("calendarMonth") || undefined }); } catch { return null; }
   const query = canonical.toString();
   return `${PERSONAL_KNOWLEDGE_PATH}${query ? `?${query}` : ""}`;
 }
 
-export function knowledgeViewForConfig(config: KnowledgeViewConfig): string {
-  const query = knowledgeViewConfigToQuery(config).toString();
+export function knowledgeViewForConfig(config: KnowledgeViewConfig, options: { calendarMonth?: string } = {}): string {
+  const query = knowledgeViewConfigToQuery(config, options).toString();
   return `${PERSONAL_KNOWLEDGE_PATH}${query ? `?${query}` : ""}`;
 }
 

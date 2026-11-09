@@ -11,8 +11,11 @@ import { KnowledgeViewFilters } from "./KnowledgeViewFilters";
 import { SavedKnowledgeViews } from "./SavedKnowledgeViews";
 import { RecordTemplatePicker } from "./RecordTemplatePicker";
 import { useRecordTemplateInsertion } from "./useRecordTemplateInsertion";
+import { parseAssignedRecordDate, type AssignedRecordDate } from "../../lib/learning/recordDateContracts";
+import { RecordDateEditor, recordDateDescription } from "./RecordDateEditor";
+import { KnowledgeRecordCalendar } from "./KnowledgeRecordCalendar";
 
-type RecordItem = { id: string; title: string; body: string; kind: string; sourceType?: string; sourceCategory?: string; aliases?: string[]; matchedAliases?: string[]; createdAt?: string; updatedAt?: string; domainIds: string[]; collections: { id: string; title: string }[] };
+type RecordItem = { id: string; title: string; body: string; kind: string; sourceType?: string; sourceCategory?: string; aliases?: string[]; matchedAliases?: string[]; createdAt?: string; updatedAt?: string; recordDate?: AssignedRecordDate | null; recordDateUnavailableReason?: string; domainIds: string[]; collections: { id: string; title: string }[] };
 type Collection = { id: string; title: string; memberships: { knowledgePointId: string }[] };
 type Domain = { id: string; name: string };
 type Relation = { id: string; fromKnowledgePointId: string; toKnowledgePointId: string; fromTitle: string; toTitle: string; type: string; status: string; detail: string | null };
@@ -37,6 +40,8 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
   const [body, setBody] = useState("");
   const [aliasesText, setAliasesText] = useState("");
   const [kind, setKind] = useState("note");
+  const [recordDate, setRecordDate] = useState<AssignedRecordDate | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState<string | undefined>();
   const [draftDomain, setDraftDomain] = useState(initialDomain);
   const [draftDomainTouched, setDraftDomainTouched] = useState(false);
   const [topic, setTopic] = useState("");
@@ -56,27 +61,28 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
   const generation = useRef({ value: 0 });
   const activeRequest = useRef<AbortController | null>(null);
   const windowKey = useRef<string | null>(null);
+  const newRecordTitle = useRef<HTMLInputElement | null>(null);
   const templateEditor = useRecordTemplateInsertion({ body, title, baseKey: "new-record", onBodyChange: setBody });
 
   useEffect(() => {
     if (lastWritten.current?.query === rawQuery && lastWritten.current.initialDomain === initialDomain) return;
     const params = new URLSearchParams(rawQuery);
     if (!params.has("domainId") && initialDomain) params.set("domainId", initialDomain);
-    try { setConfig(knowledgeViewConfigFromQuery(params)); setQueryError(""); }
-    catch (cause) { setConfig(null); setQueryError(cause instanceof Error ? cause.message : "检索地址无效。"); }
+    try { setConfig(knowledgeViewConfigFromQuery(params)); setCalendarMonth(params.get("calendarMonth") || undefined); setDateDraftVersion(value => value + 1); setQueryError(""); }
+    catch (cause) { setConfig(null); setCalendarMonth(undefined); setQueryError(cause instanceof Error ? cause.message : "检索地址无效。"); }
   }, [rawQuery, initialDomain]);
 
   useEffect(() => {
     if (!config) return;
-    const params = knowledgeViewConfigToQuery(config);
+    const params = knowledgeViewConfigToQuery(config, { calendarMonth });
     if (initialDomain && !config.filters.domainId) params.set("domainId", "");
     const url = new URL(window.location.href);
     url.search = params.toString();
     lastWritten.current = { query: params.toString(), initialDomain };
     if (url.search !== window.location.search) window.history.replaceState(window.history.state, "", url);
-  }, [config, initialDomain]);
+  }, [config, calendarMonth, initialDomain]);
 
-  const hasNewDraft = !!(title || body || aliasesText || kind !== "note" || draftDomainTouched);
+  const hasNewDraft = !!(title || body || aliasesText || kind !== "note" || draftDomainTouched || recordDate !== null);
   const filterDomain = config?.filters.domainId || "";
   useEffect(() => { if (!hasNewDraft) setDraftDomain(filterDomain); }, [filterDomain, hasNewDraft]);
 
@@ -150,7 +156,7 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
     finally { setBusy(false); }
   };
 
-  const sourceView = config ? knowledgeViewForConfig(config) : "/learning/knowledge";
+  const sourceView = config ? knowledgeViewForConfig(config, { calendarMonth }) : "/learning/knowledge";
   const dateFormatter = useMemo(() => new Intl.DateTimeFormat("en-CA", { calendar: "gregory", numberingSystem: "latn", timeZone: config?.filters.date.timeZone || "UTC", year: "numeric", month: "2-digit", day: "2-digit" }), [config?.filters.date.timeZone]);
   const formatDate = (value: string | undefined) => {
     if (!value) return "未提供";
@@ -165,7 +171,8 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
     {queryError && <SectionPanel><p role="alert">{queryError}。当前地址没有被当作全部记录运行。</p><ActionButton variant="secondary" onClick={() => applyConfig(defaultKnowledgeViewConfig())}>清除无效筛选</ActionButton></SectionPanel>}
     {config && <>
       <KnowledgeViewFilters config={config} domains={domains} collections={collections} metadataReady={metadataReady} onChange={applyConfig} onDateDraftChange={setDateDraftPending} onDateDraftEdit={editDateDraft} />
-      <SavedKnowledgeViews config={config} domains={domains} collections={collections} refresh={viewRefresh} unavailableReason={unavailableReason} dateDraftPending={dateDraftPending} dateDraftVersion={dateDraftVersion} onApply={applyConfig} />
+      <KnowledgeRecordCalendar config={config} month={calendarMonth} refresh={viewRefresh} dateDraftPending={dateDraftPending} disabled={busy} onMonthChange={month => { setCalendarMonth(month); editDateDraft(); }} onSelectDay={day => { setCalendarMonth(day.slice(0, 7)); applyConfig({ ...config, filters: { ...config.filters, date: { field: config.filters.date.field, timeZone: config.filters.date.timeZone, mode: "range", from: day, to: day } } }); }} onWriteDate={date => { setRecordDate(date); setMessage(`本人记录日期已设为 ${date.date}；标题、正文和保存领域保留，仍需确认保存。`); newRecordTitle.current?.focus(); }} />
+      <SavedKnowledgeViews config={config} domains={domains} collections={collections} refresh={viewRefresh} unavailableReason={unavailableReason} dateDraftPending={dateDraftPending} dateDraftVersion={dateDraftVersion} onApply={value => { applyConfig(value); setCalendarMonth(value.filters.date.mode === "range" && value.filters.date.from ? value.filters.date.from.slice(0, 7) : undefined); }} />
     </>}
     {error && <div role="alert"><p className="text-rose-700">{error}</p><ActionButton variant="secondary" disabled={listLoading || !config} onClick={() => void load().catch(cause => setError(cause instanceof Error ? cause.message : "无法读取个人网络。"))}>重试读取个人网络</ActionButton></div>}
     {message && <p role="status">{message}</p>}
@@ -173,19 +180,20 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
 
     <SectionPanel>
       <h2>新建个人记录</h2>
-      <input aria-label="新记录标题" disabled={busy} className="workshop-input w-full" placeholder="标题" value={title} onChange={event => setTitle(event.target.value)} />
+      <input aria-label="新记录标题" ref={newRecordTitle} disabled={busy} className="workshop-input w-full" placeholder="标题" value={title} onChange={event => setTitle(event.target.value)} />
       <label className="block">新记录保存领域 <select aria-label="新记录保存领域" disabled={busy} className="workshop-input" value={draftDomain} onChange={event => { setDraftDomain(event.target.value); setDraftDomainTouched(true); }}><option value="">独立记录</option>{draftDomain && !domains.some(domain => domain.id === draftDomain) && <option value={draftDomain}>当前保存领域（尚未读取或不可用）</option>}{domains.map(domain => <option key={domain.id} value={domain.id}>{domain.name}</option>)}</select></label>
       <p className="text-sm">开始填写后，切换检索视图不会改变这条记录的保存领域；可以在这里明确改选。</p>
       <label className="block">别名（每行一个，可选）<textarea aria-label="新记录别名" disabled={busy} className="workshop-input mt-2 min-h-20 w-full" rows={3} value={aliasesText} onChange={event => setAliasesText(event.target.value)} placeholder={"例如：conditional probability\nCP"} /></label>
       <p className="text-sm">最多20个别名，每个最多80个字符。</p>
       <select aria-label="新记录类型" disabled={busy} className="workshop-input" value={kind} onChange={event => setKind(event.target.value)}>{Object.entries(recordKindLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <RecordDateEditor value={recordDate} onChange={setRecordDate} disabled={busy} defaultTimeZone={config?.filters.date.timeZone || "UTC"} />
       <textarea aria-label="新记录内容" ref={templateEditor.textareaRef} onSelect={templateEditor.rememberPosition} onBlur={templateEditor.rememberPosition} disabled={busy} className="workshop-input min-h-28 w-full" value={body} onChange={event => templateEditor.editBody(event.target.value)} />
       <RecordTemplatePicker editor={templateEditor} disabled={busy} />
       <ActionButton disabled={busy || !title.trim() || !body.trim()} onClick={async () => {
-        let aliases: string[];
-        try { aliases = recordAliasesInput(aliasesText); } catch (cause) { setError(cause instanceof Error ? cause.message : "别名输入无效。"); return; }
-        const key = JSON.stringify({ title, body, kind, domain: draftDomain, aliases });
-        const result = await mutate("/api/knowledge-points", { requestId: requests.current[key] ||= crypto.randomUUID(), title, body, kind, aliases, domainId: draftDomain || undefined });
+        let aliases: string[], assigned: AssignedRecordDate | null;
+        try { aliases = recordAliasesInput(aliasesText); assigned = parseAssignedRecordDate(recordDate); } catch (cause) { setError(cause instanceof Error ? cause.message : "别名或记录日期输入无效。"); return; }
+        const key = JSON.stringify({ title, body, kind, domain: draftDomain, aliases, recordDate: assigned });
+        const result = await mutate("/api/knowledge-points", { requestId: requests.current[key] ||= crypto.randomUUID(), title, body, kind, aliases, domainId: draftDomain || undefined, recordDate: assigned });
         if (result) { templateEditor.reset(); setSavedRecord({ id: result.knowledgePoint.id, title: result.knowledgePoint.title }); setTitle(""); setBody(""); setAliasesText(""); setDraftDomainTouched(false); }
       }}>确认保存</ActionButton>
       <p>可以独立保存；不要求先完成课程或练习。</p>
@@ -216,6 +224,7 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
           if (field === "domains") return <p key={field} className="text-sm">所属领域：{record.domainIds.map(id => domains.find(domain => domain.id === id)?.name || "未读取或已归档的领域").join("、") || "独立记录"}</p>;
           if (field === "collections") return <p key={field} className="text-sm">主题：{record.collections.map(collection => collection.title).join("、") || "无"}</p>;
           if (field === "createdAt") return <p key={field} className="text-sm">创建日期：{formatDate(record.createdAt)}</p>;
+          if (field === "recordDate") return <p key={field} className="text-sm">本人记录日期：{recordDateDescription(record.recordDate, record.recordDateUnavailableReason)}</p>;
           return <p key={field} className="text-sm">记录更新日期：{formatDate(record.updatedAt)}</p>;
         })}
       </article>)}

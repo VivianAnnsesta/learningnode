@@ -2,6 +2,16 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第六批依据[ADR0032](docs/adr/0032-revision-owned-record-dates-and-calendar.md)推进本人指定记录日期、只读月历与补写：日期归个人修订，创建/更新时间与归档日期分开，打开月份/选日不造空记录，明确保存仍走原writer。目标/当前差异：两nullable字段/31前向迁移、唯一writer/DTO/list、同口径月计数和两入口代码已接通；官方31seed与本批真实SQLite/迁移/页面/桌面仍待验证。未以已有timestamp筛选代替本人日期，旧SavedView完整形状及创建hash兼容；原用户库/index不动。
+
+本批全项目typecheck/lint/encoding、Prisma schema validate及数据脚本/YAML静态检查通过；7个纯文件250/250通过，含新57日期/25月历合同及旧视图/模板/导航/插入/PDF回归。原114项兼容首跑1项失败为时间戳错误文案变化，已恢复原“记录日期”断言语义；新196项首跑2项为each夹具参数错误解包，已修成真实两参数检查，未改业务标准。原JSON与修后报告在 `web/test-results/record-dates-2026-11-09/`。新增7条页面与旧views精确label修改独立TypeScript/ESLint通过；审读后保留原标题/正文保存清空行为，重新填写同输入再验证创建幂等，并显式固定模板UTC以免宿主时区跨日，不增加原时限。
+
+18项SQLite/HTTP及2项新迁移回归已编写，本机原生0次，按已知AppControl不循环重试或绕过；这些仍待CI。SQL-only副本已验证两nullable列/旧4日期null、原字段/4配置/30ledger/精确备份不变，三次INSERT新修订日期add/change/clear、current指针及原trigger仍拒绝UPDATE，重开/FK0/integrity和空31安全逆投影。未知future/半列/漏ledger/非空修订拒绝且0写；它不是Prisma生命周期、正式seed或完整repeat验收。数据证据在 `web/test-results/record-dates-migration-2026-11-09/`，source30seed仍为官方 `59eaeccd…86f4`，待CI31工件核验后更新。
+
+六组合成API浏览器交互和截图61/62/63通过，零pageerror；root独立目视月历与补写草稿截图。追加两项相关检查验证月历180ms防抖三次快速输入只发最终一次、错误后手动重试仍立即恢复，未重跑全部六组；证据在 `web/test-results/record-dates-2026-11-09/ui-preview/`。它们覆盖单日count/list、待应用日期、草稿领域、日期省略/清空/409、旧坏raw、月份/快捷查找返回和模板now独立，仍是mock而不是真实SQLite/E2E。React清单审读请求绑定queryKey/Abort/generation、独立错误/状态与原记录保存边界，无新增HTML执行或未确认写入；全部临时预览服务已关闭。
+
+第五批收尾文档源 `ecd0d51f48756aa09e827d838a6c4cf939a49924` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42619173310)已真实全成功：1057测试、30页面通过/9原配置跳过、30空白seed、三条历史/新增迁移边界及完整桌面门禁；其相对已验证c057源仅两文档不同。完整日志/哈希索引 `ecd-main-evidence.json` 位于 `web/test-results/record-templates-2026-11-09/`，不覆盖本批第六批待验。
+
 第五批个人记录模板已完成本批既定门禁并合并GitHub main：[PR #5](https://github.com/VivianAnnsesta/learningnode/pull/5)，合并提交 `30fd3c20d89b54a5f0b705da5d9d2e4162922a24`，已验证源HEAD `c05775d7676db4badf0b598c541148bb450bab4e`。自定义模板可创建、编辑/改名、删除和重开，内置示例可复制；两正文入口预览标题/日期/时间变量后明确插入，冻结所见时刻并保留选区、CRLF/孤立CR和emoji。安全撤销不覆盖后续编辑，原标题/类型/别名/来源/领域保持原值；只有原确认保存才创建记录或追加不可覆盖修订。
 
 该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616634062)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616626127)均真实全成功：118文件/1057测试，含17项模板SQLite/HTTP、2项新迁移及3项PDF生命周期；完整页面30通过/9按原配置跳过，新6条模板链全过。Typecheck、lint、encoding、Prisma、历史夹具和27→28/28→29/29→30迁移保真全过；两边Electron42.11.16打包、空白seed运行、备份后旧库升级和安全交互均成功。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616633945)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616626173)各15文件/264测试及19页面全过。四份完整日志及哈希在 `c057-full-evidence.json`，专项在 `c057-target-evidence.json`，均位于 `web/test-results/record-templates-2026-11-09/`。

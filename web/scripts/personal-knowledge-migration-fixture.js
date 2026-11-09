@@ -5,8 +5,10 @@ const crypto = require("crypto");
 const aliasesMigration = "20261109090000_add_revision_aliases";
 const savedViewsMigration = "20261109120000_add_saved_knowledge_views";
 const recordTemplatesMigration = "20261109150000_add_knowledge_record_templates";
+const recordDatesMigration = "20261109180000_add_revision_record_dates";
 const aliasesSchemaSha256 = "5c45ab6b06b304c85de0f6719e250a23b992be4083f14209c10f22f79d2d50c8";
 const savedViewsSchemaSha256 = "097637e12a4cfb613b54ebf80d9d1678eaf7fe43fbef00c3451feb940122b6f9";
+const recordTemplatesSchemaSha256 = "cca4a1b8ded7f5037c814f30872c9d0a674c308d4faca5f07bd16e10e9665cd2";
 const fingerprint = filename => crypto.createHash("sha256").update(fs.readFileSync(filename)).digest("hex");
 const normalized = value => value instanceof Date ? value.toISOString() : typeof value === "bigint" ? value.toString() : value;
 const comparableRows = rows => rows.map(row => Object.fromEntries(
@@ -18,7 +20,7 @@ const comparableRows = rows => rows.map(row => Object.fromEntries(
 const same = (left, right, message) => {
   if (JSON.stringify(left) !== JSON.stringify(right)) throw new Error(message);
 };
-const snapshot = async (client, { omitAliases = false, omitTables = [] } = {}) => {
+const snapshot = async (client, { omitAliases = false, omitRecordDates = false, omitTables = [] } = {}) => {
   const tables = await client.$queryRawUnsafe(
     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name <> '_prisma_migrations' ORDER BY name"
   );
@@ -27,9 +29,11 @@ const snapshot = async (client, { omitAliases = false, omitTables = [] } = {}) =
     if (omitTables.includes(name)) continue;
     const rows = await client.$queryRawUnsafe('SELECT * FROM "' + name.replace(/"/g, '""') + '"');
     result[name] = comparableRows(rows.map(row => {
-      if (!omitAliases || name !== "KnowledgePointRevision") return row;
-      const { aliasesJson: _aliases, ...oldFields } = row;
-      return oldFields;
+      if (name !== "KnowledgePointRevision") return row;
+      const fields = { ...row };
+      if (omitAliases) delete fields.aliasesJson;
+      if (omitRecordDates) { delete fields.recordDate; delete fields.recordDateTimeZone; }
+      return fields;
     }));
   }
   return result;
@@ -39,6 +43,21 @@ const ledgerSnapshot = async client => comparableRows(await client.$queryRawUnsa
 ));
 
 // These operations run only against a new temporary copy of the empty seed.
+const removeRecordDatesFromFixture = async client => {
+  const columns = await client.$queryRawUnsafe('PRAGMA table_info("KnowledgePointRevision")');
+  const dates = columns.filter(column => column.name === "recordDate" || column.name === "recordDateTimeZone");
+  const futureLedger = await client.$queryRawUnsafe('SELECT "migration_name" FROM "_prisma_migrations" WHERE "migration_name" > ? ORDER BY "migration_name"', recordTemplatesMigration);
+  if (futureLedger.some(row => row.migration_name !== recordDatesMigration)) throw new Error("Historical fixture needs an explicit projection for a newer migration boundary.");
+  const alreadyBeforeDates = dates.length === 0 && futureLedger.length === 0;
+  if (!alreadyBeforeDates && (dates.length !== 2 || futureLedger.length !== 1 || dates.some(column => String(column.type).toUpperCase() !== "TEXT" || Number(column.notnull) !== 0 || Number(column.pk) !== 0 || column.dflt_value !== null))) throw new Error("Date fixture columns and migration ledger disagree.");
+  const [count] = await client.$queryRawUnsafe('SELECT COUNT(*) AS count FROM "KnowledgePointRevision"');
+  if (Number(count.count) !== 0) throw new Error("Only an empty revision seed table may be projected before record dates.");
+  if (alreadyBeforeDates) return;
+  await client.$executeRawUnsafe('ALTER TABLE "KnowledgePointRevision" DROP COLUMN "recordDate"');
+  await client.$executeRawUnsafe('ALTER TABLE "KnowledgePointRevision" DROP COLUMN "recordDateTimeZone"');
+  const deleted = await client.$executeRawUnsafe('DELETE FROM "_prisma_migrations" WHERE "migration_name" = ?', recordDatesMigration);
+  if (Number(deleted) !== 1) throw new Error("Date migration must occur once in the isolated fixture.");
+};
 const removeEmptyConfigurationFromFixture = async (client, { table, migration, after }) => {
   if (!["SavedKnowledgeView", "KnowledgeRecordTemplate"].includes(table)) throw new Error("Unknown configuration fixture table.");
   const tables = await client.$queryRawUnsafe("SELECT name FROM sqlite_master WHERE type='table' AND name=?", table);
@@ -54,9 +73,10 @@ const removeEmptyConfigurationFromFixture = async (client, { table, migration, a
   const deleted = await client.$executeRawUnsafe('DELETE FROM "_prisma_migrations" WHERE "migration_name" = ?', migration);
   if (Number(deleted) !== 1) throw new Error("Configuration migration must occur once in the isolated fixture.");
 };
-const removeRecordTemplatesFromFixture = client => removeEmptyConfigurationFromFixture(client, {
-  table: "KnowledgeRecordTemplate", migration: recordTemplatesMigration, after: savedViewsMigration
-});
+const removeRecordTemplatesFromFixture = async client => {
+  await removeRecordDatesFromFixture(client);
+  await removeEmptyConfigurationFromFixture(client, { table: "KnowledgeRecordTemplate", migration: recordTemplatesMigration, after: savedViewsMigration });
+};
 const removeSavedViewsFromFixture = async client => {
   await removeRecordTemplatesFromFixture(client);
   await removeEmptyConfigurationFromFixture(client, { table: "SavedKnowledgeView", migration: savedViewsMigration, after: aliasesMigration });
@@ -90,6 +110,10 @@ const createAliasesMigrationBoundary = options => createHistoricalMigrationBound
 const createSavedViewsMigrationBoundary = options => createHistoricalMigrationBoundary({ ...options,
   archiveName: "saved-knowledge-views-29.schema.prisma", archiveSha256: savedViewsSchemaSha256,
   throughMigration: savedViewsMigration, migrationCount: 29, label: "saved-views-boundary"
+});
+const createRecordTemplatesMigrationBoundary = options => createHistoricalMigrationBoundary({ ...options,
+  archiveName: "record-templates-30.schema.prisma", archiveSha256: recordTemplatesSchemaSha256,
+  throughMigration: recordTemplatesMigration, migrationCount: 30, label: "record-templates-boundary"
 });
 
 const populateHistoricalKnowledge = async (client, { aliases = false } = {}) => {
@@ -139,4 +163,12 @@ const populateHistoricalSavedViews = async client => {
   }
 };
 
-module.exports = { aliasesMigration, savedViewsMigration, recordTemplatesMigration, fingerprint, snapshot, ledgerSnapshot, same, comparableRows, createAliasesMigrationBoundary, createSavedViewsMigrationBoundary, removeRecordTemplatesFromFixture, removeSavedViewsFromFixture, populateHistoricalKnowledge, populateHistoricalSavedViews };
+const populateHistoricalRecordTemplates = async client => {
+  const rows = [
+    ["historical-template-a", "原模板 😀", 1, JSON.stringify({ body: "  历史 {{title}}\r\n{{date}}\r{{time}}\n原文", timeZone: "Asia/Shanghai" }, null, 2), 3, "2026-11-09T14:00:00.000Z", "2026-11-09T14:03:00.000Z"],
+    ["historical-template-b", "旧复盘模板", 1, JSON.stringify({ body: "复盘 {{date}}", timeZone: "UTC" }, null, 4), 2, "2026-11-09T14:01:00.000Z", "2026-11-09T14:02:00.000Z"]
+  ];
+  for (const row of rows) await client.$executeRawUnsafe('INSERT INTO "KnowledgeRecordTemplate" ("id","title","schemaVersion","configJson","version","createdAt","updatedAt") VALUES (?,?,?,?,?,?,?)', ...row);
+};
+
+module.exports = { aliasesMigration, savedViewsMigration, recordTemplatesMigration, recordDatesMigration, fingerprint, snapshot, ledgerSnapshot, same, comparableRows, createAliasesMigrationBoundary, createSavedViewsMigrationBoundary, createRecordTemplatesMigrationBoundary, removeRecordDatesFromFixture, removeRecordTemplatesFromFixture, removeSavedViewsFromFixture, populateHistoricalKnowledge, populateHistoricalSavedViews, populateHistoricalRecordTemplates };
