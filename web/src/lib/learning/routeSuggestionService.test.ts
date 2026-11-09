@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   acceptRouteSuggestion,
   classifyRouteSuggestionLevel,
-  createRouteSuggestionsFromDiagnosticAnswer
 } from "./routeSuggestionService";
 
 const prismaMock = vi.hoisted(() => ({
@@ -109,77 +108,9 @@ describe("routeSuggestionService", () => {
     expect(prismaMock.learningNode.create).not.toHaveBeenCalled();
   });
 
-  it("rejects diagnostic route suggestions before the answer is evaluated", async () => {
-    prismaMock.diagnosticAnswer.findUnique.mockResolvedValue({
-      id: "answer-1",
-      assessment: null,
-      question: { roadmapItemId: "node-1" }
-    });
 
-    await expect(
-      createRouteSuggestionsFromDiagnosticAnswer("answer-1")
-    ).rejects.toThrow(
-      "Route suggestions require an evaluated diagnostic answer."
-    );
-  });
 
-  it("rejects diagnostic route suggestions without a linked learning node", async () => {
-    prismaMock.diagnosticAnswer.findUnique.mockResolvedValue({
-      id: "answer-1",
-      assessment: "{}",
-      question: { roadmapItemId: null }
-    });
 
-    await expect(
-      createRouteSuggestionsFromDiagnosticAnswer("answer-1")
-    ).rejects.toThrow("Diagnostic answer is not linked to a learning node.");
-  });
 
-  it("creates diagnostic route suggestions only from an evaluated answer", async () => {
-    prismaMock.diagnosticAnswer.findUnique.mockResolvedValue({
-      id: "answer-1",
-      assessment: JSON.stringify({ summary: "Needs remediation." }),
-      question: { roadmapItemId: "node-1" }
-    });
-    domainMapServiceMock.getLearningNodeDetails.mockResolvedValue({
-      node: {
-        id: "node-1",
-        title: "节点",
-        moduleId: "module-1"
-      },
-      domain: {
-        id: "domain-1"
-      }
-    });
 
-    const suggestions = await createRouteSuggestionsFromDiagnosticAnswer("answer-1");
-
-    expect(suggestions).toHaveLength(3);
-    expect(domainMapServiceMock.getLearningNodeDetails).toHaveBeenCalledWith(
-      "node-1"
-    );
-    expect(prismaMock.routeSuggestion.create).toHaveBeenCalledTimes(3);
-    expect(prismaMock.routeSuggestion.create).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        data: expect.objectContaining({
-          domainId: "domain-1",
-          sourceNodeId: "node-1",
-          level: "L1",
-          title: "在当前节点补做练习",
-          changesMap: false
-        })
-      })
-    );
-    expect(prismaMock.routeSuggestion.create).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        data: expect.objectContaining({
-          level: "L2",
-          changesMap: true,
-          rationale: expect.stringContaining("Map Draft")
-        })
-      })
-    );
-  });
 });

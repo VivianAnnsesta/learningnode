@@ -17,7 +17,8 @@ const verificationUserRoot = fs.mkdtempSync(
   path.join(os.tmpdir(), "englishnode-electron-runtime-")
 );
 const verificationUserDataDir = path.join(verificationUserRoot, "Antigravity");
-const verificationDatabasePath = path.join(verificationUserDataDir, "englishnode.db");
+const verificationDatabasePath = path.join(verificationUserDataDir, "englishnode-teaching-v2.db");
+const verificationLegacyPath = path.join(verificationUserDataDir, "englishnode.db");
 
 const cleanupVerificationUserRoot = () => {
   fs.rmSync(verificationUserRoot, {
@@ -56,7 +57,7 @@ if (upgradeFixturePath && !fs.existsSync(upgradeFixturePath)) {
 
 if (upgradeFixturePath) {
   fs.mkdirSync(verificationUserDataDir, { recursive: true });
-  fs.copyFileSync(upgradeFixturePath, verificationDatabasePath, fs.constants.COPYFILE_EXCL);
+  fs.copyFileSync(upgradeFixturePath, verificationLegacyPath, fs.constants.COPYFILE_EXCL);
 }
 
 fs.mkdirSync(resultDir, { recursive: true });
@@ -133,12 +134,12 @@ child.on("exit", (code) => {
 
   const backupFiles = fs.existsSync(verificationUserDataDir)
     ? fs.readdirSync(verificationUserDataDir).filter((name) =>
-        /^englishnode\.backup-.+\.db$/.test(name)
+        /^englishnode-teaching-v2\.backup-.+\.db$/.test(name) || name === "englishnode.db.before-teaching-v2.db"
       )
     : [];
-  if (upgradeFixturePath && backupFiles.length !== 1) {
+  if (upgradeFixturePath && backupFiles.length !== 2) {
     fail(
-      `upgrade runtime expected exactly one pre-migration backup, found ${backupFiles.length}`,
+      `upgrade runtime expected retained original and pre-migration backup, found ${backupFiles.length}`,
       JSON.stringify({ result, backupFiles }, null, 2)
     );
   }

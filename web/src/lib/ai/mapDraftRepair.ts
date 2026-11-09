@@ -136,11 +136,16 @@ export function validateMapDraftQualityRepair(
         rejectRepair("changed_map_revision", "draft.baseRevision", "Map Draft repair must preserve baseRevision.");
       }
       contentRevisions = validateContentRevisions(baseline.learningGoals, draft.learningGoals, record.contentRevisions);
-      const states = new Map(baseline.stages.map(stage => [stage.key, stage.status]));
-      if (draft.stages.length !== baseline.stages.length || draft.stages.some(stage =>
-        !states.has(stage.key) || states.get(stage.key) !== stage.status
-      )) {
-        rejectRepair("changed_stage_state", "draft.stages", "Map Draft repair must preserve each Stage expansion state and stable key.");
+      const originals = new Map(baseline.stages.map(stage => [stage.key, stage]));
+      const revisedKeys = new Set(draft.stages.map(stage => stage.key));
+      if (baseline.stages.some(stage => !revisedKeys.has(stage.key)
+        && (stage.status !== "planned" || stage.modules.length > 0))) {
+        rejectRepair("removed_expanded_stage", "draft.stages", "全局自动修复只能取消尚未展开且没有详细节点的阶段；已有展开内容不能整体丢弃。");
+      }
+      if (draft.stages.some(stage => originals.has(stage.key)
+        ? originals.get(stage.key)!.status !== stage.status
+        : stage.status !== "planned" || stage.modules.length > 0)) {
+        rejectRepair("changed_stage_state", "draft.stages", "Map Draft repair must preserve retained Stage expansion states and stable keys; new Stages remain planned.");
       }
       draft = { ...baseline, status: "draft", learningGoals: draft.learningGoals, stages: draft.stages };
     }

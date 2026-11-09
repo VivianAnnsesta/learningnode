@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { CurriculumCoverage } from "../../../components/CurriculumCoverage";
+import { PlanningContentChoices, PlanningKnowledgeEvidence } from "../../../components/PlanningKnowledgeEvidence";
+import type { CourseDesignDraft, MapDraftQualityReport } from "../../../../lib/ai/tasks";
+import type { PlanningKnowledgeReview } from "../../../../lib/ai/planningKnowledgeReview";
+import type { LearningGoal } from "../../../../lib/learning/roadmapPlanningTypes";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { recoverStageDraft, replaceEditedStage } from "../stageDraftEditing";
@@ -48,18 +52,7 @@ type DomainMapNode = {
   orderIndex: number;
 };
 
-type RoadmapModuleBlueprint = {
-  goalKeys?: string[];
-  key: string;
-  title: string;
-  goal: string;
-  keyQuestions: Array<{
-    goalKeys?: string[];
-    key: string;
-    question: string;
-    checkableOutcome: string;
-  }>;
-};
+type RoadmapModuleBlueprint = import("../../../../lib/learning/roadmapPlanningTypes").RoadmapModuleBlueprint;
 
 type DomainMap = {
   contentCoverageVersion?: 1;
@@ -200,29 +193,8 @@ const apiErrorMessage = (
   return `${fallback}（HTTP ${response.status} ${response.statusText || ""}）`.trim();
 };
 
-const statusClass: Record<string, string> = {
-  locked: "border-slate-200 bg-slate-50 text-slate-500",
-  available: "border-sky-200 bg-sky-50 text-sky-700",
-  next: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  in_progress: "border-amber-300 bg-amber-50 text-amber-800",
-  completed: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  mastered: "border-violet-200 bg-violet-50 text-violet-700",
-  needs_review: "border-rose-200 bg-rose-50 text-rose-700",
-  suggested: "border-indigo-200 bg-indigo-50 text-indigo-700",
-  skipped: "border-slate-200 bg-slate-50 text-slate-500"
-};
-
-const statusOrder: Record<string, number> = {
-  next: 0,
-  in_progress: 1,
-  needs_review: 2,
-  available: 3,
-  suggested: 4,
-  completed: 5,
-  mastered: 6,
-  skipped: 7,
-  locked: 8
-};
+const statusClass:Record<string,string>={available:"border-sky-200 bg-sky-50 text-sky-700",in_progress:"border-amber-300 bg-amber-50 text-amber-800",completed:"border-emerald-200 bg-emerald-50 text-emerald-700"};
+const statusOrder:Record<string,number>={in_progress:0,available:1,completed:2};
 
 export default function LearningDomainMapPage() {
   const router = useRouter();
@@ -240,6 +212,7 @@ export default function LearningDomainMapPage() {
   );
   const [stageDraft, setStageDraft] = useState<RoadmapStageDraft | null>(null);
   const [savedDraftStages, setSavedDraftStages] = useState<RoadmapStageDraft[] | null>(null);
+  const [savedDraftGoals, setSavedDraftGoals] = useState<LearningGoal[] | null>(null);
   const [planningDraft, setPlanningDraft] = useState<{
     planningVersion: 2 | 3;
     learningGoals?: import("../../../../lib/learning/roadmapPlanningTypes").LearningGoal[];
@@ -256,6 +229,9 @@ export default function LearningDomainMapPage() {
   const [reviewRationale, setReviewRationale] = useState("");
   const [workflow, setWorkflow] = useState<DomainWorkflowSnapshot | null>(null);
   const [stageQualitySummary, setStageQualitySummary] = useState("");
+  const [qualityReport, setQualityReport] = useState<MapDraftQualityReport | null>(null);
+  const [knowledgeReview, setKnowledgeReview] = useState<PlanningKnowledgeReview | null>(null);
+  const [courseDraft, setCourseDraft] = useState<CourseDesignDraft | null>(null);
   const [deleting, setDeleting] = useState(false);
   const isStageRevision = Boolean(stageDraft && map?.units.some(unit => unit.key === stageDraft.key && unit.status === "expanded"));
 
@@ -264,19 +240,22 @@ export default function LearningDomainMapPage() {
     setLoading(true);
     setError("");
     try {
-      const [response, workflowResponse] = await Promise.all([
+      const [response, workflowResponse, courseResponse] = await Promise.all([
         fetch(`/api/domains/${domainId}/map`),
-        fetch(`/api/domains/${domainId}/workflow`)
+        fetch(`/api/domains/${domainId}/workflow`),
+        fetch(`/api/domains/${domainId}/course-design`)
       ]);
-      const [data, workflowData] = await Promise.all([
+      const [data, workflowData, courseData] = await Promise.all([
         response.json().catch(() => ({})),
-        workflowResponse.json().catch(() => ({}))
+        workflowResponse.json().catch(() => ({})),
+        courseResponse.json().catch(() => ({}))
       ]);
       if (!response.ok) {
         setError(data.error || "加载领域地图失败。");
         return;
       }
       setMap(data.map);
+      setCourseDraft(courseResponse.ok ? courseData.courseDesign?.draft || null : null);
       setWorkflow(workflowResponse.ok ? workflowData.workflow || null : null);
       setReviewId(data.qualityReview?.id || null);
       setPlanningDraft(
@@ -290,6 +269,7 @@ export default function LearningDomainMapPage() {
           : null
       );
       setSavedDraftStages(data.draft?.stages || null);
+      setSavedDraftGoals(data.draft?.learningGoals || null);
       const recoveredStage = data.map?.units?.length
         ? recoverStageDraft<RoadmapStageDraft>(data.draft?.stages || [], data.map.units.map((unit: DomainMap["units"][number]) => buildStageFromMap(data.map, unit)), new URLSearchParams(window.location.search).get("reviseStage") || data.qualityReview?.stageKey)
         : null;
@@ -298,6 +278,8 @@ export default function LearningDomainMapPage() {
         recoveredStage ? data.qualityReview?.state || "stale" : null
       );
       setStageQualitySummary(data.qualityReview?.report?.summary || "");
+      setQualityReport(data.qualityReview?.report || null);
+      setKnowledgeReview(data.qualityReview?.report?.knowledgeReview || null);
     } catch {
       setError("加载领域地图失败：无法连接到应用服务。");
     } finally {
@@ -443,16 +425,23 @@ export default function LearningDomainMapPage() {
         })
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
+      if (!response.ok && !data.stage) {
         setError(data.error || "展开 Stage 失败。");
         return;
       }
       const generatedStage = data.stage as RoadmapStageDraft;
       setSavedDraftStages(data.draft?.stages || null);
+      setSavedDraftGoals(data.draft?.learningGoals || null);
       setStageDraft(generatedStage);
-      setStageReviewState(data.reviewState || "passed");
+      setStageReviewState(data.reviewState || (response.ok ? "passed" : "blocked"));
       setReviewId(data.qualityReview?.id || null);
       setStageQualitySummary(data.qualityReport?.summary || "");
+      setQualityReport(data.qualityReport || null);
+      setKnowledgeReview(data.qualityReport?.knowledgeReview || data.knowledgeReview || null);
+      if (!response.ok) {
+        setError(data.error || "已保存阶段候选与失败依据，请先修正后再确认。");
+        return;
+      }
       setMessage(
         data.reviewState === "unavailable"
           ? "Stage 草稿已保存，但 AI 语义复审暂不可用。请重试或人工核对后确认风险。"
@@ -477,14 +466,16 @@ export default function LearningDomainMapPage() {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ draft: { planningVersion: 3,
           ...(map.contentCoverageVersion ? { contentCoverageVersion: map.contentCoverageVersion } : {}),
-          learningGoals: map.learningGoals, title: map.roadmap.title, status: "draft", baseRevision: map.roadmap.mapRevision, stages } })
+          learningGoals: savedDraftGoals || map.learningGoals, title: map.roadmap.title, status: "draft", baseRevision: map.roadmap.mapRevision, stages } })
       });
       const data = await readApiResponse(response);
       if (!response.ok) { setError(apiErrorMessage(response, data, "建立阶段修订草稿失败")); return; }
       const saved = (data.draft as { stages?: RoadmapStageDraft[] } | undefined)?.stages || stages;
       setSavedDraftStages(saved);
+      setSavedDraftGoals((data.draft as { learningGoals?: LearningGoal[] } | undefined)?.learningGoals || savedDraftGoals || map.learningGoals || null);
       setStageDraft(saved.find(stage => stage.key === unit.key) || current);
       setStageReviewState("stale"); setStageQualitySummary(""); setReviewId(null);
+      setQualityReport(null); setKnowledgeReview(null);
       router.replace(`/learning/domains/${domainId}?reviseStage=${encodeURIComponent(unit.key)}`, { scroll: false });
       setMessage("已保存阶段修订草稿。修改后请保存并复审，再明确确认；正式地图和学习记录在确认前保持原样。");
     } catch { setError("建立阶段修订草稿失败：无法连接到应用服务。"); }
@@ -493,6 +484,10 @@ export default function LearningDomainMapPage() {
 
   const confirmStageDraft = async () => {
     if (!map || !domainId || !stageDraft || !map.roadmap) return;
+    if (knowledgeReview?.verdict === "confirmed_error" || courseDraft?.knowledgeReview?.verdict === "confirmed_error") {
+      setError("明确知识错误尚未修正，请先重新核对当前候选。");
+      return;
+    }
     if (!["passed", "resolved"].includes(stageReviewState || "")) {
       setError("Stage 草稿已编辑，请先保存并完成路线质量复审。");
       return;
@@ -525,6 +520,7 @@ export default function LearningDomainMapPage() {
       }
       setStageDraft(null);
       setSavedDraftStages(null);
+      setSavedDraftGoals(null);
       setMessage(isStageRevision ? "阶段修订已确认，原节点身份与学习记录保留。" : "Stage 已确认。可从阶段目录进入新概念或复用概念。");
       await loadMap();
     } catch {
@@ -553,7 +549,7 @@ export default function LearningDomainMapPage() {
     const draft = {
       planningVersion: 3 as const,
       ...(map.contentCoverageVersion?{contentCoverageVersion:map.contentCoverageVersion}:{}),
-      learningGoals: map.learningGoals,
+      learningGoals: savedDraftGoals || map.learningGoals,
       title: map.roadmap.title,
       status: "draft",
       baseRevision: map.roadmap.mapRevision,
@@ -576,6 +572,7 @@ export default function LearningDomainMapPage() {
       }
       const reviewState = data.reviewState;
       setSavedDraftStages((data.draft as { stages?: RoadmapStageDraft[] } | undefined)?.stages || draft.stages);
+      setSavedDraftGoals((data.draft as { learningGoals?: LearningGoal[] } | undefined)?.learningGoals || draft.learningGoals || null);
       setStageReviewState(
         reviewState === "passed" ||
           reviewState === "resolved" ||
@@ -600,7 +597,7 @@ export default function LearningDomainMapPage() {
     const draft = {
       planningVersion: 3 as const,
       ...(map.contentCoverageVersion ? { contentCoverageVersion: map.contentCoverageVersion } : {}),
-      learningGoals: map.learningGoals,
+      learningGoals: savedDraftGoals || map.learningGoals,
       title: map.roadmap.title,
       status: "draft",
       baseRevision: map.roadmap.mapRevision,
@@ -620,6 +617,7 @@ export default function LearningDomainMapPage() {
         return;
       }
       setSavedDraftStages((saveData.draft as { stages?: RoadmapStageDraft[] } | undefined)?.stages || draft.stages);
+      setSavedDraftGoals((saveData.draft as { learningGoals?: LearningGoal[] } | undefined)?.learningGoals || draft.learningGoals || null);
       const reviewResponse = await fetch(
         `/api/domains/${domainId}/map/reviews`,
         {
@@ -629,8 +627,13 @@ export default function LearningDomainMapPage() {
         }
       );
       const reviewData = await readApiResponse(reviewResponse);
+      const nextReport = (reviewData.qualityReport || null) as MapDraftQualityReport | null;
+      setQualityReport(nextReport);
+      setKnowledgeReview(nextReport?.knowledgeReview || null);
       const reviewedStages = (reviewData.draft as { stages?: RoadmapStageDraft[] } | undefined)?.stages;
       if (reviewedStages) setSavedDraftStages(reviewedStages);
+      const reviewedGoals = (reviewData.draft as { learningGoals?: LearningGoal[] } | undefined)?.learningGoals;
+      if (reviewedGoals) setSavedDraftGoals(reviewedGoals);
       if (!reviewResponse.ok) {
         const reviewedStage = (
           reviewData.draft as { stages?: RoadmapStageDraft[] } | undefined
@@ -684,6 +687,10 @@ export default function LearningDomainMapPage() {
 
   const resolveCurrentReview = async () => {
     if (!domainId || !reviewId) return;
+    if (knowledgeReview?.verdict === "confirmed_error" || courseDraft?.knowledgeReview?.verdict === "confirmed_error") {
+      setError("明确知识错误须先修正，不能通过风险裁决接受。");
+      return;
+    }
     const currentState = stageDraft ? stageReviewState : planningReviewState;
     if (currentState !== "blocked" && currentState !== "unavailable") {
       setError("当前没有可裁决的路线复审。");
@@ -724,6 +731,10 @@ export default function LearningDomainMapPage() {
 
   const confirmRecoveredPlanningDraft = async () => {
     if (!domainId || !planningDraft) return;
+    if (knowledgeReview?.verdict === "confirmed_error" || courseDraft?.knowledgeReview?.verdict === "confirmed_error") {
+      setError("明确知识错误尚未修正，请返回创建流程重新核对。");
+      return;
+    }
     if (!["passed", "resolved"].includes(planningReviewState || "")) {
       setError("恢复的规划草稿缺少有效质量复审，请返回创建流程重新复审或生成。");
       return;
@@ -781,7 +792,7 @@ export default function LearningDomainMapPage() {
     if (!domainId) return;
     const domainName = map?.domain.name || "当前学习领域";
     const confirmed = window.confirm(
-      `确定删除“${domainName}”吗？该领域的地图、学习节点、诊断记录和知识点会一并删除。`
+      `确定归档“${domainName}”吗？个人记录、关系和学习历史会保留，可在历史内容中回看。`
     );
     if (!confirmed) return;
 
@@ -794,12 +805,12 @@ export default function LearningDomainMapPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(data.error || "删除学习领域失败。");
+        setError(data.error || "归档学习领域失败。");
         return;
       }
       router.push("/");
     } catch {
-      setError("删除学习领域失败：无法连接到应用服务。");
+      setError("归档学习领域失败：无法连接到应用服务。");
     } finally {
       setDeleting(false);
     }
@@ -831,11 +842,14 @@ export default function LearningDomainMapPage() {
               <Link href={`/learning/domains/${encodeURIComponent(domainId)}/ai-logs`} className="workshop-button-secondary px-3 py-2 text-sm">AI 生成记录</Link>
             ) : null}
             {domainId ? (
+              <Link href={`/learning/domains/new?domainId=${encodeURIComponent(domainId)}`} className="workshop-button-secondary px-3 py-2 text-sm">修改目标与路线</Link>
+            ) : null}
+            {domainId ? (
               <Link
-                href={`/learning/domains/${domainId}/diagnostics`}
+                href={`/learning/sessions`}
                 className="workshop-button-secondary px-3 py-2 text-sm"
               >
-                学习诊断
+                提问与练习
               </Link>
             ) : null}
             {domainId ? (
@@ -853,7 +867,7 @@ export default function LearningDomainMapPage() {
                 onClick={() => void deleteDomain()}
                 disabled={deleting}
               >
-                {deleting ? "删除中..." : "删除领域"}
+                {deleting ? "归档中..." : "归档领域"}
               </ActionButton>
             ) : null}
           </>
@@ -881,7 +895,7 @@ export default function LearningDomainMapPage() {
         </div>
       ) : null}
 
-      {reviewId &&
+      {reviewId && knowledgeReview?.verdict !== "confirmed_error" && courseDraft?.knowledgeReview?.verdict !== "confirmed_error" &&
       (stageDraft
         ? stageReviewState === "blocked" || stageReviewState === "unavailable"
         : planningReviewState === "blocked" ||
@@ -924,7 +938,7 @@ export default function LearningDomainMapPage() {
               {planningReviewState === "passed" || planningReviewState === "resolved"
                 ? planningReviewState === "resolved"
                   ? "已人工裁决当前复审"
-                  : "复审已通过"
+                  : "规划没有已报告的阻断，知识核对另见证据"
                 : "缺少有效复审，请返回创建流程处理"}
             </p>
           </div>
@@ -933,16 +947,20 @@ export default function LearningDomainMapPage() {
               <div key={stage.key} className="rounded border border-slate-200 bg-white p-3">
                 <div className="text-sm font-semibold text-slate-900">{stage.title}</div>
                 <p className="mt-1 text-xs text-slate-600">{stage.goal}</p>
+                <p className="mt-1 text-xs">位置理由：{stage.rationale || "未说明"}</p>
+                <PlanningContentChoices goals={planningDraft.learningGoals} stage={stage}/>
                 <CurriculumCoverage goals={planningDraft.learningGoals} stage={stage}/>
                 <div className="mt-1 text-xs text-slate-500">key: {stage.key}</div>
               </div>
             ))}
           </div>
+          <PlanningKnowledgeEvidence structureReport={qualityReport} reviewState={planningReviewState} sources={courseDraft?.sources} knowledgeReview={knowledgeReview}/>
           <ActionButton
             onClick={() => void confirmRecoveredPlanningDraft()}
             disabled={
               Boolean(busy) ||
-              !["passed", "resolved"].includes(planningReviewState || "")
+              !["passed", "resolved"].includes(planningReviewState || "") ||
+              knowledgeReview?.verdict === "confirmed_error" || courseDraft?.knowledgeReview?.verdict === "confirmed_error"
             }
           >
             {busy === "confirm-planning" ? "确认中..." : "确认规划并建立正式地图"}
@@ -1078,7 +1096,7 @@ export default function LearningDomainMapPage() {
                 {stageReviewState === "passed" || stageReviewState === "resolved"
                   ? stageReviewState === "resolved"
                     ? "已人工裁决当前复审"
-                    : "质量复审已通过"
+                    : "规划复审没有阻断"
                   : stageReviewState === "blocked"
                     ? "质量复审未通过"
                     : stageReviewState === "unavailable"
@@ -1092,6 +1110,8 @@ export default function LearningDomainMapPage() {
               ) : null}
             </div>
           </div>
+          <PlanningKnowledgeEvidence structureReport={qualityReport} reviewState={stageReviewState} sources={courseDraft?.sources} knowledgeReview={knowledgeReview}/>
+          <PlanningContentChoices goals={savedDraftGoals || map?.learningGoals} stage={stageDraft}/>
           <fieldset
             className="space-y-3 border-0 p-0"
             disabled={Boolean(busy)}
@@ -1119,7 +1139,7 @@ export default function LearningDomainMapPage() {
               placeholder="Stage 目标"
             />
             <div className="grid gap-3">
-              <CurriculumCoverage goals={map?.learningGoals} stage={stageDraft}/>
+              <CurriculumCoverage goals={savedDraftGoals || map?.learningGoals} stage={stageDraft}/>
               {stageDraft.modules.map((roadmapModule, moduleIndex) => (
                 <div key={`${roadmapModule.title}-${moduleIndex}`} className="rounded border border-slate-200 p-3">
                   <div className="text-sm font-semibold text-slate-900">
@@ -1229,7 +1249,8 @@ export default function LearningDomainMapPage() {
               onClick={() => void confirmStageDraft()}
               disabled={
                 Boolean(busy) ||
-                !["passed", "resolved"].includes(stageReviewState || "")
+                !["passed", "resolved"].includes(stageReviewState || "") ||
+                knowledgeReview?.verdict === "confirmed_error" || courseDraft?.knowledgeReview?.verdict === "confirmed_error"
               }
             >
               {busy === "confirm-stage"
@@ -1283,6 +1304,8 @@ export default function LearningDomainMapPage() {
                 {unit.goal ? (
                   <p className="mt-2 text-sm leading-6 text-slate-600">{unit.goal}</p>
                 ) : null}
+                <p className="mt-1 text-xs">位置理由：{unit.rationale || "未说明"}</p>
+                <PlanningContentChoices goals={map.learningGoals} stage={unit}/>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill>{unit.status === "planned" ? "待展开" : "已展开"}</StatusPill>
@@ -1320,7 +1343,7 @@ export default function LearningDomainMapPage() {
                     `/learning/domains/${map.domain.id}/items/${node.id}`
                   }
                   className={`rounded border p-3 transition hover:-translate-y-0.5 ${
-                    statusClass[node.status] || statusClass.locked
+                    statusClass[node.status] || statusClass.available
                   }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">

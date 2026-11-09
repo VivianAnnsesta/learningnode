@@ -21,8 +21,8 @@ describe("deriveDomainWorkflowSnapshot", () => {
         courseDesignReady: false
       })
     ).toMatchObject({
-      phase: "needs_task_brief",
-      allowedActions: ["CONFIRM_TASK_BRIEF"]
+      phase: "needs_course_design",
+      allowedActions: ["RESEARCH_COURSE_DESIGN"]
     });
     expect(
       deriveDomainWorkflowSnapshot({

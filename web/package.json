@@ -2,10 +2,11 @@
   "name": "web",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.17.0",
   "main": "main.js",
   "scripts": {
     "dev": "node scripts/run-web-dev.js",
-    "dev:electron": "node scripts/run-electron-dev.js",
+    "dev:electron": "npm run install:electron && node scripts/run-electron-dev.js",
     "build": "next build",
     "build:app": "node scripts/build-electron.js",
     "clean:app": "powershell -NoProfile -Command \"Remove-Item -Recurse -Force dist\\\\win-unpacked, dist\\\\builder-effective-config.yaml, dist\\\\latest.yml, dist\\\\*.exe -ErrorAction SilentlyContinue\"",
@@ -22,6 +23,7 @@
     "verify:electron-runtime": "node scripts/verify-electron-runtime.js",
     "verify:electron-upgrade": "node scripts/verify-electron-runtime.js --upgrade-fixture prisma/fixtures/legacy-pre-removal.db",
     "verify:electron-security": "node scripts/verify-electron-security.js",
+    "verify:desktop-learning": "node scripts/verify-full-product-desktop.js",
     "verify:migration-fidelity": "node scripts/verify-migration-fidelity.js",
     "audit:release": "npm audit --audit-level=high",
     "fixture:migration-legacy": "node scripts/create-legacy-migration-fixture.js",
@@ -31,12 +33,13 @@
     "verify:ai-provider:qwen": "node scripts/verify-ai-provider.js --ignore-settings --provider qwen --base-url https://dashscope.aliyuncs.com/compatible-mode/v1",
     "verify:ai-provider:deepseek": "node scripts/verify-ai-provider.js --ignore-settings --provider deepseek --base-url https://api.deepseek.com",
     "verify:course-quality": "vitest run src/lib/ai/courseQualityBaseline.test.ts",
-    "verify:roadmap-quality": "vitest run src/lib/ai/roadmapDensityBaseline.test.ts"
+    "verify:roadmap-quality": "vitest run src/lib/ai/roadmapDensityBaseline.test.ts",
+    "install:electron": "install-electron --no"
   },
   "dependencies": {
     "@prisma/client": "5.18.0",
     "d3-force": "^3.0.0",
-    "next": "^15.5.23",
+    "next": "15.5.28",
     "pdfjs-dist": "^6.2.108",
     "prisma": "5.18.0",
     "react": "18.2.0",
@@ -50,36 +53,48 @@
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "autoprefixer": "10.4.19",
-    "electron": "^41.10.3",
+    "electron": "42.11.16",
     "electron-builder": "^26.15.3",
     "eslint": "8.57.0",
-    "eslint-config-next": "^15.5.23",
+    "eslint-config-next": "15.5.28",
     "postcss": "^8.5.26",
     "tailwindcss": "3.4.7",
     "typescript": "5.5.4",
-    "vitest": "^4.1.10"
+    "vitest": "4.1.12"
   },
   "overrides": {
     "next": {
       "postcss": "8.5.26",
-      "sharp": "0.35.0"
+      "sharp": "0.35.5"
     },
-    "js-yaml": "4.3.1",
+    "js-yaml": "4.3.2",
     "electron": {
       "@electron/get": {
-        "undici": "7.29.0"
+        "undici": "7.30.1"
       }
     },
     "@typescript-eslint/typescript-estree": {
       "minimatch": {
-        "brace-expansion": "5.0.9"
+        "brace-expansion": "5.0.12"
       }
     },
     "eslint": {
       "minimatch": {
-        "brace-expansion": "2.1.4"
+        "brace-expansion": "2.1.7"
       }
-    }
+    },
+    "brace-expansion@2": "2.1.7",
+    "brace-expansion@5": "5.0.12",
+    "undici@6": "6.29.1",
+    "undici@7": "7.30.1",
+    "fast-uri": "3.1.9",
+    "browserslist": "4.28.7",
+    "source-map-js": "1.2.2",
+    "@xmldom/xmldom": "0.8.15",
+    "vitest": {
+      "vite": "8.1.6"
+    },
+    "postcss-selector-parser": "6.1.5"
   },
   "build": {
     "appId": "com.antigravity.desktop",

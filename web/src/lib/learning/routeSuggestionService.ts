@@ -1,6 +1,4 @@
-import { randomUUID } from "crypto";
 import { prisma } from "../prisma";
-import { getLearningNodeDetails } from "./domainMapService";
 import type { RouteSuggestion, RouteSuggestionLevel } from "./types";
 
 const levelChangesMap: Record<RouteSuggestionLevel, boolean> = {
@@ -49,116 +47,11 @@ const toPublicSuggestion = (row: {
   payload: parsePayload(row.payload)
 });
 
-async function insertSuggestion(input: Omit<RouteSuggestion, "status">) {
-  await prisma.routeSuggestion.create({
-    data: {
-      id: input.id,
-      domainId: input.domainId,
-      sourceNodeId: input.sourceNodeId,
-      level: input.level,
-      title: input.title,
-      rationale: input.rationale,
-      changesMap: input.changesMap,
-      status: "candidate",
-      payload: JSON.stringify(input.payload)
-    }
-  });
-}
 
-export async function createRouteSuggestionsForNode(nodeId: string) {
-  const details = await getLearningNodeDetails(nodeId);
-  const node = details.node;
-  if (!node) throw new Error("Learning node not found.");
 
-  const domainId = details.domain.id;
-  const basePayload = {
-    sourceNodeId: node.id,
-    sourceTitle: node.title,
-    moduleId: node.moduleId
-  };
 
-  const suggestions: Array<Omit<RouteSuggestion, "status">> = [
-    {
-      id: randomUUID(),
-      domainId,
-      sourceNodeId: node.id,
-      level: "L1",
-      title: "在当前节点补做练习",
-      rationale: "不改动地图，只保留稳定路线，并围绕当前节点增加一次聚焦练习。",
-      changesMap: false,
-      payload: {
-        ...basePayload,
-        action: "practice_in_place"
-      }
-    },
-    {
-      id: randomUUID(),
-      domainId,
-      sourceNodeId: node.id,
-      level: "L2",
-      title: `在“${node.title}”后添加补救节点`,
-      rationale:
-        "该建议会改动地图，当前只能作为候选保留。后续需要先转换为绑定版本的 Map Draft，再回到完整地图确认流程。",
-      changesMap: true,
-      payload: {
-        ...basePayload,
-        action: "add_remedial_node",
-        remedialTitle: `补救：${node.title}`,
-        remedialObjective: "修复阻塞当前节点的前置知识、误解或边界问题。"
-      }
-    },
-    {
-      id: randomUUID(),
-      domainId,
-      sourceNodeId: node.id,
-      level: "L3",
-      title: "重新整理当前单元",
-      rationale:
-        "该建议会重排领域地图，必须回到地图确认流程，不能在这里直接生效。",
-      changesMap: true,
-      payload: {
-        ...basePayload,
-        action: "manual_map_restructure"
-      }
-    }
-  ];
 
-  for (const suggestion of suggestions) {
-    await insertSuggestion(suggestion);
-  }
 
-  return suggestions.map((suggestion) => ({
-    ...suggestion,
-    status: "candidate" as const
-  }));
-}
-
-export async function createRouteSuggestionsFromDiagnosticAnswer(answerId: string) {
-  const answer = await prisma.diagnosticAnswer.findUnique({
-    where: { id: answerId },
-    include: {
-      question: {
-        select: {
-          learningNodeId: true
-        }
-      }
-    }
-  });
-
-  if (!answer) throw new Error("Diagnostic answer not found.");
-  if (!answer.assessment?.trim()) {
-    throw new Error("Route suggestions require an evaluated diagnostic answer.");
-  }
-  const sourceNodeId =
-    answer.question.learningNodeId ||
-    (answer.question as { roadmapItemId?: string | null }).roadmapItemId ||
-    null;
-  if (!sourceNodeId) {
-    throw new Error("Diagnostic answer is not linked to a learning node.");
-  }
-
-  return createRouteSuggestionsForNode(sourceNodeId);
-}
 
 async function getStoredSuggestion(id: string) {
   const row = await prisma.routeSuggestion.findUnique({

@@ -1,0 +1,792 @@
+{
+  "schemaVersion": 1,
+  "createdDate": "2026-10-28",
+  "purpose": "归档关键知识失败的成对诊断和回归；不是未见保留集，不是学习效果数据。",
+  "provenanceRules": [
+    "archive_actual_model_output 的 candidateText 为原始 rawOutput 解码字段的逐字连续片段。",
+    "researcher_written_corrected_neighbor 为研究者新写，不能记作模型实际成功更正。",
+    "expected及witness只供研究评价，不能作为被测模型输入。",
+    "sourceExcerpts仅保留相关小段；declaredContentHash是原系统整组blocks指纹，fragmentTextSha256和excerptSha256才是对应文本的UTF-8 SHA256。",
+    "所有标签来自本文件列出的数学反例或计算，未经独立人类学科认证，不泛化成所有内容的正确率。"
+  ],
+  "archiveSources": {
+    "stage011": {
+      "snapshotPath": "web/test-results/final-core-blank-2026-10-10-1791623160555/snapshots/011-stage-candidates-and-independent-evidence/data.json",
+      "snapshotSha256": "102c90c3fdf5e6afaa0965ef7b6e1a863fae57c82170666deb7dd94b52534760"
+    },
+    "part041": {
+      "snapshotPath": "web/test-results/reliability-verified-empty-2026-10-10-1791617868526/snapshots/041-part-3-generated/data.json",
+      "snapshotSha256": "2f50cd87e96a261067d8cce1d0f60c62d3581fcb74437803ca021139a402924d"
+    }
+  },
+  "verification": {
+    "archiveVerbatimCases": 5,
+    "researcherWrittenNeighbors": 5,
+    "allArchivedQuotesVerified": true,
+    "allSourceExcerptsVerified": true,
+    "realModelCalled": false,
+    "realDatabaseAccessed": false,
+    "fullRawOrDatabaseCopied": false,
+    "unambiguousPairs": 4,
+    "interpretationSensitivePairs": 1
+  },
+  "cases": [
+    {
+      "pairId": "011-unqualified-necessity",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/final-core-blank-2026-10-10-1791623160555/snapshots/011-stage-candidates-and-independent-evidence/data.json",
+        "collection": "ai",
+        "id": "cmv26yuhz0020ssa9myji12lf",
+        "taskType": "roadmap_stage_generation",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "roadmap-stage-generation-v3-contributions-2-continuity-1",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.modules[1].items[0].concept.learningUnit.teachingTasks[2]",
+        "fieldValueSha256": "0b26884240ae73b844f46445c638050c20368ad1a3ec2485813e274f02af1bca",
+        "archivedQuote": "对比两类路线的条件差异，指出路线二多出的“不取 L”条件不是装饰，而是结论成立的必要条件",
+        "archivedQuoteSha256": "0b26884240ae73b844f46445c638050c20368ad1a3ec2485813e274f02af1bca",
+        "quoteStartCodePoint": 0,
+        "quoteEndCodePointExclusive": 44,
+        "selection": "whole field",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.modules[1].items[0].concept.learningUnit.newKnowledge",
+            "text": "若外函数在内层极限 L 处连续，则复合极限可直接代入为 F(L)；若只知外层在 L 的去心极限，则还需内层在足够小去心邻域内不取 L，并匹配定义域与单侧趋近。"
+          }
+        ]
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "ai",
+            "id": "cmv26zd5j0026ssa9xvkz5dod",
+            "jsonStringField": "requestMessagesJson",
+            "decodedFieldPath": "$[1].content",
+            "embeddedFragmentId": "src-46a0c2ba1c35-63f242e517b2-0"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "外函数在内层极限L处连续时可直接代入；只知外函数在L处去心极限时，需要内层在足够小去心邻域不取L，并匹配定义域及单侧趋近。",
+          "excerptSha256": "0ac8c4fac1a884c66f08af1d627a47e1a92f4d314150ae63fd4b72a8c9ed88b9",
+          "excerptStartCodePoint": 39,
+          "excerptEndCodePointExclusive": 100,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "quantifier_and_implication",
+      "modelInputBoundary": "不得提供 expected、witness、origin、pairedCaseId、interpretationAnalysis 或研究者 scopeNote。保留原句和实际原上下文；此对只作歧义/澄清分析，不计无歧义正确率。",
+      "id": "011-unqualified-necessity-archived",
+      "origin": "archive_actual_model_output",
+      "candidateText": "对比两类路线的条件差异，指出路线二多出的“不取 L”条件不是装饰，而是结论成立的必要条件",
+      "pairedCaseId": "011-unqualified-necessity-corrected",
+      "expected": {
+        "verdict": "interpretation_dependent",
+        "reason": "只有在“每一具体等式成立的必要条件”解读下，归档原句才被常值函数反例否定。原句的“路线二”也容许法则适用条件/普遍保证的读法；原文不足以锁定唯一错误标签。",
+        "conditionalAssessments": {
+          "individualCaseNecessity": "confirmed_error",
+          "ruleApplicabilityOrUniformGuarantee": "not_established_as_error"
+        },
+        "basis": "researcher_checked_counterexample_with_explicit_interpretation_limit",
+        "witness": {
+          "functions": "g(x)≡0；F(t)≡1（包括 F(0)=1）；x→0，L=0，A=1。",
+          "calculation": "内层极限为0，外层去心极限为1，复合恒1；g在任何去心邻域都取L。",
+          "logicalUse": "结论成立而所称必要条件不成立，反驳个例必要性；不反驳带该条件的充分定理。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "interpretationSensitive": true,
+      "eligibleForUnambiguousAccuracy": false,
+      "interpretationAnalysis": {
+        "notForModelInput": true,
+        "individualCaseReading": "若把原句读成每一具体复合等式成立都要求内层最终避开L，F≡1、g≡0可以反驳。",
+        "ruleApplicabilityReading": "原句含“路线二多出的条件”，也可指仅凭所列前提、允许任意F(L)时作普遍代入保证的适用条件；不能用同一反例直接判该读法为错。",
+        "researchUse": "歧义识别或澄清分析；整对排除出无歧义判断正确率。不能将研究者选定的个例解读强加给被测模型。"
+      }
+    },
+    {
+      "pairId": "011-unqualified-necessity",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/final-core-blank-2026-10-10-1791623160555/snapshots/011-stage-candidates-and-independent-evidence/data.json",
+        "collection": "ai",
+        "id": "cmv26yuhz0020ssa9myji12lf",
+        "taskType": "roadmap_stage_generation",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "roadmap-stage-generation-v3-contributions-2-continuity-1",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.modules[1].items[0].concept.learningUnit.teachingTasks[2]",
+        "fieldValueSha256": "0b26884240ae73b844f46445c638050c20368ad1a3ec2485813e274f02af1bca",
+        "archivedQuote": "对比两类路线的条件差异，指出路线二多出的“不取 L”条件不是装饰，而是结论成立的必要条件",
+        "archivedQuoteSha256": "0b26884240ae73b844f46445c638050c20368ad1a3ec2485813e274f02af1bca",
+        "quoteStartCodePoint": 0,
+        "quoteEndCodePointExclusive": 44,
+        "selection": "whole field",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.modules[1].items[0].concept.learningUnit.newKnowledge",
+            "text": "若外函数在内层极限 L 处连续，则复合极限可直接代入为 F(L)；若只知外层在 L 的去心极限，则还需内层在足够小去心邻域内不取 L，并匹配定义域与单侧趋近。"
+          }
+        ]
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "ai",
+            "id": "cmv26zd5j0026ssa9xvkz5dod",
+            "jsonStringField": "requestMessagesJson",
+            "decodedFieldPath": "$[1].content",
+            "embeddedFragmentId": "src-46a0c2ba1c35-63f242e517b2-0"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "外函数在内层极限L处连续时可直接代入；只知外函数在L处去心极限时，需要内层在足够小去心邻域不取L，并匹配定义域及单侧趋近。",
+          "excerptSha256": "0ac8c4fac1a884c66f08af1d627a47e1a92f4d314150ae63fd4b72a8c9ed88b9",
+          "excerptStartCodePoint": 39,
+          "excerptEndCodePointExclusive": 100,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "quantifier_and_implication",
+      "modelInputBoundary": "不得提供 expected、witness、origin、pairedCaseId、interpretationAnalysis 或研究者 scopeNote。保留原句和实际原上下文；此对只作歧义/澄清分析，不计无歧义正确率。",
+      "id": "011-unqualified-necessity-corrected",
+      "origin": "researcher_written_corrected_neighbor",
+      "candidateText": "路线二中，内层在足够小去心邻域不取 L，是结合外层去心极限等前提保证复合极限的充分条件之一；它不是每一具体复合等式成立的必要条件。",
+      "pairedCaseId": "011-unqualified-necessity-archived",
+      "expected": {
+        "verdict": "no_error_found",
+        "reason": "在定义域匹配、g(x)→L 与外层去心极限为 A 的条件下，最终避开 L 可保证 F(g(x))→A；常值函数反例同时说明该条件不是每个个例的必要条件。 该研究者句明确了充分性与个例必要性的区别；但其配对原句有合理的另一解读，故整对仍不计入无歧义正确率。",
+        "basis": "researcher_checked_counterexample_or_calculation",
+        "witness": {
+          "functions": "g(x)≡0；F(t)≡1（包括 F(0)=1）；x→0，L=0，A=1。",
+          "calculation": "内层极限为0，外层去心极限为1，复合恒1；g在任何去心邻域都取L。",
+          "logicalUse": "结论成立而所称必要条件不成立，反驳个例必要性；不反驳带该条件的充分定理。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "provenanceNote": "这是研究者为成对诊断编写的近邻句，不是归档模型曾输出或已完成的修订。archiveAnchor 仅定位其对应的原错误。",
+      "interpretationSensitive": true,
+      "eligibleForUnambiguousAccuracy": false,
+      "interpretationAnalysis": {
+        "notForModelInput": true,
+        "individualCaseReading": "若把原句读成每一具体复合等式成立都要求内层最终避开L，F≡1、g≡0可以反驳。",
+        "ruleApplicabilityReading": "原句含“路线二多出的条件”，也可指仅凭所列前提、允许任意F(L)时作普遍代入保证的适用条件；不能用同一反例直接判该读法为错。",
+        "researchUse": "歧义识别或澄清分析；整对排除出无歧义判断正确率。不能将研究者选定的个例解读强加给被测模型。"
+      }
+    },
+    {
+      "pairId": "011-review-composite-value",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/final-core-blank-2026-10-10-1791623160555/snapshots/011-stage-candidates-and-independent-evidence/data.json",
+        "collection": "ai",
+        "id": "cmv26zd5j0026ssa9xvkz5dod",
+        "taskType": "planning_knowledge_check",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "planning-knowledge-v2-bounded-claims",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.claims[5].basis.reason",
+        "fieldValueSha256": "aa53f17a0d1426e014632437d79b869e70911c3c3bba7d61a206a94c4a00ef5a",
+        "archivedQuote": "路线二若 F(t)=1(t≠0)、F(0)=2，则外层去心极限为 1，但复合 F(g(x))≡2，说明需要额外条件。",
+        "archivedQuoteSha256": "e4b870ad26cb81a28fc525ba1ec666cfca683c6d3083d2784ce4b0957f2ddc88",
+        "quoteStartCodePoint": 171,
+        "quoteEndCodePointExclusive": 229,
+        "selection": "exact contiguous substring",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.claims[5].quote",
+            "text": "用内层 g(x)=x²、外层 F(t)=t+1（在 0 处连续）演示路线一直接代入；再用内层 g(x)=x²、外层在 0 处去心极限存在但 0 处取值不同的例子，说明路线二需要额外条件。"
+          }
+        ],
+        "premisesFromArchive": [
+          "内层 g(x)=x² 在 x→0 时极限为 0",
+          "外层 F(t)=t+1 在 0 处连续，或外层在 0 处去心极限存在但 0 处取值不同"
+        ]
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "ai",
+            "id": "cmv26zd5j0026ssa9xvkz5dod",
+            "jsonStringField": "requestMessagesJson",
+            "decodedFieldPath": "$[1].content",
+            "embeddedFragmentId": "src-46a0c2ba1c35-63f242e517b2-0"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "外函数在内层极限L处连续时可直接代入；只知外函数在L处去心极限时，需要内层在足够小去心邻域不取L，并匹配定义域及单侧趋近。",
+          "excerptSha256": "0ac8c4fac1a884c66f08af1d627a47e1a92f4d314150ae63fd4b72a8c9ed88b9",
+          "excerptStartCodePoint": 39,
+          "excerptEndCodePointExclusive": 100,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "piecewise_composition",
+      "modelInputBoundary": "只按所选实验条件提供 candidateText、当前条件和指定资料；expected、origin、pairedCaseId 与研究者判据不得发给被测模型。",
+      "id": "011-review-composite-value-archived",
+      "origin": "archive_actual_model_output",
+      "candidateText": "路线二若 F(t)=1(t≠0)、F(0)=2，则外层去心极限为 1，但复合 F(g(x))≡2，说明需要额外条件。",
+      "pairedCaseId": "011-review-composite-value-corrected",
+      "expected": {
+        "verdict": "confirmed_error",
+        "reason": "当前内层为g(x)=x²，不是g≡0。x≠0时x²>0，所以F(x²)=1；原审查把复合误写为恒2。",
+        "basis": "researcher_checked_counterexample_or_calculation",
+        "witness": {
+          "functions": "g(x)=x²；F(t)=1（t≠0）、F(0)=2。",
+          "calculation": "0<|x| ⇒ x²>0 ⇒ F(x²)=1；F(g(0))=2。",
+          "logicalUse": "恒等于2的主张错误；单点值不改变去心极限1。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "interpretationSensitive": false,
+      "eligibleForUnambiguousAccuracy": true
+    },
+    {
+      "pairId": "011-review-composite-value",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/final-core-blank-2026-10-10-1791623160555/snapshots/011-stage-candidates-and-independent-evidence/data.json",
+        "collection": "ai",
+        "id": "cmv26zd5j0026ssa9xvkz5dod",
+        "taskType": "planning_knowledge_check",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "planning-knowledge-v2-bounded-claims",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.claims[5].basis.reason",
+        "fieldValueSha256": "aa53f17a0d1426e014632437d79b869e70911c3c3bba7d61a206a94c4a00ef5a",
+        "archivedQuote": "路线二若 F(t)=1(t≠0)、F(0)=2，则外层去心极限为 1，但复合 F(g(x))≡2，说明需要额外条件。",
+        "archivedQuoteSha256": "e4b870ad26cb81a28fc525ba1ec666cfca683c6d3083d2784ce4b0957f2ddc88",
+        "quoteStartCodePoint": 171,
+        "quoteEndCodePointExclusive": 229,
+        "selection": "exact contiguous substring",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.claims[5].quote",
+            "text": "用内层 g(x)=x²、外层 F(t)=t+1（在 0 处连续）演示路线一直接代入；再用内层 g(x)=x²、外层在 0 处去心极限存在但 0 处取值不同的例子，说明路线二需要额外条件。"
+          }
+        ],
+        "premisesFromArchive": [
+          "内层 g(x)=x² 在 x→0 时极限为 0",
+          "外层 F(t)=t+1 在 0 处连续，或外层在 0 处去心极限存在但 0 处取值不同"
+        ]
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "ai",
+            "id": "cmv26zd5j0026ssa9xvkz5dod",
+            "jsonStringField": "requestMessagesJson",
+            "decodedFieldPath": "$[1].content",
+            "embeddedFragmentId": "src-46a0c2ba1c35-63f242e517b2-0"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "外函数在内层极限L处连续时可直接代入；只知外函数在L处去心极限时，需要内层在足够小去心邻域不取L，并匹配定义域及单侧趋近。",
+          "excerptSha256": "0ac8c4fac1a884c66f08af1d627a47e1a92f4d314150ae63fd4b72a8c9ed88b9",
+          "excerptStartCodePoint": 39,
+          "excerptEndCodePointExclusive": 100,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "piecewise_composition",
+      "modelInputBoundary": "只按所选实验条件提供 candidateText、当前条件和指定资料；expected、origin、pairedCaseId 与研究者判据不得发给被测模型。",
+      "id": "011-review-composite-value-corrected",
+      "origin": "researcher_written_corrected_neighbor",
+      "candidateText": "这里 g(x)=x²；若 F(t)=1（t≠0）、F(0)=2，则 x≠0 时 F(g(x))=1，x=0 时取值为2，因此 x→0 时复合极限为1。",
+      "pairedCaseId": "011-review-composite-value-archived",
+      "expected": {
+        "verdict": "no_error_found",
+        "reason": "逐支代入给出非零x时的值1和零点值2；去心极限只使用前一支。",
+        "basis": "researcher_checked_counterexample_or_calculation",
+        "witness": {
+          "functions": "g(x)=x²；F(t)=1（t≠0）、F(0)=2。",
+          "calculation": "0<|x| ⇒ x²>0 ⇒ F(x²)=1；F(g(0))=2。",
+          "logicalUse": "恒等于2的主张错误；单点值不改变去心极限1。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "provenanceNote": "这是研究者为成对诊断编写的近邻句，不是归档模型曾输出或已完成的修订。archiveAnchor 仅定位其对应的原错误。",
+      "interpretationSensitive": false,
+      "eligibleForUnambiguousAccuracy": true
+    },
+    {
+      "pairId": "041-limit-vs-value",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/reliability-verified-empty-2026-10-10-1791617868526/snapshots/041-part-3-generated/data.json",
+        "collection": "ai",
+        "id": "cmv24y4ja005cvlfedgaih3h8",
+        "taskType": "node_segment_preparation",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "flexible-learning-v4",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.steps[1].activities[0].answer",
+        "fieldValueSha256": "e328d03de8fe10ca6867fbfb25fc9c74001ed171660bd75870e64e82c61634b7",
+        "archivedQuote": "复合值 F(x²)=1（因为 x²≠0）",
+        "archivedQuoteSha256": "2013269edca4460654cfe80e770e647cacc9fa23270f14beb775393fbfe8b1b3",
+        "quoteStartCodePoint": 65,
+        "quoteEndCodePointExclusive": 85,
+        "selection": "exact contiguous substring",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.steps[1].activities[0].prompt",
+            "text": "设内层 g(x)→0，外函数 F 在 0 处的去心极限存在且等于 1，但 F 在 0 处不连续（例如 F(0)=2）。请分别判断下面两种内层能否用路线二，并说明理由：\n(1) g(x)=x²；\n(2) g(x)≡0。\n对能用路线二的情形，写出复合极限值；对不能用的情形，说明是哪一条条件不满足。"
+          }
+        ],
+        "precedingExample": {
+          "path": "$.steps[1].example",
+          "text": "仍取 L=0，F(t)=1（t≠0），F(0)=2，外层去心极限为 1。若内层 g(x)=x²，则当 x≠0 时 g(x)=x²>0，即 g(x)≠0，内层在去心邻域不取 0，满足第 1 条；复合值 F(x²)=1（因为 x²≠0），所以复合极限为 1，等于外层去心极限值。这里内层取值落在 F 有定义的 t≠0 区域，定义域也匹配。",
+          "role": "同一正文中的先前特例；与本活动重新声明的题设分别保存，不能自动合并条件。"
+        }
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "segments",
+            "id": "cmv24y4it005avlferim5z6js",
+            "jsonStringField": "sourceSnapshotJson",
+            "decodedFieldPath": "$[0]"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "第一组常值反例的目标需单独说明：g(x)恒0，F(t)=1（t≠0）、F(0)=2 时，内层极限存在且为0，外层在0的去心极限也存在且为1，而复合恒为2。",
+          "excerptSha256": "a3d3ba77a6fd8c00291fbcb2a1d7e4be835e9e3cf034e57d3aed1e8e3acc02eb",
+          "excerptStartCodePoint": 304,
+          "excerptEndCodePointExclusive": 381,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "premise_preservation",
+      "modelInputBoundary": "只按所选实验条件提供 candidateText、当前条件和指定资料；expected、origin、pairedCaseId 与研究者判据不得发给被测模型。",
+      "id": "041-limit-vs-value-archived",
+      "origin": "archive_actual_model_output",
+      "candidateText": "复合值 F(x²)=1（因为 x²≠0）",
+      "pairedCaseId": "041-limit-vs-value-corrected",
+      "expected": {
+        "verdict": "confirmed_error",
+        "reason": "本活动只规定外层去心极限为1，没有规定非零输入处外层恒1。函数极限值不能替代每一点函数值。",
+        "basis": "researcher_checked_counterexample_or_calculation",
+        "witness": {
+          "functions": "F(t)=1+t（t≠0）、F(0)=2；g(x)=x²。",
+          "calculation": "满足外层去心极限1且在0不连续；非零x时F(x²)=1+x²，例如x=1/2时为5/4；极限为1。",
+          "logicalUse": "反驳逐点恒1，不反驳复合极限为1。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "interpretationSensitive": false,
+      "eligibleForUnambiguousAccuracy": true
+    },
+    {
+      "pairId": "041-limit-vs-value",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/reliability-verified-empty-2026-10-10-1791617868526/snapshots/041-part-3-generated/data.json",
+        "collection": "ai",
+        "id": "cmv24y4ja005cvlfedgaih3h8",
+        "taskType": "node_segment_preparation",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "flexible-learning-v4",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.steps[1].activities[0].answer",
+        "fieldValueSha256": "e328d03de8fe10ca6867fbfb25fc9c74001ed171660bd75870e64e82c61634b7",
+        "archivedQuote": "复合值 F(x²)=1（因为 x²≠0）",
+        "archivedQuoteSha256": "2013269edca4460654cfe80e770e647cacc9fa23270f14beb775393fbfe8b1b3",
+        "quoteStartCodePoint": 65,
+        "quoteEndCodePointExclusive": 85,
+        "selection": "exact contiguous substring",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.steps[1].activities[0].prompt",
+            "text": "设内层 g(x)→0，外函数 F 在 0 处的去心极限存在且等于 1，但 F 在 0 处不连续（例如 F(0)=2）。请分别判断下面两种内层能否用路线二，并说明理由：\n(1) g(x)=x²；\n(2) g(x)≡0。\n对能用路线二的情形，写出复合极限值；对不能用的情形，说明是哪一条条件不满足。"
+          }
+        ],
+        "precedingExample": {
+          "path": "$.steps[1].example",
+          "text": "仍取 L=0，F(t)=1（t≠0），F(0)=2，外层去心极限为 1。若内层 g(x)=x²，则当 x≠0 时 g(x)=x²>0，即 g(x)≠0，内层在去心邻域不取 0，满足第 1 条；复合值 F(x²)=1（因为 x²≠0），所以复合极限为 1，等于外层去心极限值。这里内层取值落在 F 有定义的 t≠0 区域，定义域也匹配。",
+          "role": "同一正文中的先前特例；与本活动重新声明的题设分别保存，不能自动合并条件。"
+        }
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "segments",
+            "id": "cmv24y4it005avlferim5z6js",
+            "jsonStringField": "sourceSnapshotJson",
+            "decodedFieldPath": "$[0]"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "第一组常值反例的目标需单独说明：g(x)恒0，F(t)=1（t≠0）、F(0)=2 时，内层极限存在且为0，外层在0的去心极限也存在且为1，而复合恒为2。",
+          "excerptSha256": "a3d3ba77a6fd8c00291fbcb2a1d7e4be835e9e3cf034e57d3aed1e8e3acc02eb",
+          "excerptStartCodePoint": 304,
+          "excerptEndCodePointExclusive": 381,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "premise_preservation",
+      "modelInputBoundary": "只按所选实验条件提供 candidateText、当前条件和指定资料；expected、origin、pairedCaseId 与研究者判据不得发给被测模型。",
+      "id": "041-limit-vs-value-corrected",
+      "origin": "researcher_written_corrected_neighbor",
+      "candidateText": "当 x→0 且 x≠0 时，x²→0 且 x²≠0，因此由外层去心极限可得 F(x²)→1；这不表示每个非零x都有 F(x²)=1。",
+      "pairedCaseId": "041-limit-vs-value-archived",
+      "expected": {
+        "verdict": "no_error_found",
+        "reason": "x²在去心邻域避开0并趋近0，适用复合极限定理；只推出趋势，不额外声称逐点恒值。",
+        "basis": "researcher_checked_counterexample_or_calculation",
+        "witness": {
+          "functions": "F(t)=1+t（t≠0）、F(0)=2；g(x)=x²。",
+          "calculation": "满足外层去心极限1且在0不连续；非零x时F(x²)=1+x²，例如x=1/2时为5/4；极限为1。",
+          "logicalUse": "反驳逐点恒1，不反驳复合极限为1。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "provenanceNote": "这是研究者为成对诊断编写的近邻句，不是归档模型曾输出或已完成的修订。archiveAnchor 仅定位其对应的原错误。",
+      "interpretationSensitive": false,
+      "eligibleForUnambiguousAccuracy": true
+    },
+    {
+      "pairId": "041-branch-scoped-criterion",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/reliability-verified-empty-2026-10-10-1791617868526/snapshots/041-part-3-generated/data.json",
+        "collection": "ai",
+        "id": "cmv24y4ja005cvlfedgaih3h8",
+        "taskType": "node_segment_preparation",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "flexible-learning-v4",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.steps[1].activities[0].criteria[2]",
+        "fieldValueSha256": "7bba5bc24500c9b72a0197ee478763d07e07528047511208cc09294cd3f728c1",
+        "archivedQuote": "能明确区分“外层去心极限存在”与“外层在 L 处连续”，不把 F(0)=2 误当成复合极限。",
+        "archivedQuoteSha256": "7bba5bc24500c9b72a0197ee478763d07e07528047511208cc09294cd3f728c1",
+        "quoteStartCodePoint": 0,
+        "quoteEndCodePointExclusive": 46,
+        "selection": "whole field",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.steps[1].activities[0].prompt",
+            "text": "设内层 g(x)→0，外函数 F 在 0 处的去心极限存在且等于 1，但 F 在 0 处不连续（例如 F(0)=2）。请分别判断下面两种内层能否用路线二，并说明理由：\n(1) g(x)=x²；\n(2) g(x)≡0。\n对能用路线二的情形，写出复合极限值；对不能用的情形，说明是哪一条条件不满足。"
+          }
+        ],
+        "branches": [
+          "(1) g(x)=x²",
+          "(2) g(x)≡0"
+        ],
+        "pointValueStatus": "题面以 F(0)=2 为例，未将这一例值写成所有允许外函数的确定值。"
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "segments",
+            "id": "cmv24y4it005avlferim5z6js",
+            "jsonStringField": "sourceSnapshotJson",
+            "decodedFieldPath": "$[0]"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "第一组常值反例的目标需单独说明：g(x)恒0，F(t)=1（t≠0）、F(0)=2 时，内层极限存在且为0，外层在0的去心极限也存在且为1，而复合恒为2。",
+          "excerptSha256": "a3d3ba77a6fd8c00291fbcb2a1d7e4be835e9e3cf034e57d3aed1e8e3acc02eb",
+          "excerptStartCodePoint": 304,
+          "excerptEndCodePointExclusive": 381,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "branch_specific_criterion",
+      "modelInputBoundary": "只按所选实验条件提供 candidateText、当前条件和指定资料；expected、origin、pairedCaseId 与研究者判据不得发给被测模型。",
+      "id": "041-branch-scoped-criterion-archived",
+      "origin": "archive_actual_model_output",
+      "candidateText": "能明确区分“外层去心极限存在”与“外层在 L 处连续”，不把 F(0)=2 误当成复合极限。",
+      "pairedCaseId": "041-branch-scoped-criterion-corrected",
+      "expected": {
+        "verdict": "confirmed_error",
+        "reason": "该标准没有限定分支，会排除第二分支在明确选用F(0)=2这一例时的正确答案。g≡0时复合恒F(0)，其极限确实为F(0)。",
+        "basis": "researcher_checked_counterexample_or_calculation",
+        "witness": {
+          "functions": "采用题面允许的例子F(0)=2；第二分支g≡0。",
+          "calculation": "对所有x，F(g(x))=F(0)=2，故复合极限为2。",
+          "logicalUse": "同一句不限定分支的禁止标准会误拒正确答案。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "interpretationSensitive": false,
+      "eligibleForUnambiguousAccuracy": true
+    },
+    {
+      "pairId": "041-branch-scoped-criterion",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/reliability-verified-empty-2026-10-10-1791617868526/snapshots/041-part-3-generated/data.json",
+        "collection": "ai",
+        "id": "cmv24y4ja005cvlfedgaih3h8",
+        "taskType": "node_segment_preparation",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "flexible-learning-v4",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.steps[1].activities[0].criteria[2]",
+        "fieldValueSha256": "7bba5bc24500c9b72a0197ee478763d07e07528047511208cc09294cd3f728c1",
+        "archivedQuote": "能明确区分“外层去心极限存在”与“外层在 L 处连续”，不把 F(0)=2 误当成复合极限。",
+        "archivedQuoteSha256": "7bba5bc24500c9b72a0197ee478763d07e07528047511208cc09294cd3f728c1",
+        "quoteStartCodePoint": 0,
+        "quoteEndCodePointExclusive": 46,
+        "selection": "whole field",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.steps[1].activities[0].prompt",
+            "text": "设内层 g(x)→0，外函数 F 在 0 处的去心极限存在且等于 1，但 F 在 0 处不连续（例如 F(0)=2）。请分别判断下面两种内层能否用路线二，并说明理由：\n(1) g(x)=x²；\n(2) g(x)≡0。\n对能用路线二的情形，写出复合极限值；对不能用的情形，说明是哪一条条件不满足。"
+          }
+        ],
+        "branches": [
+          "(1) g(x)=x²",
+          "(2) g(x)≡0"
+        ],
+        "pointValueStatus": "题面以 F(0)=2 为例，未将这一例值写成所有允许外函数的确定值。"
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "segments",
+            "id": "cmv24y4it005avlferim5z6js",
+            "jsonStringField": "sourceSnapshotJson",
+            "decodedFieldPath": "$[0]"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "第一组常值反例的目标需单独说明：g(x)恒0，F(t)=1（t≠0）、F(0)=2 时，内层极限存在且为0，外层在0的去心极限也存在且为1，而复合恒为2。",
+          "excerptSha256": "a3d3ba77a6fd8c00291fbcb2a1d7e4be835e9e3cf034e57d3aed1e8e3acc02eb",
+          "excerptStartCodePoint": 304,
+          "excerptEndCodePointExclusive": 381,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "branch_specific_criterion",
+      "modelInputBoundary": "只按所选实验条件提供 candidateText、当前条件和指定资料；expected、origin、pairedCaseId 与研究者判据不得发给被测模型。",
+      "id": "041-branch-scoped-criterion-corrected",
+      "origin": "researcher_written_corrected_neighbor",
+      "candidateText": "能区分两种内层：(1) g(x)=x² 时复合极限为外层去心极限1；(2) g(x)≡0 时复合恒F(0)，若明确选用F(0)=2这一例，其复合极限就是2。",
+      "pairedCaseId": "041-branch-scoped-criterion-archived",
+      "expected": {
+        "verdict": "no_error_found",
+        "reason": "按分支分别代入，没有把例示点值当作所有外函数的固定条件，也没有排斥常值内层的正确复合极限。",
+        "basis": "researcher_checked_counterexample_or_calculation",
+        "witness": {
+          "functions": "采用题面允许的例子F(0)=2；第二分支g≡0。",
+          "calculation": "对所有x，F(g(x))=F(0)=2，故复合极限为2。",
+          "logicalUse": "同一句不限定分支的禁止标准会误拒正确答案。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "provenanceNote": "这是研究者为成对诊断编写的近邻句，不是归档模型曾输出或已完成的修订。archiveAnchor 仅定位其对应的原错误。",
+      "interpretationSensitive": false,
+      "eligibleForUnambiguousAccuracy": true
+    },
+    {
+      "pairId": "041-counterexample-reason",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/reliability-verified-empty-2026-10-10-1791617868526/snapshots/041-part-3-generated/data.json",
+        "collection": "ai",
+        "id": "cmv24y4ja005cvlfedgaih3h8",
+        "taskType": "node_segment_preparation",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "flexible-learning-v4",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.steps[2].explanation",
+        "fieldValueSha256": "5842cf1ebd5ab729afaacf6fa75a6dd509954d361c9ba46ae7ded1fbdf6fe866",
+        "archivedQuote": "需要特别说明这个反例的边界：它只否定上述“无条件直接代入”，不能用来否定“复合极限存在可反推外层去心极限存在”这一逆向命题——因为本例中内层恒取 0，复合值恒为 F(0)，并没有覆盖外层在 0 附近的其他 t 值。",
+        "archivedQuoteSha256": "4eb8c5a3aca2b5c473923ddc606941a475930618f42b374d1993427e73314bf5",
+        "quoteStartCodePoint": 278,
+        "quoteEndCodePointExclusive": 385,
+        "selection": "exact contiguous substring",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.steps[2].example",
+            "text": "g(x)≡0，F(t)=1（t≠0），F(0)=2：内层极限为 0，外层去心极限为 1，而复合恒为 2。若误用“无条件代入外层去心极限值”，会得到错误的复合极限 1。"
+          }
+        ],
+        "targetProposition": "复合极限存在可反推外层去心极限存在。",
+        "additionalOriginalContext": "针对逆向命题需要另一类振荡反例（g(x)≡0，F(t)=sin(1/t)（t≠0），F(0)=2），本部分不展开。"
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "segments",
+            "id": "cmv24y4it005avlferim5z6js",
+            "jsonStringField": "sourceSnapshotJson",
+            "decodedFieldPath": "$[0]"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "反例必须同时满足所针对命题的全部前提，并否定它的结论。为了说明“复合函数极限存在，不能反推出外层函数的去心极限存在”：取 g(x)恒等于0；当 t≠0 时 F(t)=sin(1/t)，在 t=0 时 F(0)=2。于是 F(g(x))恒等于2，所以复合极限存在；但外层 F(t) 在 t趋近0的去心邻域没有极限。",
+          "excerptSha256": "1b6a9a0d4c502845d372495a9cbfe448c0e85d7e57b353ef9c71d1cd025494d1",
+          "excerptStartCodePoint": 736,
+          "excerptEndCodePointExclusive": 892,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "reason_correctness_even_when_final_conclusion_is_true",
+      "modelInputBoundary": "只按所选实验条件提供 candidateText、当前条件和指定资料；expected、origin、pairedCaseId 与研究者判据不得发给被测模型。",
+      "id": "041-counterexample-reason-archived",
+      "origin": "archive_actual_model_output",
+      "candidateText": "需要特别说明这个反例的边界：它只否定上述“无条件直接代入”，不能用来否定“复合极限存在可反推外层去心极限存在”这一逆向命题——因为本例中内层恒取 0，复合值恒为 F(0)，并没有覆盖外层在 0 附近的其他 t 值。",
+      "pairedCaseId": "041-counterexample-reason-corrected",
+      "expected": {
+        "verdict": "confirmed_error",
+        "reason": "“该常值例不能反驳逆推”的结论正确，但所给理由不足：它不能反驳是因为外层去心极限也存在，未否定目标结论。振荡外层例同样不覆盖其他t，却可以反驳逆推。",
+        "basis": "researcher_checked_counterexample_or_calculation",
+        "witness": {
+          "constantCase": "g≡0，F(t)=1（t≠0）、F(0)=2：复合极限2存在，外层去心极限1也存在。",
+          "oscillatoryCase": "g≡0，F(t)=sin(1/t)（t≠0）、F(0)=2：复合恒2；t_n=1/(π/2+2πn)、s_n=1/(3π/2+2πn)均趋0，外层值分别1和−1。",
+          "logicalUse": "两例都不覆盖其它t，只有振荡例否定目标结论；“不覆盖”不能解释二者的反例资格差异。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "interpretationSensitive": false,
+      "eligibleForUnambiguousAccuracy": true
+    },
+    {
+      "pairId": "041-counterexample-reason",
+      "archiveAnchor": {
+        "snapshotPath": "web/test-results/reliability-verified-empty-2026-10-10-1791617868526/snapshots/041-part-3-generated/data.json",
+        "collection": "ai",
+        "id": "cmv24y4ja005cvlfedgaih3h8",
+        "taskType": "node_segment_preparation",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "promptVersion": "flexible-learning-v4",
+        "jsonStringField": "rawOutput",
+        "decodedFieldPath": "$.steps[2].explanation",
+        "fieldValueSha256": "5842cf1ebd5ab729afaacf6fa75a6dd509954d361c9ba46ae7ded1fbdf6fe866",
+        "archivedQuote": "需要特别说明这个反例的边界：它只否定上述“无条件直接代入”，不能用来否定“复合极限存在可反推外层去心极限存在”这一逆向命题——因为本例中内层恒取 0，复合值恒为 F(0)，并没有覆盖外层在 0 附近的其他 t 值。",
+        "archivedQuoteSha256": "4eb8c5a3aca2b5c473923ddc606941a475930618f42b374d1993427e73314bf5",
+        "quoteStartCodePoint": 278,
+        "quoteEndCodePointExclusive": 385,
+        "selection": "exact contiguous substring",
+        "verifiedAgainstArchive": true
+      },
+      "currentConditions": {
+        "quotedFields": [
+          {
+            "path": "$.steps[2].example",
+            "text": "g(x)≡0，F(t)=1（t≠0），F(0)=2：内层极限为 0，外层去心极限为 1，而复合恒为 2。若误用“无条件代入外层去心极限值”，会得到错误的复合极限 1。"
+          }
+        ],
+        "targetProposition": "复合极限存在可反推外层去心极限存在。",
+        "additionalOriginalContext": "针对逆向命题需要另一类振荡反例（g(x)≡0，F(t)=sin(1/t)（t≠0），F(0)=2），本部分不展开。"
+      },
+      "sourceExcerpts": [
+        {
+          "fragmentId": "src-46a0c2ba1c35-63f242e517b2-0",
+          "kind": "user_text",
+          "location": "用户正文字符 1",
+          "sourceLocator": {
+            "collection": "segments",
+            "id": "cmv24y4it005avlferim5z6js",
+            "jsonStringField": "sourceSnapshotJson",
+            "decodedFieldPath": "$[0]"
+          },
+          "declaredContentHash": "63f242e517b25df10a83e05356863ab092785d21cf4690c3052d7f2c6ec73faa",
+          "declaredContentHashScope": "source block collection; not the individual fragment text",
+          "fragmentTextSha256": "4ee1a9ceb337e2c3b042b11d6727ac2cd69db22783b2420f5efd306680b56ae6",
+          "fragmentTextLength": 1282,
+          "excerpt": "反例必须同时满足所针对命题的全部前提，并否定它的结论。为了说明“复合函数极限存在，不能反推出外层函数的去心极限存在”：取 g(x)恒等于0；当 t≠0 时 F(t)=sin(1/t)，在 t=0 时 F(0)=2。于是 F(g(x))恒等于2，所以复合极限存在；但外层 F(t) 在 t趋近0的去心邻域没有极限。",
+          "excerptSha256": "1b6a9a0d4c502845d372495a9cbfe448c0e85d7e57b353ef9c71d1cd025494d1",
+          "excerptStartCodePoint": 736,
+          "excerptEndCodePointExclusive": 892,
+          "authority": "实际用户推导笔记；不是公开教材或机构认证。摘录用于恢复原输入，标签另由反例或计算建立。"
+        }
+      ],
+      "evaluationScope": "reason_correctness_even_when_final_conclusion_is_true",
+      "modelInputBoundary": "只按所选实验条件提供 candidateText、当前条件和指定资料；expected、origin、pairedCaseId 与研究者判据不得发给被测模型。",
+      "id": "041-counterexample-reason-corrected",
+      "origin": "researcher_written_corrected_neighbor",
+      "candidateText": "该常值例不能否定“复合极限存在可反推外层去心极限存在”，因为它的复合极限存在，外层去心极限也存在，没有使目标结论为假。应改用复合极限存在而外层去心极限不存在的例子，例如 g≡0、F(t)=sin(1/t)（t≠0）、F(0)=2。",
+      "pairedCaseId": "041-counterexample-reason-archived",
+      "expected": {
+        "verdict": "no_error_found",
+        "reason": "反例须同时满足前提并否定结论；常值外层例不满足后一要求，振荡外层例满足。",
+        "basis": "researcher_checked_counterexample_or_calculation",
+        "witness": {
+          "constantCase": "g≡0，F(t)=1（t≠0）、F(0)=2：复合极限2存在，外层去心极限1也存在。",
+          "oscillatoryCase": "g≡0，F(t)=sin(1/t)（t≠0）、F(0)=2：复合恒2；t_n=1/(π/2+2πn)、s_n=1/(3π/2+2πn)均趋0，外层值分别1和−1。",
+          "logicalUse": "两例都不覆盖其它t，只有振荡例否定目标结论；“不覆盖”不能解释二者的反例资格差异。"
+        },
+        "notAnIndependentHumanExpertCertification": true
+      },
+      "provenanceNote": "这是研究者为成对诊断编写的近邻句，不是归档模型曾输出或已完成的修订。archiveAnchor 仅定位其对应的原错误。",
+      "interpretationSensitive": false,
+      "eligibleForUnambiguousAccuracy": true
+    }
+  ]
+}

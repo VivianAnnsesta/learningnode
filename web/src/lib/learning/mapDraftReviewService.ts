@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import { prisma } from "../prisma";
 import type { MapDraftQualityReport } from "../ai/tasks";
+import { createUncertainPlanningKnowledgeReview } from "../ai/planningKnowledgeReview";
 import { getRoadmapByDomain, type RoadmapInput } from "./roadmapService";
+import { buildPlanningTeachingEvidence } from "./planningTeachingEvidence";
 
 export type MapDraftReviewBinding = {
   status: string;
@@ -12,6 +14,7 @@ export type MapDraftReviewBinding = {
   courseDesignAiCallLogId: string;
   availability?: string | null;
   resolutionJson?: string | null;
+  reportJson?: string | null;
 };
 
 export type MapDraftReviewState =
@@ -90,6 +93,9 @@ export function evaluateMapDraftReview(
   ) {
     return "stale";
   }
+  const knowledge = parseJsonOr<MapDraftQualityReport | null>(input.review.reportJson || null, null)?.knowledgeReview;
+  // A structural receipt can remain passed while an independent knowledge failure blocks acceptance.
+  if (knowledge?.verdict === "confirmed_error") return "blocked";
   if (input.review.status === "passed") return "passed";
   const resolution = parseJsonOr<MapDraftReviewResolution | null>(
     input.review.resolutionJson || null,
@@ -142,20 +148,69 @@ export async function recordMapDraftQualityReview(input: {
   if ((input.draft as RoadmapInput).planningVersion !== 3) {
     throw new Error("只有 planningVersion=3 的路线草稿可以记录质量复审。");
   }
-  return prisma.mapDraftQualityReview.create({
-    data: {
-      domainId: input.domainId,
-      scope: input.scope,
-      stageKey: input.stageKey || null,
-      baseRevision: input.baseRevision,
-      draftHash: canonicalMapDraftDigest(input.draft),
-      courseDesignAiCallLogId: input.courseDesignAiCallLogId,
-      status: input.report.status,
-      availability: input.availability || "available",
-      createdAt: new Date(),
-      reportJson: JSON.stringify(input.report),
-      aiCallLogIdsJson: JSON.stringify(input.aiCallLogIds || [])
+  const draftHash = canonicalMapDraftDigest(input.draft);
+  const availability = input.availability || "available";
+  return prisma.$transaction(async (tx) => {
+    let knowledgeReview = input.report.knowledgeReview;
+    let inheritedLogIds: string[] = [];
+    // A later opinion cannot erase a known error without changing the actual
+    // candidate. Keep the original evidence across scopes and retry outcomes.
+    const previous = await tx.mapDraftQualityReview.findMany({
+      where: {
+        domainId: input.domainId,
+        draftHash,
+        baseRevision: input.baseRevision,
+        courseDesignAiCallLogId: input.courseDesignAiCallLogId
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: { reportJson: true, aiCallLogIdsJson: true }
+    });
+    for (const review of previous) {
+      const priorKnowledge = parseJsonOr<MapDraftQualityReport | null>(review.reportJson, null)?.knowledgeReview;
+      if (priorKnowledge?.verdict === "confirmed_error") {
+        knowledgeReview = priorKnowledge;
+        inheritedLogIds = [
+          ...parseJsonOr<string[]>(review.aiCallLogIdsJson, []),
+          ...(priorKnowledge.aiCallLogIds || [])
+        ];
+        break;
+      }
     }
+    const aiCallLogIds = [...new Set([
+      ...inheritedLogIds,
+      ...(input.aiCallLogIds || []),
+      ...(input.report.knowledgeReview?.aiCallLogIds || []),
+      ...(knowledgeReview?.aiCallLogIds || [])
+    ])];
+    knowledgeReview ||= createUncertainPlanningKnowledgeReview(
+      input.draft,
+      [],
+      availability === "unavailable"
+        ? "AI 语义复审不可用，未取得本候选的独立知识核对报告。"
+        : "本次规划回执未提供独立知识核对报告；结构通过不能证明知识正确。",
+      aiCallLogIds
+    );
+    const report = {
+      ...input.report,
+      knowledgeReview: { ...knowledgeReview, acceptedDraftHash: draftHash },
+      teachingEvidence: buildPlanningTeachingEvidence(input.draft, { ...input.report, knowledgeReview }, input.courseDesignAiCallLogId)
+    };
+    const receipt = await tx.mapDraftQualityReview.create({
+      data: {
+        domainId: input.domainId,
+        scope: input.scope,
+        stageKey: input.stageKey || null,
+        baseRevision: input.baseRevision,
+        draftHash,
+        courseDesignAiCallLogId: input.courseDesignAiCallLogId,
+        status: report.status,
+        availability,
+        createdAt: new Date(),
+        reportJson: JSON.stringify(report),
+        aiCallLogIdsJson: JSON.stringify(aiCallLogIds)
+      }
+    });
+    return { ...receipt, report, aiCallLogIds };
   });
 }
 
@@ -208,6 +263,9 @@ export async function resolveMapDraftQualityReview(input: {
   ]);
   if (!review || review.id !== input.reviewId) {
     throw new Error("MAP_REVIEW_STALE: 只能裁决当前路线草稿的最新复审。");
+  }
+  if (parseJsonOr<MapDraftQualityReport | null>(review.reportJson, null)?.knowledgeReview?.verdict === "confirmed_error") {
+    throw new Error("MAP_QUALITY_BLOCKED: 明确知识错误必须先修正并重新核对；不能用结构裁决代替事实更正。");
   }
   if (!roadmap?.draft || !roadmap.draftCourseDesignAiCallLogId) {
     throw new Error("MAP_REVIEW_STALE: 当前没有可裁决的路线草稿。");

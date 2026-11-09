@@ -1,6 +1,5 @@
 import { prisma } from "../prisma";
 import {
-  diagnosticQuestionTypes,
   type DiagnosticQuestionType
 } from "./types";
 
@@ -61,18 +60,9 @@ export interface DiagnosticSessionDto {
   questions: DiagnosticQuestionDto[];
 }
 
-const normalizeOptional = (value?: string | null) => {
-  const next = value?.trim();
-  return next ? next : null;
-};
 
-const normalizeDiagnosticQuestionType = (value?: string | null) => {
-  const next = value?.trim();
-  if (next && diagnosticQuestionTypes.includes(next as DiagnosticQuestionType)) {
-    return next as DiagnosticQuestionType;
-  }
-  return "concept";
-};
+
+
 
 function toDiagnosticAnswerDto(answer: {
   id: string;
@@ -196,101 +186,4 @@ export async function getDiagnosticSession(
   });
 
   return session ? toPublicSession(session) : null;
-}
-
-export async function createDiagnosticSession(
-  domainId: string,
-  input: DiagnosticSessionInput
-): Promise<DiagnosticSessionDto> {
-  const domain = await prisma.domain.findUnique({
-    where: { id: domainId },
-    select: { id: true, name: true }
-  });
-
-  if (!domain) {
-    throw new Error("学习领域不存在");
-  }
-
-  const questions = input.questions ?? [];
-  const usableQuestions = questions.filter((question) => question.prompt?.trim());
-  const referencedNodeIds = Array.from(
-    new Set(
-      usableQuestions
-        .map((question) => normalizeOptional(question.roadmapItemId))
-        .filter((nodeId): nodeId is string => Boolean(nodeId))
-    )
-  );
-  if (referencedNodeIds.length > 0) {
-    const ownedNodes = await prisma.learningNode.findMany({
-      where: { id: { in: referencedNodeIds }, domainId },
-      select: { id: true }
-    });
-    if (ownedNodes.length !== referencedNodeIds.length) {
-      throw new Error("诊断题引用的学习节点不属于该领域或不存在。");
-    }
-  }
-
-  const session = await prisma.diagnosticSession.create({
-    data: {
-      domainId,
-      title: input.title?.trim() || `${domain.name} 诊断`,
-      status: input.status?.trim() || "draft",
-      summary: normalizeOptional(input.summary),
-      questions: {
-        create: usableQuestions.map((question, index) => ({
-          prompt: question.prompt?.trim() || `诊断题 ${index + 1}`,
-          questionType: normalizeDiagnosticQuestionType(question.questionType),
-          expectedAnswer: normalizeOptional(question.expectedAnswer),
-          learningNodeId: normalizeOptional(question.roadmapItemId),
-          orderIndex: index
-        }))
-      }
-    },
-    include: {
-      questions: {
-        orderBy: { orderIndex: "asc" },
-        include: {
-          learningNode: {
-            select: { id: true, title: true, status: true }
-          },
-          answers: {
-            orderBy: { createdAt: "desc" },
-            take: 1
-          }
-        }
-      }
-    }
-  });
-
-  return toPublicSession(session);
-}
-
-export async function saveDiagnosticAnswer(
-  questionId: string,
-  input: DiagnosticAnswerInput
-): Promise<DiagnosticAnswerDto> {
-  const response = input.response?.trim();
-  if (!response) {
-    throw new Error("回答不能为空");
-  }
-
-  const question = await prisma.diagnosticQuestion.findUnique({
-    where: { id: questionId },
-    select: { id: true }
-  });
-
-  if (!question) {
-    throw new Error("诊断题不存在");
-  }
-
-  const answer = await prisma.diagnosticAnswer.create({
-    data: {
-      questionId,
-      response,
-      assessment: null,
-      result: "unreviewed"
-    }
-  });
-
-  return toDiagnosticAnswerDto(answer);
 }

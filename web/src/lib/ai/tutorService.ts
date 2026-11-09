@@ -3,9 +3,9 @@ import { randomUUID } from "node:crypto";
 import { AiLogPersistenceError, buildJsonRepairPrompt, evidenceSerializer, scopedSkeletonRepair } from "./generationEvidence";
 import { aiFailureReference, validationIssues } from "./validationEvidence";
 import { sameUnresolvedPlanningIssues } from "./planningReviewPolicy";
+import { retainCourseRepairKnowledge } from "./courseRepairKnowledge";
 import { hasStageRepairableFindings, validateMapDraftQualityRepair } from "./mapDraftRepair";
 import {
-  getLongTermReviewSummary,
   type RoadmapInput,
   type RoadmapModuleInput,
   type RoadmapStageInput,
@@ -29,12 +29,8 @@ import {
   buildCourseDesignRepairPrompt,
   buildCourseDesignCritiquePrompt,
   buildTaskBriefPrompt,
-  buildDiagnosticEvaluationPrompt,
-  buildDiagnosticPrompt,
   buildIslandReactivationPrompt,
   buildKnowledgeGraphOrganizerPrompt,
-  buildLearningHintPrompt,
-  buildLongTermReviewInsightPrompt,
   buildRelationExplanationPrompt,
   buildRelationCandidatePrompt,
   buildRelationReactivationPrompt,
@@ -52,13 +48,10 @@ import {
   parseJsonObjectFromModel,
   validateTaskBriefDraft,
   validateCourseDesignDraft,
+  evaluateCourseDesignQuality,
   validateCourseDesignCritique,
-  validateDiagnosticEvaluation,
-  validateDiagnosticDraft,
   validateIslandReactivationPlan,
   validateKnowledgeGraphOrganizer,
-  validateLearningHint,
-  validateLongTermReviewInsight,
   validateRelationExplanation,
   validateRelationCandidates,
   validateRelationReactivationPlan,
@@ -83,7 +76,9 @@ import {
   assertCourseResearchInputs,
   saveCourseDesignDraft
 } from "../learning/courseDesignService";
-import { groundCourseSources } from "../learning/sourceGroundingService";
+import { groundPlanningSources, createPlanningSourceCache, normalizePlanningGrounding, publicPlanningSourceDeclarations, planningMaterials, selectPlanningMaterials, buildActualMaterialsPrompt } from "../learning/planningEvidence";
+import { planningRequestSelect, planningRequestFingerprint, planningResearchDomain, savedPlanningInput, StalePlanningRequestError } from "../learning/planningRequestSnapshot";
+import { buildPlanningKnowledgePrompt, buildPlanningKnowledgeRepairPrompt, validateGeneratedPlanningKnowledgeReview, applyValidatedPlanningKnowledgeCorrections, assertPlanningKnowledgeErrorsAddressed, planningKnowledgeDigest, createUncertainPlanningKnowledgeReview, type PlanningKnowledgeReview } from "./planningKnowledgeReview";
 import {
   scoreSourceRelevance,
   buildSourceRelevanceQuery
@@ -120,11 +115,12 @@ const aiTaskRunPolicies: Partial<Record<AiTaskType, AiTaskRunPolicy>> = {
   course_design_regeneration: { timeoutMs: 120000, maxTokens: 20000 },
   course_design_repair: { timeoutMs: 90000, maxTokens: 16000 },
   course_design_critique: { timeoutMs: 120000, maxTokens: 20000 },
+  planning_knowledge_check: { timeoutMs: 180000, maxTokens: 12000 },
   source_relevance_check: { timeoutMs: 60000, maxTokens: 4000 },
   roadmap_skeleton_generation: { timeoutMs: 180000, maxTokens: 24000 },
   roadmap_skeleton_critique: { timeoutMs: 180000, maxTokens: 24000 },
   roadmap_skeleton_repair: { timeoutMs: 180000, maxTokens: 24000 },
-  roadmap_stage_generation: { timeoutMs: 120000, maxTokens: 9000 },
+  roadmap_stage_generation: { timeoutMs: 180000, maxTokens: 18000 },
   roadmap_stage_critique: { timeoutMs: 180000, maxTokens: 24000 },
   roadmap_stage_repair: { timeoutMs: 180000, maxTokens: 24000 },
   roadmap_generation: { timeoutMs: 300000, maxTokens: 24000 },
@@ -331,6 +327,11 @@ export async function runJsonTask<T>(input: AiTaskRunInput<T>) {
       await save(responseFields(response));
       previousRaw = response.text;
       previousParsed = undefined;
+      const envelope = response.raw as {choices?:{finish_reason?:string}[];incomplete_details?:{reason?:string};status?:string} | undefined;
+      if (envelope?.choices?.some(choice => choice.finish_reason === "length") || envelope?.incomplete_details?.reason === "max_output_tokens") {
+        const error = new AiTaskValidationError("模型输出达到本次上限，返回尚未完整；已保留原文，可缩短规划描述后重试。", [{code:"output_truncated",path:"$",message:"Output was truncated by the token limit. Return concise planning fields, not lesson bodies. Preserve the complete outer object and all required identities."}]);
+        await fail(error, "validation"); throw reference(error);
+      }
       let parsed: unknown;
       try { parsed = parseJsonObjectFromModel(response.text); }
       catch (error) { await fail(error, "json_parse"); throw reference(error); }
@@ -345,12 +346,16 @@ export async function runJsonTask<T>(input: AiTaskRunInput<T>) {
     }
     throw reference(new Error("AI retry attempts exhausted."));
   };
-  try { return await execute(input.userPrompt, "initial"); }
-  catch (error) {
-    if (!(error instanceof AiTaskValidationError) || input.singleAttempt || input.taskType === "course_design_repair") throw error;
-    const issues=validationIssues(error);
-    if(input.taskType==="roadmap_skeleton_generation") scopedRepair=scopedSkeletonRepair(previousParsed,issues);
-    return execute(scopedRepair?.prompt || buildJsonRepairPrompt({originalPrompt:input.userPrompt,rawOutput:previousRaw,parsedCandidate:previousParsed,issues}), "validation");
+  let prompt = input.userPrompt;
+  const reportRepairLimit = ["roadmap_skeleton_critique", "roadmap_stage_critique"].includes(input.taskType) ? 2 : 1;
+  for (let repair = 0; ; repair++) {
+    try { return await execute(prompt, repair === 0 ? "initial" : "validation"); }
+    catch (error) {
+      if (!(error instanceof AiTaskValidationError) || input.singleAttempt || input.taskType === "course_design_repair" || repair >= reportRepairLimit) throw error;
+      const issues = validationIssues(error);
+      if (input.taskType === "roadmap_skeleton_generation") scopedRepair = scopedSkeletonRepair(previousParsed, issues);
+      prompt = scopedRepair?.prompt || buildJsonRepairPrompt({originalPrompt:input.userPrompt,rawOutput:previousRaw,parsedCandidate:previousParsed,issues});
+    }
   }
 }
 
@@ -819,65 +824,7 @@ function buildLocalRoadmapStageDraft(
   };
 }
 
-async function getLearningNodeTutorContext(nodeId: string) {
-  const node = await prisma.learningNode.findUnique({
-    where: { id: nodeId },
-    include: {
-      domain: {
-        select: {
-          id: true,
-          name: true,
-          goal: true,
-          taskBrief: true
-        }
-      },
-      knowledgePoint: {
-        include: {
-          coreReviewSessions: {
-            orderBy: { createdAt: "desc" },
-            take: 1
-          }
-        }
-      }
-    }
-  });
 
-  if (!node) {
-    throw new Error("学习节点不存在");
-  }
-
-  return {
-    domain: node.domain,
-    roadmapItem: {
-      id: node.id,
-      title: node.title,
-      keyQuestion: node.keyQuestion,
-      objective: node.objective,
-      prerequisite: node.prerequisite,
-      commonMistake: node.commonMistake,
-      transferPrompt: node.transferPrompt,
-      status: node.knowledgePoint?.masteryStatus || node.status,
-      linkedKnowledgePointId: node.knowledgePoint?.id || null
-    },
-    currentUnderstanding: node.knowledgePoint?.userUnderstanding || null,
-    currentCoreEssence: node.knowledgePoint?.coreEssence || null
-  };
-}
-
-const courseDesignResearchDomainSelect = {
-  id: true,
-  name: true,
-  description: true,
-  currentLevel: true,
-  goal: true,
-  scope: true,
-  excludedScope: true,
-  depth: true,
-  outputType: true,
-  outputTarget: true,
-  taskBrief: true,
-  taskBriefConfirmedAt: true
-} as const;
 
 const sourceRelevanceCheckDomainSelect = {
   id: true,
@@ -887,24 +834,35 @@ const sourceRelevanceCheckDomainSelect = {
   courseDesignDraft: true
 } as const;
 
+function isResearchCapabilityError(error: AiProviderError) {
+  // Authentication, rate limits, timeout and transport failures remain failures.
+  if ([401, 403, 429].includes(error.status || 0)) return false;
+  return /(?:web[_ -]?search|web research|research capability|联网|检索).*(?:unsupported|not supported|unavailable|不支持|不可用)|(?:unsupported|not supported|does not support|不支持).*(?:web|research|联网)/i.test(error.message)
+    || ([400, 404, 405, 422, 501].includes(error.status || 0) && /web[_ -]?search|research|responses endpoint/i.test(error.message));
+}
+
 export async function generateCourseDesignDraft(
   domainId: string,
   input: { feedback?: string | null } = {}
 ) {
-  const domain = await prisma.domain.findUnique({
+  const requestSnapshot = await prisma.domain.findUnique({
     where: { id: domainId },
-    select: courseDesignResearchDomainSelect
+    select: planningRequestSelect
   });
 
-  if (!domain) {
+  if (!requestSnapshot) {
     throw new Error("学习领域不存在");
   }
+  const domain = planningResearchDomain(requestSnapshot);
+  const expectedPlanningFingerprint = planningRequestFingerprint(requestSnapshot);
+  const { materials: rawMaterials, feedback: savedFeedback } = savedPlanningInput(requestSnapshot);
+  const feedback = input.feedback?.trim() ? input.feedback : savedFeedback;
   assertCourseResearchInputs(domain);
-  if (!domain.taskBriefConfirmedAt) {
-    throw new Error("请先确认任务书，再研究课程设计方向。");
-  }
 
   try {
+    const cache = createPlanningSourceCache();
+    const providedSources = await providedPlanningSources(rawMaterials, cache);
+    const actualInput = buildActualMaterialsPrompt({ sources: providedSources }, domain.goal || domain.name, rawMaterials);
     const taskType = input.feedback?.trim()
       ? "course_design_regeneration"
       : "course_design_research";
@@ -912,11 +870,14 @@ export async function generateCourseDesignDraft(
       domainId: domain.id,
       taskType,
       inputSummary: `Research course design direction for domain: ${domain.name}`,
-      userPrompt: buildCourseDesignPrompt(domain, input.feedback),
+      userPrompt: buildCourseDesignPrompt(domain, feedback) + "\n以下是服务端实际取得的材料，优先据此规划；缺失正文不能宣称来源安排已核实。\n" + actualInput,
       validate: value => validateCourseDesignDraft(value, true),
       timeoutMs: 45000,
       requiresWebResearch: true,
-      promptVersion: "course-design-research-v3-foundations-1-continuity-1"
+      promptVersion: "course-design-research-v4-flexible-goal"
+    }).catch(error => {
+      if (!(error instanceof AiProviderError) || !isResearchCapabilityError(error)) throw error;
+      return runJsonTask({ domainId:domain.id,taskType,inputSummary:`同一模型在联网不可用后基于已提供材料规划：${domain.name}`,requiresWebResearch:false,promptVersion:"course-design-v4-without-web",userPrompt:buildCourseDesignPrompt(domain,feedback)+"\n本次联网能力不可用。仅依据用户实际材料和模型知识提出待核对方案；sources可以为空，必须明确资料缺口，禁止伪造检索来源。基础可以未知，开放目标不强制单一答案或考试成果。\n"+actualInput,validate:value=>validateCourseDesignDraft(value,true) });
     });
 
     const researchedDraft = bindCourseDesignSourcesToResearchEvidence(
@@ -926,20 +887,25 @@ export async function generateCourseDesignDraft(
 
     const critiqued = await runCourseDesignCritiquePasses({
       domain,
-      draft: researchedDraft
+      draft: publicCourseSourceDraft(researchedDraft, providedSources),
+      cache, rawMaterials, providedSources, feedback
     });
     const repaired = await repairCourseDesignUntilValid({
       domain,
       draft: critiqued.draft,
       initialAiCallLogId: result.log.id,
-      previousRepairCount: 0
+      previousRepairCount: 0,
+      cache, rawMaterials, providedSources, feedback
     });
-    const finalDraft = await groundDraftSources(
-      repaired.draft.qualityReport
-        ? repaired.draft
-        : { ...repaired.draft, qualityReport: critiqued.draft.qualityReport ?? null },
-      domain
+    const repairedWithMaterials = publicCourseSourceDraft(repaired.draft, providedSources);
+    let finalDraft = await groundDraftSources(
+      repairedWithMaterials.qualityReport
+        ? repairedWithMaterials
+        : { ...repairedWithMaterials, qualityReport: critiqued.draft.qualityReport ?? null },
+      domain, cache, providedSources
     );
+    const knowledge = await independentlyCheckPlanning({ domainId: domain.id, draft: finalDraft, courseDesign: finalDraft, learner: { domain, userConcern: feedback || null }, rawMaterials, scope: "course", validate: v => validateCourseDesignDraft(v, true) });
+    finalDraft = { ...knowledge.draft, sources: finalDraft.sources, knowledgeReview: knowledge.report };
     const warnings = [critiqued.warning, repaired.warning].filter(
       (message): message is string => Boolean(message)
     );
@@ -951,15 +917,17 @@ export async function generateCourseDesignDraft(
       repair: repaired.repair,
       ...(warnings.length > 0 ? { warning: warnings.join("；") } : {})
     };
-    await saveCourseDesignDraft(domain.id, saved);
+    await saveCourseDesignDraft(domain.id, { ...saved, expectedPlanningFingerprint });
     return saved;
   } catch (error) {
+    if (error instanceof StalePlanningRequestError || error instanceof AiLogPersistenceError) throw error;
     const draft = buildLocalCourseDesignDraft(domain);
     await saveCourseDesignDraft(domain.id, {
       draft,
       aiCallLogId: null,
-      repairCount: 0
-    }).catch(() => null);
+      repairCount: 0,
+      expectedPlanningFingerprint
+    });
     return {
       draft,
       aiCallLogId: null,
@@ -1093,6 +1061,85 @@ export async function runSourceRelevanceCheck(
 const maxCourseDesignRepairAttempts = 2;
 const maxCourseDesignCritiquePasses = 2;
 
+async function rawPlanningMaterials(domainId: string) {
+  const domain = await prisma.domain.findUnique({ where: { id: domainId }, select: { entryGuideJson: true } });
+  try { return (JSON.parse(domain?.entryGuideJson || "{}").planningInput?.materials as string) || ""; }
+  catch { return ""; }
+}
+
+/** Knowledge evidence is separate from the structure/semantic receipt. Never writes the formal map. */
+async function independentlyCheckPlanning<T>(input: {
+  domainId: string; draft: T; courseDesign: CourseDesignDraft; learner: unknown;
+  scope: string; stageKey?: string | null; validate: (v: unknown) => T;
+  rawMaterials?: string;
+  initialKnownError?: PlanningKnowledgeReview | null;
+  priorKnowledgeHistory?: unknown[];
+}) {
+  let draft = input.draft;
+  const materials = selectPlanningMaterials(planningMaterials(input.courseDesign, input.rawMaterials ?? await rawPlanningMaterials(input.domainId)), JSON.stringify(input.draft));
+  const aiCallLogIds: string[] = [], corrections: unknown[] = [];
+  let last: PlanningKnowledgeReview | null = input.initialKnownError || null;
+  // The full old candidate and source report stay in the saved archive, not duplicated
+  // into every prompt. Current materials below are this request's evidence selection.
+  const inheritedContext = input.priorKnowledgeHistory?.length ? [{
+    kind: "retained_course_knowledge_context", originalAiCallLogIds: input.initialKnownError?.aiCallLogIds || [],
+    note: "完整原候选与原报告另存归档；以下仅为未改字段的原错误约束，不是本次新核对。旧来源引用不冒充本次实际片段。实际变更的字段仍需重新核对。",
+    knownError: input.initialKnownError ? { summary: input.initialKnownError.summary, claims: input.initialKnownError.claims, findings: input.initialKnownError.findings } : null
+  }] : [];
+  let reportRepair: { rawOutput: string; parsedCandidate: unknown; issues: ReturnType<typeof validationIssues>; aiCallLogId?: string } | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let correctionReportLogId: string | undefined;
+    try {
+      const auditPrompt = buildPlanningKnowledgePrompt({ draft, materials, learner: input.learner, scope: input.scope, stageKey: input.stageKey || undefined, previousCorrections: [...inheritedContext, ...corrections] });
+      const checked: { data: PlanningKnowledgeReview; aiCallLogIds: string[] } = await runJsonTask<PlanningKnowledgeReview>({
+        domainId: input.domainId, taskType: "planning_knowledge_check", singleAttempt: true,
+        inputSummary: `Independent knowledge/conditions check: ${input.scope}; correction ${attempt}/2`,
+        userPrompt: reportRepair ? buildPlanningKnowledgeRepairPrompt({ originalPrompt: auditPrompt, ...reportRepair, ...(last?.verdict === "confirmed_error" && last.draftDigest === planningKnowledgeDigest(draft) ? { knownErrorReport: last } : {}) }) : auditPrompt,
+        validate: v => validateGeneratedPlanningKnowledgeReview(v, draft, materials),
+        promptVersion: "planning-knowledge-v3-retained-corrections"
+      });
+      aiCallLogIds.push(...checked.aiCallLogIds);
+      correctionReportLogId = checked.aiCallLogIds.at(-1);
+      const previous = last;
+      const next = checked.data;
+      reportRepair = null;
+      if (next.verdict !== "confirmed_error" || attempt === 2) {
+        assertPlanningKnowledgeErrorsAddressed(previous, next);
+        last = next;
+        break;
+      }
+      // Until the new batch succeeds, keep the earlier error bound to the unchanged draft.
+      if (previous?.verdict !== "confirmed_error" || previous.draftDigest !== next.draftDigest) last = next;
+      const validated = applyValidatedPlanningKnowledgeCorrections(next, draft, input.validate);
+      assertPlanningKnowledgeErrorsAddressed(previous, next, { before: draft, after: validated });
+      last = next;
+      corrections.push({ findings: next.findings, beforeHash: planningKnowledgeDigest(draft), afterHash: planningKnowledgeDigest(validated) });
+      draft = validated;
+    } catch (error) {
+      if (error instanceof AiLogPersistenceError) throw error;
+      aiCallLogIds.push(...(aiFailureReference(error).aiCallLogIds || []));
+      const message = error instanceof Error ? error.message : "核对未完成";
+      if (!last || last.draftDigest !== planningKnowledgeDigest(draft)) last = { reviewVersion: 1, draftDigest: planningKnowledgeDigest(draft), materialsDigest: planningKnowledgeDigest(materials), verdict: "uncertain", summary: "独立知识核对未完成；已执行的更正仍保留，当前候选尚待核对", claims: [], findings: [], limitations: [message] };
+      else last = { ...last, limitations: [...last.limitations, message] };
+      // Report repairs and teaching corrections share the same total budget: at most three calls.
+      if ((error instanceof AiTaskValidationError || correctionReportLogId) && attempt < 2) {
+        // A valid report can still fail application/normalization. Repair from its saved raw
+        // output, retaining the original known error and draft until the whole batch survives.
+        const failedLogId = aiFailureReference(error).aiCallLogId || correctionReportLogId;
+        const failed = failedLogId ? await prisma.aiCallLog.findUnique({ where: { id: failedLogId }, select: { rawOutput: true, parsedOutputJson: true } }) : null;
+        if (failed?.rawOutput) {
+          let parsedCandidate: unknown;
+          try { parsedCandidate = failed.parsedOutputJson ? JSON.parse(failed.parsedOutputJson) : undefined; } catch { parsedCandidate = undefined; }
+          reportRepair = { rawOutput: failed.rawOutput, parsedCandidate, issues: validationIssues(error), aiCallLogId: failedLogId };
+          continue;
+        }
+      }
+      break;
+    }
+  }
+  return { draft, report: { ...last!, aiCallLogIds: [...new Set([...(input.initialKnownError?.aiCallLogIds || []), ...aiCallLogIds])], corrections: [...(input.priorKnowledgeHistory || []), ...corrections], materials: last?.materials || materials }, aiCallLogIds };
+}
+
 const normalizeResearchUrl = (value: string) => {
   try {
     const url = new URL(value);
@@ -1106,6 +1153,23 @@ const normalizeResearchUrl = (value: string) => {
     return null;
   }
 };
+
+async function providedPlanningSources(rawMaterials: string, cache: ReturnType<typeof createPlanningSourceCache>): Promise<CourseDesignDraft["sources"]> {
+  const urls = [...new Set(rawMaterials.match(/https:\/\/[^\s<>"')]+/g) || [])].slice(0, 8);
+  const digests = await groundPlanningSources(urls, cache);
+  return urls.map((url, index) => ({ url, title: digests[index].title || url, reason: "用户提供的资料", grounding: normalizePlanningGrounding(digests[index]) }));
+}
+
+/** Model internal IDs never become public retrieval declarations or overwrite actual user URLs. */
+function publicCourseSourceDraft(draft: CourseDesignDraft, providedSources: CourseDesignDraft["sources"] = []): CourseDesignDraft {
+  const sourcesByUrl = new Map<string, CourseDesignDraft["sources"][number]>();
+  for (const source of publicPlanningSourceDeclarations([...providedSources, ...draft.sources])) {
+    const key = normalizeResearchUrl(source.url) || source.url;
+    if (!sourcesByUrl.has(key)) sourcesByUrl.set(key, source);
+  }
+  const current = { ...draft, sources: [...sourcesByUrl.values()].slice(0, 8) };
+  return { ...current, qualityGate: evaluateCourseDesignQuality(current) };
+}
 
 function bindCourseDesignSourcesToResearchEvidence(
   draft: CourseDesignDraft,
@@ -1143,11 +1207,14 @@ function bindCourseDesignSourcesToResearchEvidence(
 
 const groundDraftSources = async (
   draft: CourseDesignDraft,
-  domain: { name?: string | null; scope?: string | null; goal?: string | null }
+  domain: { name?: string | null; scope?: string | null; goal?: string | null },
+  cache = createPlanningSourceCache(),
+  providedSources: CourseDesignDraft["sources"] = []
 ): Promise<CourseDesignDraft> => {
+  draft = publicCourseSourceDraft(draft, providedSources);
   try {
-    const digests = await groundCourseSources(
-      draft.sources.map((source) => source.url)
+    const digests = await groundPlanningSources(
+      draft.sources.map((source) => source.url), cache
     );
     const digestByUrl = new Map(
       draft.sources.map((source, index) => [source.url, digests[index]])
@@ -1170,23 +1237,25 @@ const groundDraftSources = async (
         return {
           ...source,
           grounding: {
-            ok: digest.ok,
-            status: digest.status,
-            title: digest.title,
-            excerpt: digest.excerpt,
+            ...normalizePlanningGrounding(digest),
             relevance
           }
         };
       })
     };
-  } catch {
-    return draft;
+  } catch (error) {
+    // Never preserve a model-supplied retrieval claim after the actual fetch failed.
+    return { ...draft, sources: draft.sources.map(source => ({ ...source, grounding: normalizePlanningGrounding({ ok: false, status: null, finalUrl: null, title: null, excerpt: null, fragments: [], error: error instanceof Error ? error.message : "来源取得失败" }) })) };
   }
 };
 
 async function runCourseDesignCritiquePasses(input: {
   domain: CourseDesignResearchDomain;
   draft: CourseDesignDraft;
+  cache?: ReturnType<typeof createPlanningSourceCache>;
+  rawMaterials?: string;
+  providedSources?: CourseDesignDraft["sources"];
+  feedback?: string;
 }): Promise<{
   draft: CourseDesignDraft;
   critiqueAiCallLogIds: string[];
@@ -1195,9 +1264,10 @@ async function runCourseDesignCritiquePasses(input: {
   let draft = input.draft;
   const critiqueAiCallLogIds: string[] = [];
   let warning: string | undefined;
+  const cache = input.cache || createPlanningSourceCache();
 
   for (let pass = 1; pass <= maxCourseDesignCritiquePasses; pass += 1) {
-    draft = await groundDraftSources(draft, input.domain);
+    draft = await groundDraftSources(draft, input.domain, cache, input.providedSources);
     try {
       const result = await runJsonTask({
         domainId: input.domain.id,
@@ -1213,9 +1283,9 @@ async function runCourseDesignCritiquePasses(input: {
             title: source.grounding?.title ?? null,
             excerpt: source.grounding?.excerpt ?? null
           }))
-        }),
+        }) + "\n本轮用户质疑（只读待核对，不是已成立错误或新增课程要求）：" + JSON.stringify(input.feedback || null) + "\n实际材料优先；网址、标题、摘要不证明教学顺序。只有以下正文片段可支持具体来源主张，未取得正文须改写为暂定教学选择或待核对解释。\n" + buildActualMaterialsPrompt(draft, input.domain.goal || input.domain.name, input.rawMaterials),
         validate: value => validateCourseDesignCritique(value, draft.courseDesignVersion === 3),
-        requiresWebResearch: true,
+        requiresWebResearch: false,
         promptVersion: "course-design-critique-v3-foundations-1-continuity-1"
       });
       critiqueAiCallLogIds.push(result.log.id);
@@ -1223,10 +1293,10 @@ async function runCourseDesignCritiquePasses(input: {
         result.data.draft,
         result.researchSources
       );
-      draft = {
+      draft = await groundDraftSources({
         ...revisedDraft,
         qualityReport: result.data.report
-      };
+      }, input.domain, cache, input.providedSources);
       if (!result.data.report.significantIssues) break;
     } catch (error) {
       warning =
@@ -1282,8 +1352,21 @@ async function repairCourseDesignUntilValid(input: {
   draft: CourseDesignDraft;
   initialAiCallLogId: string | null;
   previousRepairCount: number;
+  cache?: ReturnType<typeof createPlanningSourceCache>;
+  rawMaterials?: string;
+  providedSources?: CourseDesignDraft["sources"];
+  feedback?: string;
 }) {
-  let draft = input.draft;
+  const cache = input.cache || createPlanningSourceCache();
+  let draft = await groundDraftSources(input.draft, input.domain, cache, input.providedSources);
+  // Saved model JSON is historical evidence, not a second set of current source facts.
+  const domainContext: CourseDesignResearchDomain = {
+    id: input.domain.id, name: input.domain.name, description: input.domain.description,
+    currentLevel: input.domain.currentLevel, goal: input.domain.goal, scope: input.domain.scope,
+    excludedScope: input.domain.excludedScope, depth: input.domain.depth,
+    outputType: input.domain.outputType, outputTarget: input.domain.outputTarget,
+    taskBrief: input.domain.taskBrief, taskBriefConfirmedAt: input.domain.taskBriefConfirmedAt
+  };
   let aiCallLogId = input.initialAiCallLogId;
   const repair = emptyCourseDesignRepairSummary(
     input.initialAiCallLogId,
@@ -1304,21 +1387,22 @@ async function repairCourseDesignUntilValid(input: {
         taskType: "course_design_repair",
         inputSummary: `Repair course design direction for domain: ${input.domain.name}; attempt ${repair.attempts}; missing: ${draft.qualityGate.missing.join(", ")}`,
         userPrompt: buildCourseDesignRepairPrompt({
-          domain: input.domain,
+          domain: domainContext,
           draft,
           missing: draft.qualityGate.missing
-        }),
+        }) + "\n本轮用户质疑（只读待核对，不是已成立错误或新增课程要求）：" + JSON.stringify(input.feedback || null) + "\n公开来源与实际用户正文分别记录；内部 pasted 身份不是公开来源 URL，不能写入 sources。实际材料如下：\n" + buildActualMaterialsPrompt(draft, input.domain.goal || input.domain.name, input.rawMaterials),
         validate: value => validateCourseDesignDraft(value, true),
-        requiresWebResearch: true,
+        requiresWebResearch: false,
         promptVersion: "course-design-repair-v3-foundations-1-continuity-1"
       });
-      draft = bindCourseDesignSourcesToResearchEvidence(
+      draft = await groundDraftSources(bindCourseDesignSourcesToResearchEvidence(
         result.data,
         result.researchSources
-      );
+      ), input.domain, cache, input.providedSources);
       aiCallLogId = result.log.id;
       repair.aiCallLogIds.push(result.log.id);
     } catch (error) {
+      if (error instanceof AiLogPersistenceError) throw error;
       repair.error =
         error instanceof Error ? error.message : "AI course design repair failed.";
       if (repair.attempts < maxCourseDesignRepairAttempts) {
@@ -1340,43 +1424,48 @@ async function repairCourseDesignUntilValid(input: {
 }
 
 export async function repairCourseDesignDraft(domainId: string) {
-  const domain = await prisma.domain.findUnique({
+  const requestSnapshot = await prisma.domain.findUnique({
     where: { id: domainId },
-    select: {
-      ...courseDesignResearchDomainSelect,
-      courseDesignDraft: true,
-      courseDesignRepairCount: true,
-      courseDesignAiCallLogId: true
-    }
+    select: planningRequestSelect
   });
 
-  if (!domain) throw new Error("学习领域不存在");
+  if (!requestSnapshot) throw new Error("学习领域不存在");
+  const domain = planningResearchDomain(requestSnapshot);
+  const expectedPlanningFingerprint = planningRequestFingerprint(requestSnapshot);
   assertCourseResearchInputs(domain);
-  if (!domain.taskBriefConfirmedAt) {
-    throw new Error("请先确认任务书，再修复课程设计方向。");
-  }
-  if (!domain.courseDesignDraft) throw new Error("请先生成课程设计方向。");
+  if (!requestSnapshot.courseDesignDraft) throw new Error("请先生成课程设计方向。");
 
-  const draft = validateCourseDesignDraft(JSON.parse(domain.courseDesignDraft));
+  const originalSavedDraft = JSON.parse(requestSnapshot.courseDesignDraft);
+  const draft = validateCourseDesignDraft(originalSavedDraft);
   if (draft.qualityGate.passed) {
     throw new Error("课程设计方向已通过质量门，无需修复。");
   }
 
+  const cache = createPlanningSourceCache();
+  const { materials: rawMaterials, feedback } = savedPlanningInput(requestSnapshot);
+  const providedSources = await providedPlanningSources(rawMaterials, cache);
+
   const repaired = await repairCourseDesignUntilValid({
     domain,
     draft,
-    initialAiCallLogId: domain.courseDesignAiCallLogId,
-    previousRepairCount: domain.courseDesignRepairCount
+    initialAiCallLogId: requestSnapshot.courseDesignAiCallLogId,
+    previousRepairCount: requestSnapshot.courseDesignRepairCount,
+    cache, rawMaterials, providedSources, feedback
   });
+  const priorKnowledge = retainCourseRepairKnowledge(originalSavedDraft, repaired.draft);
+  const knowledge = await independentlyCheckPlanning({ domainId: domain.id, draft: repaired.draft,
+    courseDesign: repaired.draft, learner: { domain, userConcern: feedback || null }, rawMaterials, scope: "course",
+    validate: value => validateCourseDesignDraft(value, true), initialKnownError: priorKnowledge.knownError,
+    priorKnowledgeHistory: priorKnowledge.history });
   const saved = {
-    draft: repaired.draft,
+    draft: { ...knowledge.draft, knowledgeReview: knowledge.report },
     aiCallLogId: repaired.aiCallLogId,
     repairCount: repaired.repair.totalAttempts,
     source: repaired.aiCallLogId ? ("ai" as const) : ("fallback" as const),
     repair: repaired.repair,
     ...(repaired.warning ? { warning: repaired.warning } : {})
   };
-  await saveCourseDesignDraft(domain.id, saved);
+  await saveCourseDesignDraft(domain.id, { ...saved, expectedPlanningFingerprint });
   return saved;
 }
 
@@ -1413,6 +1502,7 @@ function assertConfirmedCourseDesignForBatchRoadmap(
   if (!courseDesign.qualityGate.passed) {
     throw new Error("课程设计方向未通过质量门禁，不能生成领域地图。");
   }
+  if (courseDesign.knowledgeReview?.verdict === "confirmed_error") throw new Error("课程有尚未修正的明确知识错误，不能生成正式路线候选。");
 }
 
 export async function generateRoadmapSkeletonDraft(
@@ -1461,17 +1551,21 @@ export async function generateRoadmapSkeletonDraft(
   } catch (error) {
     if (
       !(error instanceof AiProviderError) &&
-      !(error instanceof AiConfigurationError)
+      !(error instanceof AiConfigurationError) &&
+      !(error instanceof AiTaskValidationError)
     ) {
       throw error;
     }
     const message = error instanceof Error ? error.message : "AI 语义复审暂不可用。";
+    const failureLogIds = [...aiCallLogIds, ...(aiFailureReference(error).aiCallLogIds || [])];
+    const materials = selectPlanningMaterials(planningMaterials(courseDesign!, await rawPlanningMaterials(domain.id)), JSON.stringify(generation.data));
     return {
       skeleton: generation.data,
       aiCallLogId: generation.log.id,
-      aiCallLogIds: [generation.log.id],
+      aiCallLogIds: failureLogIds,
       qualityReport: {
         status: "blocked" as const,
+        knowledgeReview: createUncertainPlanningKnowledgeReview(generation.data, materials, `语义复审不可用，未执行独立知识核对：${message}`, failureLogIds),
         summary: "AI 语义复审暂不可用；这不是路线内容缺陷。",
         blockingIssues: [],
         warnings: [
@@ -1533,6 +1627,10 @@ export async function generateRoadmapSkeletonDraft(
     throw new Error("MAP_QUALITY_BLOCKED: 路线修复结果丢失了分层规划版本。");
   }
 
+  const knowledge = await independentlyCheckPlanning({ domainId: domain.id, draft: reviewed.draft, courseDesign: courseDesign!, learner: domain, scope: "skeleton", validate: validateRoadmapSkeletonDraft });
+  reviewed.draft = knowledge.draft;
+  reviewed.report = { ...reviewed.report, knowledgeReview: knowledge.report };
+  aiCallLogIds.push(...knowledge.aiCallLogIds);
   return {
     skeleton: reviewed.draft,
     aiCallLogId: generation.log.id,
@@ -1547,6 +1645,7 @@ export async function generateRoadmapSkeletonDraft(
 export async function reviewRoadmapDraftQuality(
   domainId: string,
   input: {
+    feedback?: string | null;
     courseDesign?: CourseDesignDraft | null;
     draft: RoadmapInput;
     scope: "skeleton" | "stage" | "map";
@@ -1577,7 +1676,9 @@ export async function reviewRoadmapDraftQuality(
       domain,
       courseDesign,
       draft: initialDraft,
-      scope: input.scope
+      scope: input.scope,
+      stageKey: input.stageKey,
+      feedback: input.feedback
     }),
     validate: value => validateMapDraftQualityReview(value, initialDraft),
     promptVersion: "map-draft-review-v3-critical-1-contributions-2-excerpts-1-continuity-1"
@@ -1605,12 +1706,15 @@ export async function reviewRoadmapDraftQuality(
         draft: reviewed.draft,
         scope: input.scope,
         stageKey: input.stageKey,
+        feedback: input.feedback,
         previousReport: reviewed.report
       }) : buildMapDraftQualityRepairPrompt({
         domain,
         courseDesign,
         draft: reviewed.draft,
         scope: input.scope,
+        stageKey: input.stageKey,
+        feedback: input.feedback,
         previousReport: reviewed.report
       }),
       validate: (value) => validateMapDraftQualityRepair(value, reviewed.draft, {
@@ -1635,10 +1739,11 @@ export async function reviewRoadmapDraftQuality(
     }
   }
 
+  const knowledge = await independentlyCheckPlanning({ domainId: domain.id, draft: reviewed.draft, courseDesign: courseDesign!, learner: {domain,userConcern:input.feedback||null}, scope: input.scope, stageKey: input.stageKey, validate: v => validateRoadmapInput(v as RoadmapInput) });
   return {
-    draft: reviewed.draft,
-    qualityReport: reviewed.report,
-    aiCallLogIds,
+    draft: knowledge.draft,
+    qualityReport: { ...reviewed.report, knowledgeReview: knowledge.report },
+    aiCallLogIds: [...aiCallLogIds, ...knowledge.aiCallLogIds],
     repairAttempts
   };
 }
@@ -1668,14 +1773,14 @@ export async function generateRoadmapStageDraft(
   const visitedNodes = await prisma.learningNode.findMany({
     where: {
       domainId,
-      status: { in: ["in_progress", "completed", "mastered", "needs_review"] }
+      status: { in: ["in_progress", "completed"] }
     },
     orderBy: { updatedAt: "desc" },
     take: 40,
     select: {
       title: true,
       status: true,
-      knowledgePoint: { select: { userUnderstanding: true } }
+      knowledgeLinks: { include: { knowledgePoint: { include: { currentRevision: true } } } }
     }
   });
   const knownNodes = await prisma.learningNode.findMany({where:{domainId},select:{id:true,mapKey:true,title:true,conceptJson:true}});
@@ -1683,7 +1788,7 @@ export async function generateRoadmapStageDraft(
   const learningContext = visitedNodes.map((node) => ({
     title: node.title,
     status: node.status,
-    userUnderstanding: node.knowledgePoint?.userUnderstanding || null
+    userUnderstanding: node.knowledgeLinks?.map(link=>link.knowledgePoint.currentRevision?.body || "").filter(Boolean).join("\n") || null
   }));
   try {
     const result = await runJsonTask({
@@ -1877,176 +1982,13 @@ export async function generateTaskBriefDraft(domainId: string) {
   }
 }
 
-export async function generateDiagnosticDraft(domainId: string) {
-  const domain = await prisma.domain.findUnique({
-    where: { id: domainId },
-    select: { id: true, name: true, goal: true, taskBrief: true }
-  });
 
-  if (!domain) {
-    throw new Error("学习领域不存在");
-  }
 
-  const [units, nodes] = await prisma.$transaction([
-    prisma.unit.findMany({
-      where: { domainId },
-      orderBy: { orderIndex: "asc" },
-      select: {
-        id: true,
-        title: true
-      }
-    }),
-    prisma.learningNode.findMany({
-      where: { domainId },
-      orderBy: { orderIndex: "asc" },
-      select: {
-        id: true,
-        unitId: true,
-        moduleTitle: true,
-        title: true
-      }
-    })
-  ]);
 
-  const unitMap = new Map(units.map((unit) => [unit.id, unit.title]));
-  const roadmapItems = nodes.map((item) => ({
-    id: item.id,
-    title: item.title,
-    context: `${unitMap.get(item.unitId || "") || "未分组单元"} / ${item.moduleTitle || "默认模块"}`
-  }));
 
-  if (roadmapItems.length === 0) {
-    throw new Error("请先保存路线图，再生成诊断题草稿");
-  }
 
-  const allowedIds = new Set(roadmapItems.map((item) => item.id));
-  const result = await runJsonTask({
-    canvasId: domain.id,
-    taskType: "diagnostic_generation",
-    inputSummary: `Generate diagnostic draft for domain: ${domain.name}; items: ${roadmapItems.length}`,
-    userPrompt: buildDiagnosticPrompt(domain, roadmapItems),
-    validate: (value) => validateDiagnosticDraft(value, allowedIds)
-  });
 
-  return { draft: result.data, aiCallLogId: result.log.id };
-}
 
-export async function evaluateDiagnosticAnswer(answerId: string) {
-  const answer = await prisma.diagnosticAnswer.findUnique({
-    where: { id: answerId },
-    include: {
-      question: {
-        include: {
-          session: {
-            include: {
-              domain: {
-                select: { id: true, name: true, goal: true, taskBrief: true }
-              }
-            }
-          },
-          learningNode: true
-        }
-      }
-    }
-  });
-
-  if (!answer) {
-    throw new Error("诊断回答不存在");
-  }
-
-  const domain = answer.question.session.domain;
-  const roadmapItem = answer.question.learningNode;
-  const result = await runJsonTask({
-    canvasId: domain.id,
-    taskType: "answer_evaluation",
-    inputSummary: `Evaluate diagnostic answer for domain: ${domain.name}; question: ${answer.question.prompt.slice(0, 120)}`,
-    userPrompt: buildDiagnosticEvaluationPrompt({
-      domain,
-      question: {
-        prompt: answer.question.prompt,
-        questionType: answer.question.questionType,
-        expectedAnswer: answer.question.expectedAnswer
-      },
-      answer: answer.response,
-      roadmapItem: roadmapItem
-        ? {
-            title: roadmapItem.title,
-            keyQuestion: roadmapItem.keyQuestion,
-            objective: roadmapItem.objective,
-            prerequisite: roadmapItem.prerequisite,
-            commonMistake: roadmapItem.commonMistake,
-            transferPrompt: roadmapItem.transferPrompt,
-            status: roadmapItem.status
-          }
-        : null
-    }),
-    validate: validateDiagnosticEvaluation
-  });
-
-  const assessment = JSON.stringify(result.data);
-  const updated = await prisma.diagnosticAnswer.update({
-    where: { id: answer.id },
-    data: {
-      assessment,
-      result: result.data.suggestedResult
-    }
-  });
-
-  return {
-    answer: updated,
-    evaluation: result.data,
-    aiCallLogId: result.log.id,
-    updatedRoadmapItemId: null,
-    suggestedRoadmapItemUpdate: roadmapItem
-      ? {
-          roadmapItemId: roadmapItem.id,
-          suggestedStatus: result.data.suggestedRoadmapStatus
-        }
-      : null
-  };
-}
-
-export async function generateLearningNodeHint(
-  nodeId: string,
-  input: {
-    hintLevel?: number;
-    userQuestion?: string | null;
-    currentUnderstanding?: string | null;
-    currentCoreEssence?: string | null;
-  }
-) {
-  const context = await getLearningNodeTutorContext(nodeId);
-  const hintLevel =
-    typeof input.hintLevel === "number" &&
-    input.hintLevel >= 1 &&
-    input.hintLevel <= 5
-      ? Math.round(input.hintLevel)
-      : 1;
-
-  const result = await runJsonTask({
-    canvasId: context.domain.id,
-    taskType: "hint_generation",
-    inputSummary: `Generate level ${hintLevel} hint for node: ${context.roadmapItem.title}`,
-    userPrompt: buildLearningHintPrompt({
-      ...context,
-      currentUnderstanding:
-        input.currentUnderstanding || context.currentUnderstanding,
-      currentCoreEssence: input.currentCoreEssence || context.currentCoreEssence,
-      userQuestion: input.userQuestion,
-      hintLevel
-    }),
-    validate: validateLearningHint
-  });
-
-  return { hint: result.data, aiCallLogId: result.log.id };
-}
-
-export async function generateRoadmapItemHint(
-  itemId: string,
-  input: Parameters<typeof generateLearningNodeHint>[1]
-) {
-  return generateLearningNodeHint(itemId, input);
-}
 
 export async function evaluateLearningNodeAnswer(
   nodeId: string,
@@ -2067,36 +2009,9 @@ export async function evaluateRoadmapItemLearning(
   return evaluateLearningNodeAnswer(itemId, input);
 }
 
-export async function generateLearningNodePractice(
-  nodeId: string,
-  input: {
-    userGoal?: string | null;
-  }
-) {
-  const context = await getLearningNodeTutorContext(nodeId);
-  const wordId = context.roadmapItem.linkedKnowledgePointId;
 
-  if (!wordId) {
-    throw new Error("Complete this learning node before generating practice.");
-  }
 
-  const result = await generateTransferChallenge(wordId, {
-    canvasId: context.domain.id,
-    userGoal: input.userGoal
-  });
 
-  return {
-    practice: result.challenge,
-    aiCallLogId: result.aiCallLogId
-  };
-}
-
-export async function generateRoadmapItemPractice(
-  itemId: string,
-  input: Parameters<typeof generateLearningNodePractice>[1]
-) {
-  return generateLearningNodePractice(itemId, input);
-}
 
 type KnowledgePointPromptContext = {
   id: string;
@@ -2133,8 +2048,8 @@ async function loadKnowledgePointPromptContext(
   return {
     id: point.id,
     text: point.title,
-    canvasId: point.domainId,
-    canvasName: point.domain.name,
+    canvasId: point.domainId || "",
+    canvasName: point.domain?.name || "个人记录",
     coreEssence: point.coreEssence || null,
     userUnderstanding: point.userUnderstanding || null,
     isIsland: point.isIsland,
@@ -2169,8 +2084,8 @@ async function loadKnowledgePointPromptContextMap(pointIds: string[]) {
       {
         id: point.id,
         text: point.title,
-        canvasId: point.domainId,
-        canvasName: point.domain.name,
+        canvasId: point.domainId || "",
+        canvasName: point.domain?.name || "个人记录",
         coreEssence: point.coreEssence || null,
         userUnderstanding: point.userUnderstanding || null,
         isIsland: point.isIsland,
@@ -2230,8 +2145,8 @@ export async function generateRelationCandidates(
       {
         id: target.id,
         text: target.title,
-        canvasId: target.domainId,
-        canvasName: target.domain.name,
+        canvasId: target.domainId || "",
+        canvasName: target.domain?.name || "个人记录",
         coreEssence: target.coreEssence || null,
         isWormholeTarget: false
       }
@@ -2540,7 +2455,7 @@ export async function generateIslandReactivationPlan(
   const normalizedTargets = candidateTargets.map((target) => ({
     id: target.id,
     text: target.title,
-    canvasName: target.domain.name,
+    canvasName: target.domain?.name || "个人记录",
     coreEssence: target.coreEssence || null
   }));
 
@@ -2639,138 +2554,6 @@ export async function generateRelationReactivationPlan(
 
   return {
     plan: result.data,
-    aiCallLogId: result.log.id
-  };
-}
-
-export async function generateLongTermReviewInsightPack(domainId: string) {
-  const domain = await prisma.domain.findUnique({
-    where: { id: domainId },
-    select: { id: true, name: true }
-  });
-
-  if (!domain) {
-    throw new Error("学习领域不存在");
-  }
-
-  const summary = await getLongTermReviewSummary(domainId);
-
-  const focusWordIds = Array.from(
-    new Set([
-      ...summary.queue.map((entry) => entry.wordId),
-      ...summary.longTermIslands.map((entry) => entry.wordId),
-      ...summary.weakRelations.map((entry) => entry.fromWordId)
-    ])
-  );
-
-  const focusWords = await prisma.knowledgePoint.findMany({
-    where: { id: { in: focusWordIds } },
-    select: {
-      id: true,
-      title: true,
-      masteryStatus: true,
-      isIsland: true,
-      islandReason: true
-    }
-  });
-
-  const wormholes = (await listKnowledgeRelations(domainId))
-    .filter((relation) => relation.relationType === "WORMHOLE")
-    .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
-    .slice(0, 12);
-  const pointMap = await loadKnowledgePointPromptContextMap(
-    wormholes.flatMap((relation) => [relation.fromWordId, relation.toWordId])
-  );
-
-  const wormholeContexts = wormholes.map((relation) => ({
-    relationId: relation.id,
-    status: relation.status,
-    evidenceStrength: relation.evidenceStrength,
-    detail: relation.detail,
-    applicability: relation.applicability,
-    misuseRisk: relation.misuseRisk,
-    fromWord: {
-      id: relation.fromWordId,
-      text: relation.fromWord.text,
-      canvasName:
-        pointMap.get(relation.fromWordId)?.canvasName || relation.fromWord.canvas.name,
-      coreEssence: pointMap.get(relation.fromWordId)?.coreEssence || null
-    },
-    toWord: {
-      id: relation.toWordId,
-      text: relation.toWord.text,
-      canvasName:
-        pointMap.get(relation.toWordId)?.canvasName || relation.toWord.canvas.name,
-      coreEssence: pointMap.get(relation.toWordId)?.coreEssence || null
-    }
-  }));
-
-  const relatedWordPool = Array.from(
-    new Map(
-      wormholeContexts.flatMap((relation) => [
-        [
-          relation.fromWord.id,
-          {
-            id: relation.fromWord.id,
-            text: relation.fromWord.text,
-            canvasName: relation.fromWord.canvasName
-          }
-        ],
-        [
-          relation.toWord.id,
-          {
-            id: relation.toWord.id,
-            text: relation.toWord.text,
-            canvasName: relation.toWord.canvasName
-          }
-        ]
-      ])
-    ).values()
-  );
-
-  const result = await runJsonTask({
-    canvasId: domainId,
-    taskType: "long_term_review_generation",
-    inputSummary: `Generate long-term review pack for domain: ${domain.name}; focusWords: ${focusWords.length}; wormholes: ${wormholeContexts.length}`,
-    userPrompt: buildLongTermReviewInsightPrompt({
-      domain,
-      summary: {
-        overdueCount: summary.overdueCount,
-        dueTodayCount: summary.dueTodayCount,
-        upcomingCount: summary.upcomingCount,
-        longTermIslandCount: summary.longTermIslandCount,
-        weakRelationCount: summary.weakRelationCount,
-        nextActions: summary.nextActions
-      },
-      focusWords: focusWords.map((word) => ({
-        id: word.id,
-        text: word.title,
-        masteryStatus: word.masteryStatus,
-        isIsland: word.isIsland,
-        islandReason: word.islandReason
-      })),
-      wormholes: wormholeContexts,
-      relatedWordPool
-    }),
-    validate: (value) =>
-      validateLongTermReviewInsight(
-        value,
-        new Set(focusWords.map((word) => word.id)),
-        new Set(relatedWordPool.map((word) => word.id)),
-        new Set(wormholeContexts.map((relation) => relation.relationId))
-      )
-  });
-
-  return {
-    pack: result.data,
-    focusWords: focusWords.map((word) => ({
-      id: word.id,
-      text: word.title,
-      masteryStatus: word.masteryStatus,
-      isIsland: word.isIsland,
-      islandReason: word.islandReason
-    })),
-    wormholes: wormholeContexts,
     aiCallLogId: result.log.id
   };
 }

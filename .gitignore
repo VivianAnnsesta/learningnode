@@ -9,6 +9,7 @@ web/.electron-cache/
 web/.electron-builder-cache/
 web/.electron-user-data/
 web/.npm-cache/
+web/.verification-temp/
 
 .env
 .env.*

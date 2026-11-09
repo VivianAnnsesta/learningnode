@@ -53,13 +53,6 @@ export type DomainWorkflowSnapshot = {
 export function deriveDomainWorkflowSnapshot(
   input: DomainWorkflowInput
 ): DomainWorkflowSnapshot {
-  if (!input.taskBriefConfirmed) {
-    return {
-      phase: "needs_task_brief",
-      allowedActions: ["CONFIRM_TASK_BRIEF"],
-      blockers: ["任务书尚未由服务端确认。"]
-    };
-  }
   if (!input.courseDesignReady) {
     return {
       phase: "needs_course_design",

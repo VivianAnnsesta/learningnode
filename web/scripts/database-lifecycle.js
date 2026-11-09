@@ -368,6 +368,19 @@ const restoreLegacyMigrationFidelity = async ({
       if (Number(updated) < 1) {
         throw new Error(`Migration fidelity restore could not find Word "${word.id}".`);
       }
+      // Keep restored legacy context in immutable content history as well as the
+      // compatibility columns. Repeated starts never move a user's newer revision.
+      const columns = await client.$queryRawUnsafe('PRAGMA table_info(KnowledgePoint)');
+      if (!columns.some(column => column.name === 'currentRevisionId')) continue;
+      const points = await client.$queryRawUnsafe('SELECT id,title,userUnderstanding,coreEssence,currentRevisionId FROM KnowledgePoint WHERE legacyWordId = ?', word.id);
+      const point = points[0];
+      const revisionId = `legacy-fidelity-revision:${point.id}`;
+      const existing = await client.$queryRawUnsafe('SELECT id FROM KnowledgePointRevision WHERE id = ?', revisionId);
+      if (!existing.length) {
+        const versions = await client.$queryRawUnsafe('SELECT COALESCE(MAX(sequence),0) AS seq FROM KnowledgePointRevision WHERE knowledgePointId = ?', point.id);
+        await client.$executeRawUnsafe('INSERT INTO KnowledgePointRevision (id,knowledgePointId,sequence,title,body,sourceType,sourcesJson,createdAt) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)', revisionId, point.id, Number(versions[0].seq)+1, point.title, point.userUnderstanding || point.coreEssence || '', point.userUnderstanding ? 'legacy_user' : 'legacy_ai_or_unknown', JSON.stringify([{kind:'legacy_fidelity',legacyWordId:word.id,snapshot:word,restoredContext:fidelityEnvelopeFor(word)}]));
+        if (String(point.currentRevisionId || '').startsWith('legacy-revision:')) await client.$executeRawUnsafe('UPDATE KnowledgePoint SET currentRevisionId = ? WHERE id = ? AND currentRevisionId = ?', revisionId,point.id,point.currentRevisionId);
+      }
     }
     for (const variants of relationVariantGroups(snapshot).values()) {
       const edge = variants[0];

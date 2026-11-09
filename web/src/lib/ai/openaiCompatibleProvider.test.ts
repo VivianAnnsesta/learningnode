@@ -165,7 +165,7 @@ describe("createOpenAiCompatibleProvider", () => {
     expect(body.search_options).toEqual({ forced_search: false });
   });
 
-  it("can disable Qwen web search through environment", async () => {
+  it("does not claim web research when Qwen search is disabled, and permits explicit offline continuation", async () => {
     vi.stubEnv("AI_DISABLE_QWEN_WEB_SEARCH", "true");
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
@@ -179,12 +179,14 @@ describe("createOpenAiCompatibleProvider", () => {
       timeoutMs: 1000
     });
 
-    await provider.generateText({
+    await expect(provider.generateText({
       taskType: "course_design_research",
       messages: [{ role: "user", content: "research a course" }],
       responseFormat: "json_object",
       requiresWebResearch: true
-    });
+    })).rejects.toThrow("does not support web research");
+    expect(fetchMock).not.toHaveBeenCalled();
+    await provider.generateText({taskType:"course_design_research",messages:[{role:"user",content:"Use only supplied content; there is no web research."}],responseFormat:"json_object",requiresWebResearch:false});
 
     const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(body.enable_search).toBeUndefined();

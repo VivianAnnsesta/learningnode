@@ -1,0 +1,580 @@
+{
+  "schemaVersion": 1,
+  "createdDate": "2026-10-28",
+  "status": "independent_rubric_before_route_output_review",
+  "inputHarness": "web/scripts/research/route-quality-live-experiment.test.ts",
+  "inputHarnessSha256AtInitialRead": "4068433706822048c5ec56993bb08e796dce4395684fe1054a32bdd518855335",
+  "inputHarnessSha256AtInputRecheck": "89b49072088b13c2f7aabb07c814bee3d215d2236be1df143a78017a11460806",
+  "inputSnapshotVerification": "编写期间harness其他内容更新；两场景的name、goal、currentLevel、scope、excludedScope、feedback已与更新后文件逐字核对相同。本oracle不宣称harness整体已冻结，实际运行仍需使用其manifest。",
+  "purpose": "供根代理独立审读两个人工研究目标产生的路线候选；本文件不进入模型提示，不规定固定Stage或节点数，不替代正式用户确认。",
+  "provenance": {
+    "goals": "两份目标与材料来自研究者构造，不是真实学习者观测。",
+    "reviewer": "AI协作代理独立整理；不是人类学科认证。",
+    "materialsVerifiedBeforeGeneratedOutputReview": true,
+    "productionCodeOrHarnessModified": false,
+    "realModelCalled": false,
+    "realDatabaseUsed": false
+  },
+  "judgmentFramework": {
+    "dimensions": [
+      "knowledge_truth",
+      "stated_goal_coverage",
+      "optional_scope_preservation",
+      "assumption_and_evidence_fidelity",
+      "prerequisite_justification",
+      "planned_task_executability",
+      "pedagogical_preference"
+    ],
+    "findingStates": {
+      "supported": "有与实际文本相符的直接推导、计算或任务证据。",
+      "contradicted": "可引用实际主张并给出条件不变的反例、计算或明确目标冲突。",
+      "missing": "生成范围已完整到达，但目标要求没有任何实际承接证据。",
+      "not_observable": "对应阶段未生成或缺少原文；不能把未到达当成内容通过或确定缺失。",
+      "needs_clarification": "术语/量词/关系有多种合理解读，应限定范围后判断。",
+      "preference_only": "属于教学取舍，现有材料没有单一知识真值。"
+    },
+    "evidenceRecordRequired": [
+      "runId和输入目标身份",
+      "产物层级：课程、完整骨架、已展开阶段或具体任务",
+      "原始JSON字段路径",
+      "最小足够的逐字引文",
+      "对应rubric项",
+      "独立依据或具体计算",
+      "是否原始生成、模型更正还是最终保存文本",
+      "影响及判断局限"
+    ],
+    "rules": [
+      "各维度分别记录；结构门通过、知识核对模型放行、成功保存与语义正确不是同一证据。",
+      "必须读实际课程问题、节点知识、任务和依赖理由；关键词出现、标题匹配或覆盖ID存在都不能独立证明语义覆盖。",
+      "多个目标可由同一节点共同承担，一个目标也可由多个节点协作；不要求一概念一节点、固定阶段数、唯一顺序或每段必练。",
+      "只对实际存在的矛盾标contradicted；没有生成到的材料标not_observable。框架已完整但责任确实遗漏时才标missing。",
+      "模型报告的finding只是待核对证据。没有来源的额外指控、解释敏感指控与可计算错误分开；不能用另一个模型打分作为真值。",
+      "纠正必须保留原目标、题设、选学身份和正确条件；不能改题、缩小目标范围或把选学改成必修来让错误主张成立。",
+      "按根因记录重复问题并列出所有传播位置，避免同一错误重复出现就当成多个独立失败样本。",
+      "这是完整候选路线的静态研究；计划中的任务可执行不等于真实学习者完成，更不等于长期掌握。"
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "finite-screening",
+      "inputSnapshot": {
+        "name": "有限筛查表中的条件概率",
+        "goal": "学会从有限产品筛查表正确读取条件概率，区分两个条件方向，并解释筛查结果。我会分数、百分数和集合交并，但没学过概率。希望能先操作具体表格再概括；贝叶斯公式的代数推导只是选学，不应成为理解筛查例子的必经前置。",
+        "currentLevel": "学习者自述会分数、百分数和集合交并，未学过概率；未进行能力测验。",
+        "scope": "有限计数表、条件方向、基准比例与筛查结果；一段可完整学完的主题路线。",
+        "excludedScope": "连续分布、测度论、显著性检验；不把贝叶斯公式代数推导列为主线必需。",
+        "feedback": "请保留我声明的基础；公式推导可选。不要把选学内容变成必学前置。"
+      },
+      "verifiedKnowledge": {
+        "universe": "200个研究者构造零件的有限记录；不是实测产品质量，不自动代表后续真实零件的概率。",
+        "eventDefinitions": {
+          "D": "有缺陷",
+          "M": "被标记"
+        },
+        "table": {
+          "D_and_M": 16,
+          "D_and_notM": 4,
+          "notD_and_M": 36,
+          "notD_and_notM": 144
+        },
+        "totals": {
+          "D": 20,
+          "notD": 180,
+          "M": 52,
+          "notM": 148,
+          "all": 200
+        },
+        "requiredKeyConclusions": [
+          {
+            "id": "F-K1",
+            "claim": "以已被标记为条件，缺陷比例为16/52=4/13。",
+            "proof": "先限定52个已标记零件，再数其中16个有缺陷；分母随条件集合改变。"
+          },
+          {
+            "id": "F-K2",
+            "claim": "以有缺陷为条件，被标记比例为16/20=4/5。",
+            "proof": "先限定20个有缺陷零件，再数其中16个被标记；与F-K1的分母不同。"
+          },
+          {
+            "id": "F-K3",
+            "claim": "两个方向不能互换；80%不是这份表中已被标记者有缺陷的比例。",
+            "proof": "16/20与16/52不相等。二者共享交集计数16不使条件集合相同。"
+          },
+          {
+            "id": "F-K4",
+            "claim": "10%的缺陷基准比例与各类计数共同决定标记集合的构成，单报某一条件方向不足以说明反向比例。",
+            "proof": "标记集合中包含16个有缺陷和36个无缺陷；该构成与两类总体大小20和180有关。"
+          }
+        ],
+        "additionalCorrectFactsNotMandatoryCoverage": [
+          {
+            "claim": "原有限表的缺陷比例",
+            "exact": "20/200=1/10"
+          },
+          {
+            "claim": "原有限表的标记比例",
+            "exact": "52/200=13/50"
+          },
+          {
+            "claim": "无缺陷条件下被标记比例",
+            "exact": "36/180=1/5"
+          },
+          {
+            "claim": "已被标记条件下无缺陷比例",
+            "exact": "36/52=9/13"
+          },
+          {
+            "claim": "未被标记条件下有缺陷比例",
+            "exact": "4/148=1/37"
+          },
+          {
+            "claim": "在全部200个中既有缺陷又被标记的比例",
+            "exact": "16/200=2/25"
+          }
+        ],
+        "deterministicErrorExamples": [
+          "把P(D|M)写成16/20、16/200或80%，而没有另行改变并清楚标记问题。",
+          "把P(M|D)与P(D|M)说成一般相等，或把被标记等同于一定有缺陷。",
+          "把52与148、20与180的边际总数混用，或者改动原表计数却仍称在解释同一原材料。",
+          "宣称不先完成一般贝叶斯公式代数推导，就在逻辑上不能计算这份表的条件比例。"
+        ],
+        "limits": [
+          "允许用条件频率或在这个有限集合中均匀抽取的条件概率解释；不强迫引入测度论定义。",
+          "可引入清楚标明的新表或变式；新例子的数值不必与原表相同，但不能静默覆盖原条件。",
+          "基准比例与反向结果的关系可以用组内计数解释；不要求学习者先完成一般公式推导。",
+          "若给出近似百分数，4/13约为30.77%、1/37约为2.70%；合理精度差异不构成知识错误。"
+        ]
+      },
+      "coverageObligations": [
+        {
+          "id": "F-C1",
+          "need": "把文字计数整理或读取为有限分组表，辨认交集和边际总数。",
+          "acceptableEvidence": "实际教学内容或任务让学习者定位哪组零件被计入分子、分母，而非只出现“表格”标题。"
+        },
+        {
+          "id": "F-C2",
+          "need": "分别处理两个条件方向，并解释分母为何不同。",
+          "acceptableEvidence": "在明确的条件集合下计算并比较4/13与4/5，或安排等价的可执行读表任务。"
+        },
+        {
+          "id": "F-C3",
+          "need": "解释一个被标记结果能说明什么、不能说明什么。",
+          "acceptableEvidence": "将结果解释为原有限表中标记组的缺陷比例，不误写成确定诊断或真实未来产品保证。"
+        },
+        {
+          "id": "F-C4",
+          "need": "承接输入scope中的基准比例责任。",
+          "acceptableEvidence": "结合20/180与16/36说明两类来源如何组成标记组；可以数值、图示、讨论或变式承担，不要求推一般公式。"
+        },
+        {
+          "id": "F-C5",
+          "need": "安排可实际完成的具体表格操作及解释，再提供概括。",
+          "acceptableEvidence": "先接触具体计数的安排可从课程顺序或节点内部教学任务体现；阅读中的完整例子、讨论或可选练习均可，不强制每节点答题。"
+        }
+      ],
+      "optionalAndScopeRules": [
+        {
+          "id": "F-O1",
+          "requirement": "贝叶斯公式的代数推导保持选学。",
+          "violations": "将推导任务计为主线完成必须产出，或把该选学节点设为解释原筛查表不可绕过的必要前置。",
+          "allowed": "公式名称、一个便于概括的等式或可选推导可出现；不能因出现公式就自动判越界。"
+        },
+        {
+          "id": "F-O2",
+          "requirement": "连续分布、测度论、显著性检验不作为本主题必修范围。",
+          "violations": "将它们加入实现本目标必须完成的核心任务或必要前置。",
+          "allowed": "简短边界说明、说明本主题不涉及这些内容，不算范围扩张。"
+        },
+        {
+          "id": "F-O3",
+          "requirement": "尊重先具体表格后概括的明确偏好。",
+          "violations": "明确要求先完成一般抽象推导才可接触表格。",
+          "allowed": "不规定Stage总数；节点内部先例后概括亦可满足。没有可判顺序证据时应说明待核，而非凭节点名称猜测。"
+        }
+      ],
+      "prerequisites": {
+        "logicalTaskDependencies": [
+          "按已给分母计算比例要能识别条件集合和交集计数；这些概念可在任务内先解释，不必各建一个节点。",
+          "理解标记组组成需要同时考虑缺陷和无缺陷来源计数。"
+        ],
+        "notLogicallyNecessary": [
+          "先掌握一般贝叶斯公式的代数推导",
+          "连续概率、测度论或显著性检验"
+        ],
+        "existingBasicsTreatment": "把分数、百分数、集合交并作为用户自述的可用工作假设，不重新包装成已测得掌握，也不无理由强制重修整套基础。可在需要处提供短补讲。"
+      }
+    },
+    {
+      "id": "python-list-sharing",
+      "inputSnapshot": {
+        "name": "Python列表的引用与拷贝",
+        "goal": "我已会变量赋值、列表下标和简单for循环，想正确预测列表赋值、浅拷贝及嵌套列表修改的结果，并能解释共享发生在哪一层。深入deepcopy是选学，不应为了预测这些小例子先要求掌握类设计或内存管理。",
+        "currentLevel": "学习者自述会变量、列表下标、简单for循环；未进行能力测验。",
+        "scope": "普通Python内置list的绑定、浅拷贝、嵌套共享、修改元素与重新绑定的区别。",
+        "excludedScope": "自定义类拷贝协议、引用计数、垃圾回收实现；deepcopy细节只作选学。",
+        "feedback": "先满足预测和解释实际代码的目标，深拷贝保持选学；相关概念可合讲，不要求每个术语单独节点。"
+      },
+      "verifiedKnowledge": {
+        "environment": "普通Python内置list；没有自定义拷贝协议、代理对象或对内置类型的特殊改写。",
+        "officialSource": {
+          "title": "Python copy — Shallow and deep copy operations",
+          "url": "https://docs.python.org/3/library/copy.html",
+          "accessed": "2026-10-28",
+          "basis": "官方说明赋值建立绑定；浅拷贝建立新的复合对象，并将原元素的引用放入其中。本文只将该语义用于普通内置列表，不推断所有对象的拷贝行为。"
+        },
+        "facts": [
+          {
+            "id": "P-K1",
+            "claim": "赋值b=a不会创建新的列表对象。",
+            "fixedCode": "a=[1,2]\nb=a\nb.append(3)",
+            "expected": {
+              "a": [
+                1,
+                2,
+                3
+              ],
+              "b": [
+                1,
+                2,
+                3
+              ],
+              "sameOuterObject": true
+            },
+            "proof": "两名字绑定同一列表，append修改该共同对象。"
+          },
+          {
+            "id": "P-K2",
+            "claim": "a.copy()创建不同的外层列表，元素仍引用原来的对象。",
+            "fixedCode": "a=[[1],[2]]\nb=a.copy()",
+            "expected": {
+              "sameOuterObject": false,
+              "sameFirstInnerObject": true,
+              "sameSecondInnerObject": true
+            },
+            "proof": "新的外层容器复制两个元素引用，没有递归复制这两个内层列表。"
+          },
+          {
+            "id": "P-K3",
+            "claim": "浅拷贝后修改共享第一内层，a、b都观察到变化，但外层仍不同。",
+            "fixedCode": "a=[[1],[2]]\nb=a.copy()\nb[0].append(9)",
+            "expected": {
+              "a": [
+                [
+                  1,
+                  9
+                ],
+                [
+                  2
+                ]
+              ],
+              "b": [
+                [
+                  1,
+                  9
+                ],
+                [
+                  2
+                ]
+              ],
+              "sameOuterObject": false,
+              "sameFirstInnerObject": true
+            },
+            "proof": "b[0]和a[0]指向同一内层列表；append作用于该对象。值相等不推出外层身份相同。"
+          },
+          {
+            "id": "P-K4",
+            "claim": "随后替换b的第二个元素引用，只影响b的该外层槽位。",
+            "fixedCode": "a=[[1],[2]]\nb=a.copy()\nb[0].append(9)\nb[1]=[7]",
+            "expected": {
+              "a": [
+                [
+                  1,
+                  9
+                ],
+                [
+                  2
+                ]
+              ],
+              "b": [
+                [
+                  1,
+                  9
+                ],
+                [
+                  7
+                ]
+              ],
+              "sameOuterObject": false,
+              "sameFirstInnerObject": true,
+              "sameSecondInnerObject": false
+            },
+            "proof": "b和a的外层是两个对象；b[1]=[7]改的是b的索引1槽位，未修改a[1]指向的列表，也未改变共享的第一内层。"
+          }
+        ],
+        "supplementalWitnessesNotInOriginalMaterial": [
+          {
+            "id": "P-W1",
+            "purpose": "若候选讲到变量名重新绑定，用此有限例子核对其语义；不要求路线必须采用这一具体代码。",
+            "fixedCode": "a=[1,2]\nb=a\nb=[7]",
+            "expected": {
+              "a": [
+                1,
+                2
+              ],
+              "b": [
+                7
+              ],
+              "sameOuterObject": false
+            },
+            "proof": "b=[7]使名字b绑定新列表，没有修改原来由a指向的列表。"
+          }
+        ],
+        "deterministicErrorExamples": [
+          "声称b=a会自动复制列表，或在别名append后a仍为[1,2]。",
+          "声称浅拷贝让所有内层列表彼此独立，因此b[0].append(9)不影响a。",
+          "因为a、b打印值相同，就声称它们是同一个外层列表。",
+          "声称b[1]=[7]会把a[1]也替换成[7]，或说该操作同时解除第一内层共享。",
+          "把变量名重新绑定b=[7]当成对原列表的原地修改，或将索引赋值b[1]=[7]说成名字b改绑到新外层。",
+          "声称必须先掌握自定义类设计、引用计数或垃圾回收实现才能预测这些普通列表例子。"
+        ],
+        "limits": [
+          "允许用引用箭头、共享对象或其他准确表述解释，不强制使用is语法或内存地址；不能把CPython地址布局当成语言层必要知识。",
+          "名字重新绑定和列表元素引用替换应按各自目标明确解释；不以“重新绑定”关键词自动判覆盖或判错。",
+          "额外例子允许不同数值、变量名和列表形状，但必须完整初始化并清楚区分独立例子与同一执行序列。",
+          "不要求覆盖自定义类、循环引用、不可复制外部资源或deepcopy实现。"
+        ]
+      },
+      "coverageObligations": [
+        {
+          "id": "P-C1",
+          "need": "预测列表赋值后的共享修改并解释绑定关系。",
+          "acceptableEvidence": "实际说明或任务涉及b=a与一次可追踪修改，正确区分赋值和拷贝。"
+        },
+        {
+          "id": "P-C2",
+          "need": "解释浅拷贝外层新建、内层可能共享。",
+          "acceptableEvidence": "不能只列copy()名称；要承接“新外层”和“保留元素引用”两层责任。"
+        },
+        {
+          "id": "P-C3",
+          "need": "预测嵌套例子连续两步的结果。",
+          "acceptableEvidence": "共享内层append与不同外层中的索引替换都由具体任务承接，可以共同放在一节点，不要求固定例子或节点数。"
+        },
+        {
+          "id": "P-C4",
+          "need": "解释共享具体发生在哪一层，并区分修改已有对象和改变引用绑定。",
+          "acceptableEvidence": "给出足够准确的对象关系或解释依据，不能仅凭输出一样判断对象同一；scope中的重新绑定须有明确语义承接。"
+        },
+        {
+          "id": "P-C5",
+          "need": "让读者有可执行的代码预测与解释活动。",
+          "acceptableEvidence": "规划任务至少明确要分析的操作、初始化或例子来源、输出或关系解释目标；正式详细代码可在教学阶段展开，不要求规划节点提前包含所有课堂正文。"
+        }
+      ],
+      "optionalAndScopeRules": [
+        {
+          "id": "P-O1",
+          "requirement": "深入deepcopy保持选学。",
+          "violations": "把deepcopy细节、递归实现或特殊协议设为预测原列表例子必须完成的任务或唯一前置。",
+          "allowed": "简短对比浅/深拷贝边界或提供可选扩展；仅出现deepcopy名称不算违反选学。"
+        },
+        {
+          "id": "P-O2",
+          "requirement": "自定义类拷贝协议、引用计数、垃圾回收实现不成为本主题必修。",
+          "violations": "用它们阻断普通列表预测任务，或声称不掌握实现就无法进行本题语义推理。",
+          "allowed": "提醒对象可能有不同拷贝行为、说明本主题只讨论内置list。"
+        },
+        {
+          "id": "P-O3",
+          "requirement": "相关概念允许合讲，先满足预测与解释实际代码目标。",
+          "violations": "因人为一术语一节点规则拆散必要对照且不能完成目标，或以全套高级实现课替代具体预测。",
+          "allowed": "节点数量多或少本身不判错；应核对实际覆盖和衔接。"
+        }
+      ],
+      "prerequisites": {
+        "logicalTaskDependencies": [
+          "解释共享修改需要明确哪些名字或元素引用同一对象；此概念可与示例同步引入。",
+          "区分两次嵌套操作，需要跟踪外层和内层对象，不能把所有层级当作一个对象。"
+        ],
+        "notLogicallyNecessary": [
+          "先掌握自定义类设计或拷贝协议",
+          "先学习引用计数或垃圾回收实现",
+          "先深入掌握deepcopy"
+        ],
+        "existingBasicsTreatment": "把变量赋值、下标和简单for循环作为自述基础，允许本地补充对象绑定解释，不把自述变成能力认证，也不无依据要求重修全部入门语法。"
+      }
+    }
+  ],
+  "crossScenarioRules": {
+    "optionalPreservation": {
+      "reviewSurfaces": [
+        "课程方向和选学标记",
+        "内容问题及requirements",
+        "Stage与模块目标",
+        "节点newKnowledge和teachingTasks",
+        "显式prerequisiteKeys及理由",
+        "完成产出或任务要求"
+      ],
+      "test": "在不完成指定选学主题的条件下，是否仍存在覆盖本目标的主线安排；阅读真实依赖和任务语义，不仅看optional标签。显式逻辑前置不能把选学内容暗中变为必修。",
+      "caution": "提到选学概念、提供可选节点或建议性扩展本身不是强制；不得重现把可选活动当成必须改任务的误判。"
+    },
+    "priorClaims": {
+      "supported": "基于你的自述，暂按这些基础安排；需要时可补讲。",
+      "contradicted": "诊断已经验证你掌握这些知识，或你已达到某能力等级，而本实验没有任何能力测验。",
+      "caution": "“已会”可能是在复述用户输入。必须结合主语、证据来源和是否声称验证来判断，不能见“掌握”二字就自动判错。"
+    },
+    "prerequisiteReview": {
+      "method": "对每条影响主线的前置，指出后续任务究竟需要前项提供的哪条知识或操作；若能用已给计数或固定代码直接完成而无需该高级主题，可否定其普遍必要性。也检查真正需要的背景是否至少在本任务内补足。",
+      "permitted": "一个节点内部引入所需背景、多个起点或多个前置、可改选的推荐顺序、相关概念共同教授。",
+      "notPermittedInference": "从列表顺序自动推断逻辑依赖；从某个可行教学顺序推出唯一正确顺序；从活动已完成推断掌握。",
+      "boundary": "任务逻辑依赖可以直接分析；何种安排最适合真实学习者通常需要实际表现证据，不能用静态图或另一个模型的偏好代替。"
+    },
+    "executableTasks": {
+      "necessary": "目标行为、材料或输入来源、可观察的输出或解释责任互相相容，且所需背景已声明或可在任务内补足。",
+      "failures": [
+        "要求计算却不给数据也不指向已有表；或要求运行却没有可恢复初始化且不同例子状态混淆。",
+        "判据要求原目标不支持的唯一答案，或与给定表/程序状态矛盾。",
+        "任务以尚未出现且未安排补充的高级知识为必须条件。"
+      ],
+      "notRequired": [
+        "每节点练习",
+        "固定练习数",
+        "所有开放讨论唯一标准答案",
+        "规划候选提前拥有每段正式教学全文",
+        "用户在本研究中完成所有任务"
+      ],
+      "caution": "路线层任务可只规划将使用的明确例型，不能因尚未生成详细课堂材料就断言不可执行；若输入不足应记录证据级别。"
+    },
+    "pedagogicalPreferencesNotTruth": [
+      "节点/Stage数量、同一主题分几次讲。",
+      "用箭头图还是逐行表格解释共享，或用面积图还是分组表解释计数。",
+      "在满足用户先具体后概括偏好内的不同可行安排。",
+      "可选练习的难度、数量或是否最能提升保持和迁移。",
+      "一个静态路线是否比另一个更适合特定学习者。"
+    ],
+    "sourceAndEvidence": {
+      "rules": [
+        "研究者构造表不能被改称真实质量调查或经外部统计验证。",
+        "Python材料是研究者依据官方文档整理的转述，不是文档逐字引文。",
+        "真实来源URL、抓取成功和来源支持具体主张分开判断；不能只凭URL存在认定支持。",
+        "独立官方文档核验不等于本轮模型实际联网成功；后者须看实际服务日志。"
+      ]
+    }
+  },
+  "runtimeVerification": {
+    "executedBy": "local fixed-code Python invocation; no model-generated code executed",
+    "runtime": "Python 3.12.10",
+    "verifiedTableTotals": {
+      "all": 200,
+      "defective": 20,
+      "nondefective": 180,
+      "marked": 52,
+      "unmarked": 148
+    },
+    "exactFractions": {
+      "defectiveGivenMarked": "4/13",
+      "markedGivenDefective": "4/5",
+      "defectivePrior": "1/10",
+      "markedPrior": "13/50",
+      "markedGivenNondefective": "1/5",
+      "nondefectiveGivenMarked": "9/13",
+      "defectiveGivenUnmarked": "1/37",
+      "defectiveAndMarked": "2/25"
+    },
+    "nestedShallowBefore": {
+      "outerSame": false,
+      "firstInnerSame": true,
+      "secondInnerSame": true
+    },
+    "afterInnerAppend": {
+      "a": [
+        [
+          1,
+          9
+        ],
+        [
+          2
+        ]
+      ],
+      "b": [
+        [
+          1,
+          9
+        ],
+        [
+          2
+        ]
+      ],
+      "outerSame": false,
+      "firstInnerSame": true
+    },
+    "afterSecondItemReplacement": {
+      "a": [
+        [
+          1,
+          9
+        ],
+        [
+          2
+        ]
+      ],
+      "b": [
+        [
+          1,
+          9
+        ],
+        [
+          7
+        ]
+      ],
+      "outerSame": false,
+      "firstInnerSame": true,
+      "secondInnerSame": false
+    },
+    "aliasAppend": {
+      "left": [
+        1,
+        2,
+        3
+      ],
+      "right": [
+        1,
+        2,
+        3
+      ],
+      "sameObject": true
+    },
+    "supplementalNameRebinding": {
+      "original": [
+        1,
+        2
+      ],
+      "rebound": [
+        7
+      ],
+      "sameObject": false
+    },
+    "assertionsPassed": true,
+    "limitations": "这些有限运行只支持所列普通列表例子；一般语义另依据官方文档，不覆盖未测试自定义对象。"
+  },
+  "outcomeReporting": {
+    "required": [
+      "每个场景/模式的实际到达阶段",
+      "实际生成与最终保存版本的差异",
+      "每维度具体支持或失败证据",
+      "完整但不正确、未完整、内容待核三者分开",
+      "已见样例与新目标的范围",
+      "调用数、耗时和失败原因"
+    ],
+    "comparisonLimit": "两主题各模式一条独立生成路线，候选文本不同；不是固定候选的纯审查比较，也不是估计生产成功率的独立样本集。推理模式忽略temperature，不宣称有效采样完全相同。",
+    "noLearningEffectClaims": [
+      "长期保持",
+      "无辅助掌握",
+      "跨情境迁移效果",
+      "真实学习者进步",
+      "完成即掌握",
+      "正式地图已获用户确认"
+    ],
+    "noAutomaticAggregatePass": "不得因全部Stage已展开、脚本结束或模型报告no_error_found就宣布整条路线教学质量通过。"
+  }
+}

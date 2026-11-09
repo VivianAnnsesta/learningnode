@@ -343,6 +343,12 @@ export function createOpenAiCompatibleProvider(
   return {
     config,
     async generateText(input: AiGenerateTextInput): Promise<AiGenerateTextResult> {
+      const nativeResearch = config.provider === "deepseek"
+        || (config.provider === "openai" && !truthyEnv(process.env.AI_DISABLE_OPENAI_WEB_SEARCH))
+        || (config.provider === "qwen" && !truthyEnv(process.env.AI_DISABLE_QWEN_WEB_SEARCH));
+      if (input.requiresWebResearch && !nativeResearch && !process.env.AI_RESEARCH_EXTRA_BODY_JSON?.trim()) {
+        throw new AiProviderError("This provider does not support web research; continue explicitly with supplied materials and unverified model explanations.");
+      }
       const controller = new AbortController();
       const timeout = setTimeout(
         () => controller.abort(),

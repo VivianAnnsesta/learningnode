@@ -46,8 +46,8 @@ describe("course foundations and unique learning ownership", () => {
   });
 });
 
-const sharedQuestion: CourseContentQuestion = { key: "cq-limit-methods", question: "极限是什么，如何选择计算方法？", contentRequirements: ["解释趋近与取到的区别", "比较计算方法的条件", "提供一个复杂迁移例子"], dimensionKeys: ["definition", "selection", "use"] };
-const contribution = (requirementIndex: number, dimensionKey: "definition" | "selection"): ContentContribution => ({ contentQuestionKey: sharedQuestion.key, requirementIndices: [requirementIndex], dimensionKeys: [dimensionKey], contribution: requirementIndex ? "比较计算方法的适用条件" : "解释极限的趋近含义" });
+const sharedQuestion: CourseContentQuestion = { key: "cq-limit-methods", question: "极限是什么，如何选择计算方法？", contentRequirements: ["解释趋近与取到的区别", "比较计算方法的条件", "提供一个复杂迁移例子"], dimensionKeys: [] };
+const contribution = (requirementIndex: number, _dimensionKey: "definition" | "selection"): ContentContribution => ({ contentQuestionKey: sharedQuestion.key, requirementIndices: [requirementIndex], dimensionKeys: [], contribution: requirementIndex ? "比较计算方法的适用条件" : "解释极限的趋近含义" });
 function sharedMap(): RoadmapInput {
   return { planningVersion: 3, contentCoverageVersion: 1, title: "极限课程", status: "draft", learningGoals: [{ key: "limit-methods", description: "理解极限并合理选择计算方法", contentQuestions: [structuredClone(sharedQuestion)] }], stages: [{
     key: "limits", title: "极限", goal: "解释极限与计算方法选择", status: "expanded", problem: { question: "如何计算一个函数极限？", steps: ["说明趋近含义", "选择合适方法"] },
@@ -65,13 +65,12 @@ describe("explicit portions of shared content questions", () => {
   });
   it("localizes and merges confirmed portions using original requirement order and indices", () => {
     const scoped = scopedContentQuestions([sharedQuestion], [contribution(1, "selection"), contribution(0, "definition"), contribution(1, "selection")]);
-    expect(scoped).toEqual([{ ...sharedQuestion, contentRequirements: sharedQuestion.contentRequirements.slice(0, 2), dimensionKeys: ["definition", "selection"], requirementIndices: [0, 1], contribution: "比较计算方法的适用条件；解释极限的趋近含义" }]);
+    expect(scoped).toEqual([{ ...sharedQuestion, contentRequirements: sharedQuestion.contentRequirements.slice(0, 2), dimensionKeys: [], requirementIndices: [0, 1], contribution: "比较计算方法的适用条件；解释极限的趋近含义" }]);
     expect(scopedContentQuestions([sharedQuestion], [])).toEqual([]);
     expect(sharedQuestion.contentRequirements).toHaveLength(3);
   });
   it.each([
     { requirementIndices: [] }, { requirementIndices: [-1] }, { requirementIndices: [0, 0] }, { requirementIndices: [0.5] },
-    { dimensionKeys: [] }, { dimensionKeys: ["constructor"] }, { dimensionKeys: ["definition", "definition"] },
     { contentQuestionKey: "not a stable key" }, { contribution: "" }
   ])("rejects malformed contribution $requirementIndices $dimensionKeys $contentQuestionKey", (override) => {
     expect(() => parseContentContributions([{ ...contribution(0, "definition"), ...override }])).toThrow();
@@ -83,7 +82,7 @@ describe("explicit portions of shared content questions", () => {
     expect(parseLearningUnit({ ...unit, version: 2, contentContributions: [] })?.contentContributions).toEqual([]);
   });
   it.each([
-    { contentQuestionKey: "unknown-content" }, { requirementIndices: [3] }, { dimensionKeys: ["boundaries"] },
+    { contentQuestionKey: "unknown-content" }, { requirementIndices: [3] },
   ])("rejects a contribution outside the confirmed registry $contentQuestionKey $requirementIndices $dimensionKeys", override => {
     const candidate = sharedMap();
     Object.assign(candidate.stages![0].modules![0].items![0].concept!.learningUnit!.contentContributions![0], override);

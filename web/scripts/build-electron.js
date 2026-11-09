@@ -4,6 +4,7 @@ const path = require("path");
 
 const webRoot = path.resolve(__dirname, "..");
 const distDir = path.join(webRoot, "dist-electron");
+if (path.dirname(distDir) !== webRoot) throw new Error("Build output must remain inside the workspace.");
 
 const forbiddenRuntimeFile = (name) =>
   name === "ai-settings.json" || name === ".env" || name.startsWith(".env.");
@@ -135,7 +136,16 @@ fs.cpSync(standaloneDir, targetResourcesDir, copyOpts);
 removeForbiddenRuntimeFiles(targetResourcesDir);
 
 console.log("   -> Copying public assets...");
-fs.cpSync(path.join(webRoot, "public"), path.join(targetResourcesDir, "public"), copyOpts);
+const publicSource = path.join(webRoot, "public");
+const publicTarget = path.join(targetResourcesDir, "public");
+const publicInfo = fs.statSync(publicSource, { throwIfNoEntry: false });
+if (publicInfo) {
+  if (!publicInfo.isDirectory()) throw new Error("The optional public assets path must be a directory.");
+  fs.cpSync(publicSource, publicTarget, copyOpts);
+} else {
+  fs.mkdirSync(publicTarget, { recursive: true });
+  console.log("   -> No optional public assets; created an empty runtime public directory.");
+}
 
 console.log("   -> Copying .next/static assets...");
 fs.cpSync(path.join(webRoot, ".next", "static"), path.join(targetResourcesDir, ".next", "static"), copyOpts);
@@ -149,13 +159,7 @@ if (fs.existsSync(prismaSource)) {
   fs.cpSync(prismaSource, prismaTarget, copyOpts);
   removeDevelopmentDatabaseArtifacts(prismaTarget);
 } else {
-  const rootPrismaSource = path.join(webRoot, "..", "prisma");
-  if (fs.existsSync(rootPrismaSource)) {
-    console.log(`      Fallback source: ${rootPrismaSource}`);
-    fs.cpSync(rootPrismaSource, prismaTarget, copyOpts);
-  } else {
-    console.error("      Could not find a Prisma directory.");
-  }
+  throw new Error("The formal web Prisma schema and versioned seed are required for packaging.");
 }
 
 console.log("   -> Copying Prisma migration runtime...");

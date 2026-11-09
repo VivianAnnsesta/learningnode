@@ -1,5 +1,9 @@
 # Persist Domain creation progress on the Domain
 
+## 2026-10-09 后续决定
+
+本 ADR 中冲突的产品约定已被 [ADR 0025](0025-unified-learning-and-personal-knowledge.md) 部分或全部替代。URL 和 SQLite 恢复、草稿来源与原子地图接受保留；重复的 Task Brief Confirmation 前置关卡退役，由正式地图接受记录用户所见意图和安排。 下文保留原决策背景，不能用其旧规则覆盖当前任务书。
+
 Status: Accepted
 
 Date: 2026-07-19

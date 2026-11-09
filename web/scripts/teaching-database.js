@@ -28,12 +28,12 @@ function claimDatabaseStartup(directory) {
   return () => fs.unlinkSync(lock);
 }
 
-// The old database is only read to make a consistent SQLite backup. It is never
-// the input to the new curriculum migrations, and is never removed.
+// Read the old file only for a consistent backup. Existing installations upgrade
+// a copy through the same lifecycle; the original remains an in-app history source.
 async function preserveLegacyDatabase(source, directory, PrismaClient) {
   if (!fs.existsSync(source)) return;
   const backup = path.join(directory, `${path.basename(source)}.before-teaching-v2.db`);
-  if (fs.existsSync(backup)) return;
+  if (fs.existsSync(backup)) return backup;
   const temporary = `${backup}.${process.pid}.pending`;
   const client = new PrismaClient({ datasources: { db: { url: databaseUrl(source) } } });
   try {
@@ -51,6 +51,7 @@ async function preserveLegacyDatabase(source, directory, PrismaClient) {
   } finally {
     await client.$disconnect();
   }
+  return backup;
 }
 
 async function ensureTeachingDatabase({ userDataDir, serverDir, legacyPaths = [] }) {
@@ -60,9 +61,13 @@ async function ensureTeachingDatabase({ userDataDir, serverDir, legacyPaths = []
   try {
   const target = path.join(userDataDir, TEACHING_DATABASE_NAME);
   if (!fs.existsSync(target)) {
+    const priorInstallation=path.join(userDataDir,"englishnode.db");
+    let priorBackup;
     for (const source of new Set([path.join(userDataDir, "englishnode.db"), ...legacyPaths])) {
-      await preserveLegacyDatabase(source, userDataDir, PrismaClient);
+      const backup=await preserveLegacyDatabase(source, userDataDir, PrismaClient);
+      if(path.resolve(source)===path.resolve(priorInstallation))priorBackup=backup;
     }
+    if(priorBackup)fs.copyFileSync(priorBackup,target,fs.constants.COPYFILE_EXCL);
   }
   // Existing data keeps the established backup / migrate / fidelity / FK gates.
   await runUserDatabaseLifecycle({

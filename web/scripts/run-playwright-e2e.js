@@ -72,7 +72,7 @@ const stopServer = (server) => {
     path.join(os.tmpdir(), "englishnode-e2e-")
   );
   const databasePath = path.join(tempDirectory, "e2e.db");
-  fs.copyFileSync(seedDatabase, databasePath);
+  fs.copyFileSync(process.env.E2E_DATABASE_SOURCE ? path.resolve(process.env.E2E_DATABASE_SOURCE) : seedDatabase, databasePath);
   const isolatedAiSettingsPath = aiSettingsSource
     ? path.join(tempDirectory, "ai-settings.json")
     : null;
@@ -83,6 +83,8 @@ const stopServer = (server) => {
     ...process.env,
     DATABASE_URL: `file:${databasePath.replace(/\\/g, "/")}`,
     E2E_PORT: port,
+    E2E_OUTPUT_DIR: path.join(root, 'test-results', `browser-${Date.now()}`),
+    E2E_REPORT_DIR: path.join(root, 'test-results', `browser-report-${Date.now()}`),
     ...(isolatedAiSettingsPath
       ? { AI_SETTINGS_PATH: isolatedAiSettingsPath }
       : {}),
@@ -139,12 +141,29 @@ const stopServer = (server) => {
     process.exitCode = 1;
   } finally {
     stopServer(server);
+    try {
+    const evidenceDirectory = path.join(root, 'test-results', `journey-${Date.now()}`);
+    fs.mkdirSync(evidenceDirectory, { recursive: true });
+    if (fs.existsSync(databasePath)) {
+      const { PrismaClient } = require('@prisma/client');
+      const client = new PrismaClient({ datasources: { db: { url: env.DATABASE_URL } } });
+      try {
+        const target = path.join(evidenceDirectory, 'journey.db');
+        await client.$executeRawUnsafe(`VACUUM INTO '${target.replace(/\\/g, '/').replace(/'/g, "''")}'`);
+      } finally { await client.$disconnect(); }
+    }
+    console.log(`Journey data retained: ${evidenceDirectory}`);
+    } catch (error) {
+      console.error('Could not archive journey data:', error.message);
+      process.exitCode = 1;
+    } finally {
     fs.rmSync(tempDirectory, {
       recursive: true,
       force: true,
       maxRetries: 10,
       retryDelay: 200
     });
+    }
     process.exit(process.exitCode ?? 0);
   }
 })();

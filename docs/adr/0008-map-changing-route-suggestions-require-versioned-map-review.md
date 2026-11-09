@@ -1,5 +1,9 @@
 # Map-changing route suggestions require versioned map review
 
+## 2026-10-09 后续决定
+
+本 ADR 中冲突的产品约定已被 [ADR 0025](0025-unified-learning-and-personal-knowledge.md) 部分或全部替代。正式改图必须进入绑定版本的 Map Draft 原则保留；普通教学改为可执行真实活动与下一步，历史 L1/L2/L3 不再是必经管线。 下文保留原决策背景，不能用其旧规则覆盖当前任务书。
+
 Status: Accepted
 
 Date: 2026-07-19

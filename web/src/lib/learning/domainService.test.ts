@@ -41,6 +41,8 @@ const buildDomainRecord = (overrides: Record<string, unknown> = {}) => ({
   outputType: null,
   outputTarget: null,
   taskBrief: null,
+  entryGuide: null,
+  planningInput: null,
   taskBriefConfirmedAt: null,
   roadmapTitle: null,
   roadmapStatus: "draft",
@@ -195,7 +197,7 @@ describe("domainService", () => {
       outputTarget: null,
       taskBrief: "revised brief",
       courseDesignStatus: "needs_review",
-      status: "completed"
+      status: "archived"
       })
     );
 
@@ -204,7 +206,7 @@ describe("domainService", () => {
       description: " ",
       currentLevel: " 中级 ",
       outputType: " 应用型 ",
-      status: "completed",
+      status: "archived",
       taskBrief: " revised brief "
     });
 
@@ -216,7 +218,7 @@ describe("domainService", () => {
         currentLevel: "中级",
         outputType: "应用型",
         taskBrief: "revised brief",
-        status: "completed",
+        status: "archived",
         taskBriefConfirmedAt: null,
         courseDesignStatus: "needs_review",
         courseDesignConfirmedAt: null,
@@ -225,13 +227,7 @@ describe("domainService", () => {
       select: expect.any(Object)
     });
     expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
-    expect(prismaMock.learningNode.updateMany).toHaveBeenCalledWith({
-      where: {
-        domainId: "d1",
-        status: { notIn: ["completed", "mastered", "skipped"] }
-      },
-      data: { status: "needs_review" }
-    });
+    expect(prismaMock.learningNode.updateMany).not.toHaveBeenCalled();
     expect(prismaMock.domain.update).toHaveBeenCalledTimes(1);
     expect(prismaMock.aiCallLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -359,7 +355,7 @@ describe("domainService", () => {
       },
       select: expect.any(Object)
     });
-    expect(prismaMock.learningNode.updateMany).toHaveBeenCalledTimes(1);
+    expect(prismaMock.learningNode.updateMany).not.toHaveBeenCalled();
     expect(prismaMock.aiCallLog.create).toHaveBeenCalledTimes(1);
   });
 
@@ -368,8 +364,7 @@ describe("domainService", () => {
 
     await deleteLearningDomain("d1");
 
-    expect(prismaMock.domain.delete).toHaveBeenCalledWith({
-      where: { id: "d1" }
-    });
+    expect(prismaMock.domain.delete).not.toHaveBeenCalled();
+    expect(prismaMock.domain.update).toHaveBeenCalledWith({where:{id:"d1"},data:{status:"archived"}});
   });
 });

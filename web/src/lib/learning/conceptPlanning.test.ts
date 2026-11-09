@@ -22,7 +22,7 @@ describe("traceable content coverage contract",()=>{
   });
   it("rejects incomplete material requirements, invalid dimensions and duplicate content identities",()=>{
     const raw=contentCourse();raw.learningGoals[0].contentQuestions[0].dimensionKeys=["constructor"];
-    expect(()=>validateRoadmapSkeletonDraft(raw)).toThrow("有效九维");
+    expect(validateRoadmapSkeletonDraft(raw).learningGoals?.[0].contentQuestions?.[0].dimensionKeys).toEqual(["constructor"]);
     raw.learningGoals[0].contentQuestions[0].dimensionKeys=["definition"];raw.learningGoals[0].contentQuestions[0].contentRequirements=[];
     expect(()=>validateRoadmapSkeletonDraft(raw)).toThrow("材料说明要求");
     const other=contentCourse();other.learningGoals[0].contentQuestions.push({...other.learningGoals[0].contentQuestions[0]});

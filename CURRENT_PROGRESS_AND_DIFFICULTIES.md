@@ -1,5 +1,216 @@
 # 当前设计与开发进度
 
+## Obsidian 借鉴能力连续优化（2026-11-08）
+
+用户已授权持续实施并及时发布 GitHub。依据 ADR 0027 已接通个人记录的固定修订引用草稿/预览、当前修订反向引用分页、1–2 层已确认局部联系 SVG 与说明、可恢复类型/排序视图，以及全局 Ctrl+K 快捷查找。新增引用仍需明确保存，不自动确认语义关系；来源修订保留既有服务器快照，新增引用仅传身份，避免重新读取旧曝光或回传大正文。列表写入后按最新筛选刷新，保存时保护正在提交的输入。
+
+本机全项目 typecheck、定向 ESLint 及编码检查已通过；`npm run build` 退出码 0、完成编译/路由产出，但收集页面数据期间反复记录 Prisma 引擎被 Windows Application Control 阻止加载。新增隔离 SQLite 测试首轮在初始化阶段因同一引擎错误停止，实际业务断言没有运行，不能记作通过。原始日志在 `web/test-results/obsidian-discovery-2026-11-08/`。新增独立 GitHub Actions 验证数据库与真实页面，保留原全量/桌面门禁；本轮 SQLite、页面操作及截图尚待 CI 实际结果，未重新打包，旧桌面包不包含本轮改动。
+
+远端目标已核实为 `VivianAnnsesta/learningnode`，本地无 Git remote 且旧历史包含不应公开的配置/数据库路径。因此基于远端 main 在独立发布目录准备当前源码快照，排除设置、用户数据库、缓存、产物和私人 Word 文档，原工作区 index/历史不变。版本化空白 seed 与合成迁移 fixture 已只读核验；具体发布提交、PR 及 CI 结果待实际完成后追加。段落锚点、别名/未链接提及、更多属性视图、模板、日期回看、剪藏与导出仍是后续目标，没有记作已交付。
+
+源码首批已发布为 [PR #1](https://github.com/VivianAnnsesta/learningnode/pull/1)，提交 `dd3242ec867405988b51d792a9c5b98c8a72c9d1`，main 未改。两条 PR CI 均在 `npm ci` 停止，报告缺失 brace-expansion/concat-map，后续检查未运行；原始 [CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42566142454) 与 [针对验证](https://github.com/VivianAnnsesta/learningnode/actions/runs/42566142412) 保留。根因输入包括本机 npm 11.17.0 与 runner npm 10.9.9 对既有 override/lock 的解析差异，现按 ADR 0005 固定 npm 工具链再重验。首次 lock-only 重算未改变锁，不能把安装命令退出 0 当作 CI 修复成功。
+
+新增来源请求边界纯逻辑测试 3/3 通过；10 项 SQLite 与3条新页面链仍待实际后端验证。另以合成正式 API 完成6项浏览器操作/视觉检查，超过72k字符旧来源的新增引用请求仅409字节；这是 mock UI 证据，不是 SQLite/Electron 验收。视觉问题已修复：局部图谱避让节点和标签，相关/类比/对比在列表及图谱统一使用双向语义。固定历史 schema 已原字节归档，校验及无 `.git` 读取通过，实际迁移保真待 CI。
+
+本次重新查询依赖审计发现当前 high/critical 阻断，旧日期的零漏洞结果不覆盖新公告。正在按官方修复范围升级兼容补丁；Electron 41 没有消除当前阻断公告的可用补丁，依据 ADR 0005 计划升到最小已修复 Electron 42.11.16，并重新验证完整桌面运行/升级/安全门禁。没有降低审计阈值或把未打包源码当作可发布桌面程序。
+
+安全维护已写入 package/lock：Next.js 与 eslint-config-next 15.5.28、Electron 42.11.16、Vitest 4.1.12、sharp 0.35.5 和兼容传递补丁。`npm run audit:release`、npm 11.17.0 的 `npm ci --dry-run --ignore-scripts` 均通过，最新完整审计 0 critical / 0 high / 11 moderate。剩余 moderate 为 [minimatch globparts amplification](https://github.com/advisories/GHSA-g3hv-75wg-m249) 的 9/10 传递依赖链，限于现有开发/构建 glob 使用，暂不以不兼容的 minimatch 11 强制覆盖；后续跟进依赖拥有者的兼容修复，不能据此宣称零漏洞。before/after 审计与 lock 检查在同一证据目录。Electron 42 的显式 binary 安装已接入开发命令；本机 node_modules 尚未切到新依赖，真实新版本行为继续待 CI 及桌面门禁。
+
+提交 `279a5362341b59f650945a6abee38b3913feaf00` 的[专项 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42567513379)已真实通过：13/13（10项隔离 SQLite/HTTP + 3项请求边界）及3/3真实页面链，包含引用选择/明确保存/旧版本回看/反向引用、两层图谱/候选隔离、类型视图与快捷查找。证据 artifact `knowledge-discovery-evidence` 的 SHA-256 为 `49ed0d120de0e96d38e907581e5c84412f0d0a82822348ed5ca407498712b462`；不再以 mock UI 替代这些后端/页面证据。
+
+同提交[全量 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42567513361)为800/803：密集图谱逐条造数超时、其后清理 P1008，以及既有真实 PDF 提取5秒超时，后续迁移/桌面未运行。已保留原失败日志，将测试图谱数据改为批量事务、全量 Windows worker 限为2，未改节点/边规模、断言、测试超时或业务门禁；效果待下一实际 CI，不能将专项成功写成全量通过。
+
+提交 `79b103f02b2dcdab323fc7179da88cb3d218a6f2` 的[专项验证](https://github.com/VivianAnnsesta/learningnode/actions/runs/42568415623)再次通过；[全量](https://github.com/VivianAnnsesta/learningnode/actions/runs/42568415616)为801/803。Discovery10项实际15.037秒全部通过，原造数/清理超时已消除；剩余学习反馈证据与PDF提取为5秒时限失败，没有出现业务断言不符。前者失败项在时限触发后仍于7.852秒结束，PDF套件6.225秒；PDF独立本机11/11、2.11秒通过（本机旧安装依赖），不能代替 CI。依照既有隔离串行验收方式，下一全量改为单 worker 串行，仍保留全部断言、原时限和原失败日志，迁移及桌面阶段继续待实际到达。
+
+提交 `03508aa56e647c82ff5dc7f88ddff091524dfab2` 的[全量](https://github.com/VivianAnnsesta/learningnode/actions/runs/42569103756)已真实通过803/803、Prisma校验、归档旧schema夹具生成和迁移保真；[专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42569103690)继续通过。完整E2E为11通过/9跳过/3失败：两项全库只读计数被另一并行测试写入污染；一项旧测试仍匹配更新前的保存提示。已将共享隔离SQLite的浏览器文件默认串行、更新提示断言，保留全库无写入及后续旧原文/修订保真断言。没有改业务规则；下一E2E及桌面阶段仍待实际结果。
+
+接续阅读体验的目标/当前差异：现有视图可刷新恢复，但详情的普通返回按钮仍回到未筛选列表；领域入口选择全部领域后刷新也可能恢复初始领域。依据 ADR 0027 接通受限 `returnTo` 视图传递，覆盖列表→记录→引用/图谱→返回、快捷查找及领域空筛选，不引入新的业务状态或外部导航。此接续能力尚未记为实现/验证通过；段落级选择仍在后续范围。
+
+提交 `ee2bb63782a84c067c0884a2af14609601a5690d` 的[完整 quality](https://github.com/VivianAnnsesta/learningnode/actions/runs/42570112250)已通过803/803、迁移保真和14条页面流程，9项按原配置跳过。桌面阶段已下载/解压 Electron 42 并生成应用，但随后因干净 checkout 没有可选空 `web/public` 目录、打包脚本无条件复制而 ENOENT；runtime/upgrade/security尚未执行。已按 ADR 0005 允许缺省可选 public 并建立空目标目录，存在的资产仍须复制成功，必需资源门禁不变；下一实际打包待验。
+
+返回视图的接续代码已完成：受限 canonical 相对视图由普通返回、引用、图谱和快捷查找沿用；领域显式空筛选能刷新保留，检索词中的反斜杠只作为编码文本。22项纯导航及3项来源请求测试本机通过，typecheck/lint/encoding通过；新增第4条真实页面往返检查尚待新CI，本机仍未换新依赖或重新打包。下一批段落级引用需统一选择器身份、真实原文偏移/哈希核验、多段共存和固定快照，不把这些方案写成已实现功能。
+
+更新日期：2026-11-08
+
+本轮路线输入与显式修复的代码改动已完成，最新隔离串行全量 **766/766** 通过，0失败、0未运行；全项目 typecheck、lint、encoding 通过。[全量JSON](web/test-results/planning-evidence-final-full-2026-10-28.json)、[输出](web/test-results/planning-evidence-final-full-2026-10-28.log)、[类型](web/test-results/planning-evidence-final-typecheck-2026-10-28.log)、[规范](web/test-results/planning-evidence-final-lint-2026-10-28.log)、[编码](web/test-results/planning-evidence-final-encoding-2026-10-28.log)保留。此前中间态755/755仍有效但不覆盖后来新增的旁路修复；编码命令首次误指向不存在的check-encoding.js，原[失败输出](web/test-results/planning-evidence-encoding-2026-10-28.log)保留，改用package脚本实际指向的check-mojibake.js后通过。未修改schema、真实用户数据库或Provider默认推理模式，未重新打包。
+
+请求快照修复：课程研究和显式修复冻结目标、范围、基础声明、任务书、材料、意见及起始课程候选身份；成功/失败回退保存均在SQLite事务内核对指纹。原延期回归7/7失败，修后覆盖新增边界的针对119/119通过；入口独立复现又发现旧domain自动任务书写回、旧资料拼入新快照，3/3失败。现入口只传本次明确意见，保存材料/意见由服务单次读取，不再按旧domain生成重复任务书；已有用户任务书保留，名称目标仍足够。入口与快照12/12通过，归入最终766项。地图/阶段首审及局部/全图修复显式接收只读用户质疑与目标阶段，仍保留整图约束及原局部可写边界。证据：[快照旧失败](web/test-results/planning-request-snapshot-before-2026-10-28.json)、[针对结果](web/test-results/planning-input-targeted-final-2026-10-28.json)。
+
+显式课程修复的知识旁路已修复：原4项隔离服务回归均出现预期失败，含已有确定知识错误的 incomplete 课程只补齐结构，原错误句未改但knowledgeReview丢失，实际skeleton生成入口能够继续。现显式repair也复用既有至多3次独立知识核对；核验原报告/原候选/原来源身份，只继承实际未改字段的确定错误，完整原报告和候选归档，并明确继承证据不是新的模型核验。新意见或连接失败不能清除未改旧错；实际改动后重新核对，失败记未核实。日志持久化失败在保存前重抛。新增8项回归与相关四文件42/42通过，归入最终766项。[旧失败](web/test-results/course-repair-knowledge-before-2026-10-28.json)、[针对结果](web/test-results/course-repair-targeted-verified-2026-10-28.json)保留；扩展开发期曾有一项错误文案断言与Prisma spy类型问题，修正断言/夹具后通过，未放宽门禁。这些仍是协议夹具的程序证据，不是实际模型一定纠正知识的证明。
+
+新规划知识迁移诊断已完成：6组成对文本、12例、每例每模式一次，共24次，未调整冻结提示或补抽样。非推理有效更正5/6错例、保留6/6正例；推理有效更正6/6错例、保留5/6正例，两臂均11/12报告可用。非推理pt-08有claims而缺findings，且无错判定与自己的正确推导冲突；推理pt-12耗尽实验10000 token预算，没有最终答案。该实验预算与生产规划核对12000/180秒不同，不能直接外推生产必失败。11份实际更正经逐份AI协作审读未发现新增确定错误；仍发现支持理由口径错位及任务澄清的过强指控，判定命中不能替代论证可靠。非推理总91.773秒/44616 tokens，推理475.547秒/108042 tokens；两臂合计152658 tokens，不是账单。原设置未变、临时设置已删除、无产品数据库。[完整审读](docs/research/2026-10-28-planning-transfer-results.md)、[原始结果](web/test-results/planning-transfer-2026-10-28-1793181396960/summary.json)与[预定协议](docs/research/2026-10-28-route-quality-protocol.md)分别保留。这些是未用于前轮调提示的新诊断题，不是随机抽样或独立人类保留集。
+
+完整候选路线实验进行中：两个人工研究目标分别为有限筛查表条件概率与Python列表引用/拷贝，每域两种运行模式，使用实际请求处理器及隔离seed，计划到达全部实际Stage候选并保存重载。每路线24次、总96次请求是研究预算，原服务门禁与内部修复限制不变；错误、blocked或unavailable立即停止该路线，未到达不记通过。没有正式确认或正式节点写入。代码及判据已冻结，[运行目录](web/test-results/route-quality-live-2026-10-28-1793183197873)保存实时证据；Python两路线尚无完整结论，不能将以下有限表结果扩展为四路线全部通过。
+
+有限表两路线已终止：非推理24次实际请求、322655毫秒，六个Stage有展开返回，前五个重读一致；第六个知识核对在发送前被研究预算拦截，未进行最后重读，status=stopped，不计完整候选链，也不记为生产失败。推理24次实际请求、1374550毫秒，五个Stage全部展开、重读一致，status=all-candidates-generated-and-reloaded；主例计算、条件方向、名单解释和选学边界逐项审读有支持，但知识核对多次在实际生产预算内没有完整答案，不能把链到达写成各项核对成功。两臂是不同的独立生成路线、小样本运行策略比较，不是固定候选下的纯模式因果实验。[原始终态](web/test-results/route-quality-live-2026-10-28-1793183197873/outcomes.json)、[语义审读](docs/research/2026-10-28-finite-route-results.md)、[运行与交接审计](docs/research/2026-10-28-route-runtime-audit.md)分别保留。
+
+有限表原文中最明确的局部问题是把未声明的“按行列读表”归为用户自述。Stage3具体迁移提示只给总300/缺陷30/标记60，现有数字不决定交集；模型已识别并记uncertain，语义评审明确留待后续补表，不能写成漏检或吞掉确定更正。Stage5“同规则”和Stage6概率/计数对比存在待澄清表述，但上下文实际公式正确，未夸大为确定计算错误。
+
+规划到教学的交接缺口已隔离复现，尚未修复：实际createLearningSession→prepareLearningSession→prepareLearningSegment链、mock模型协议、临时空白seed数据库，专用7项回归全部按目标断言失败。[原失败](web/test-results/planning-teaching-handoff-before-2026-10-28.json)、[复现脚本](web/scripts/research/planning-teaching-handoff-repro.test.ts)保留。makeContext漏传example/commonMistake/transferPrompt；最新无关阶段报告遮蔽旧相关疑点；课程、Stage、node key或正文已变而quote仍重合时会把旧confirmed_error套进新上下文；无可靠绑定的legacy报告也被当当前证据。新增文件lint和全项目typecheck通过，无网络、未接触产品数据库。此前766全量不包含这份显式运行的研究复现，不能用766通过否定新失败。ADR0026已先规定真实任务原文与可核验节点证据绑定，生产实现等待当前冻结的四路线实验终态；实际课堂是否补全仍未观察，不能把输入缺失直接写成已证实教学失败。
+
+本轮审计同时确认：课程报告中已保存的materials会间接传到后续生成，不能把风险误记为所有正文丢失。阶段核对仍是有限主张预算及有界选源，不能由某些知识句通过推出整个阶段已穷尽核验。原目标仍涵盖路线与知识设计、针对性教学及更正可靠性，真实学习效果未观察；本轮程序改动和局部模型结果不替代整体目标。
+
+2026-10-28 本轮反馈证据及更正链的代码修复已完成并通过隔离串行全量 **743/743**，0失败、0未运行；全项目 typecheck、lint、encoding 通过。[全量JSON](web/test-results/feedback-evidence-full-2026-10-28.json)、[输出](web/test-results/feedback-evidence-full-2026-10-28.log)、[类型](web/test-results/feedback-evidence-typecheck-2026-10-28.log)、[规范](web/test-results/feedback-evidence-lint-2026-10-28.log)、[编码](web/test-results/feedback-evidence-encoding-2026-10-28.log)保留。lint 只有 Next.js 命令退役提示。新增隔离用例曾因夹具使用非法材料版本触发既有 SQLite 保护，已改合法夹具；未放宽保护。
+
+具体实现：生成与核对共用实际原题、用户原话、绑定材料版本、提交时帮助和来源快照；失败同号重试同步当前快照，迟到结果受生成令牌保护，新动态活动也保存来源。自动审查覆盖 text、observation、uncertainty、verdict、action、newActivity 全部字段，有效替换整体复核，报告修复与知识核对共用总三次预算；失败或仍有确定错误时不沿用旧判断/行动，不伪造已完成更正。手动核对先独立记录原反馈的有效确定错误，即使后续更正复核不确定、抛错或称未发现错误，原判断/行动也保持撤回；原反馈、调用和错误依据可追溯。使用既有内部 JSON 记录，无 schema 迁移、无新正式地图写入；反馈核对提示版本为 learning-feedback-whole-reply-v2。
+
+真实模型经完整反馈服务的第一轮4个构造场景均保存重载，9次调用；其中开放题核对将可选新活动误解为强制改任务，不能计为已证实错误检出。[第一轮结果](web/test-results/feedback-service-live-2026-10-28-1793178365861/run-complete.json)。加入不确定性字段核对及明确可选活动语义后的第二轮4场景、10次调用：点值/极限混淆、单位换算和开放观察3例保存重载；正确质疑错误参考的案例在有界核对后阻断。该失败先缺顶层 uncertainty 导致一次合同失败，后又把已定义 g(0)=0 的对照题误读为 g 在0未定义；核心复合极限2正确，原正文另有未被准确指出的泛化条件表述不严谨。不能以运行脚本通过声称所有案例内容通过。[第二轮结果](web/test-results/feedback-service-live-2026-10-28-1793179516175/run-complete.json)及原回应/调用均保留；两轮均用隔离 seed，外键违例0、临时设置删除、原设置哈希未变。
+
+完整反馈组件另对真实生成回复注入单字段错误并保留两个控制，共5场景各2次、16次核对调用；正文以外的判分、表现描述、帮助归因6次注入中4次修复并复核，2次首份报告合同失败，原注入错误仍保留。另有控制被过度修改及合同失败，不能合并成通用准确率。该诊断脚本遇无效报告即停止，不是生产服务三次预算耗尽。逐份解释、必要/充分条件歧义、可选活动误判与服务失败见[完整反馈结果审读](docs/research/2026-10-28-whole-feedback-results.md)，[原始结果](web/test-results/whole-feedback-repair-2026-10-28-1793179109821/summary.json)保留。
+
+当前适配器对可切换推理的相应非联网任务默认关闭推理。保持5个冻结输入、同一请求模型及温度，交替比较开启/关闭模式，各10次初次报告；关闭模式9份可执行、1份合同失败，开启模式10份可执行，分别0/10及10/10返回 reasoning_content。关闭模式总耗时47.640秒、usage 39467 tokens；开启模式315.985秒、usage 87533 tokens，包含提示及推理/回答，不等于账单。接口在推理模式忽略 temperature，因此这是支持的运行模式比较，不能称有效采样参数完全相同。只检查初次报告，没有生产更正复核循环；开发病例含解释敏感控制，未做独立保留集或真实学习者试验。产品默认模式未改，原设置未变、临时副本已删除。[原始结果](web/test-results/thinking-comparison-2026-10-28-1793179489745/summary.json)、[模式对照审读](docs/research/2026-10-28-thinking-mode-comparison.md)记录具体判断与局限。
+
+推理模式对照的语义审读：三类明确单字段注入共6次/臂，两臂原始报告均指出注入错误；关闭模式其中1次返回非法 action=finish，故可执行修复5/6，另2次附加依据不足的行动指控。开启模式6/6仅更改对应错误字段，替换合同可用。两个解释敏感控制共4次/臂，关闭模式均指错、开启模式均未指错；其中有“缺少已经存在的条件”、把正确质疑参考当成不能答对等明确误判，但也有“当前困难”措辞及必要/充分条件的解释争议，不能将4次全算无歧义误报或宣称模式准确率100%。同案例四条提示逐字相同，保存的20个提示指纹均复核一致。独立协作审读仍是 AI 复核，不是人类学科认证。
+
+本轮目标继续进行：已经证明部分信息损失和更正状态缺陷可修，但实际模型仍会漏掉条件、误读已有条件或过度撤销合理建议。路线范围/真实前置、未见案例稳定性、完整桌面新包和真实学习效果仍未完成；旧桌面包不含本轮修复，不以代码测试、研究报告或少量反馈案例替代整体目标。
+
+2026-10-28 用户继续要求研究出能解决项目难点的办法。本轮从研究建议进入机制定位和实际对照，目标仍覆盖路线知识与范围、教学针对性、判断及更正可靠性，不以单个样例或单一修复替代整体目标。当前代码审读已定位反馈生成与审查的信息断层、反馈正文纠正后旧判断仍沿用、重试资料快照不同步等可复现候选机制。先冻结诊断病例及原提示，比较同模型在缺失/具备本轮交互证据时的表现，再实施和验证；未运行的实验、尚未修复的缺口及真实学习效果继续记为未完成。
+
+本轮已实际运行两组成对机制实验，各6组12病例、每例每臂重复2次，各48次、合计96次真实调用。配置为 DeepSeek/deepseek-v4-flash、温度0.25，返回标识为 deepseek-flash；这不是永久固定权重的证明。第一轮：原流程24次中检测明确错误0/12、错例放行11次、弃权3次（含正确例2次）、保留正确例10/12；只补交互证据的24次中检出8/12、错例放行2次、正确例保留12/12，另2次理由/更正正确但verdict与findings冲突被合同拒绝。第二轮复测context为8/12检出、3次错例放行、1次合同失败；增加通用归因职责的context_scope为12/12检出、正确例保留10/12、无合同失败，另2次不匹配集中在同一个帮助记录限定句，已登记判据解释敏感，不据此估计通用误报率。所有重复不是独立学习者样本；首轮和第二轮分别保留[汇总](web/test-results/feedback-context-2026-10-28-1793176069255/summary.json)、[汇总](web/test-results/feedback-context-2026-10-28-1793176309133/summary.json)及原始逐次输出。
+
+上述调用提供方usage合计138276 tokens（第一轮baseline 27301、context 35466；第二轮context 35411、context_scope 40098），不是账单金额；每臂单次上限4096输出token、120秒，不自动重试失败。两轮临时设置均已删除、原设置哈希未变，未访问产品数据库。实验脚本首次因括号语法错误在加载前失败、未发出模型请求，修正后两轮完整执行。病例是公开诊断开发集，第二轮规则由第一轮失败启发；这两轮本身没有完整服务真实AI、独立保留集或学习效果测量，后续服务实验单列于上方。研究结论与剩余工作见[机制改进报告](docs/research/2026-10-28-solving-quality-bottlenecks.md)、[原始失败提取](docs/research/2026-10-28-failure-mechanisms.md)和[逐份输出审读](docs/research/2026-10-28-context-experiment-review.md)。
+
+2026-10-27 教学质量目标的研究材料已整理为[路线与教学研究方案](docs/research/2026-10-27-ai-teaching-research.md)，配套原始实证、学习机制、当前实现审计、数学/开放探索样例及[比较评价协议](docs/research/2026-10-27-ai-teaching-evaluation-protocol.md)。研究区分真实学习表现、辅助下完成、行为评价和程序可靠性；核对新论文的样本/版本/人工介入条件，明确正面、负面与未显著改善结果的边界。旧方法论中 seen 沉淀、入口缺失等表述已加历史适用性说明，不能覆盖 ADR 0025/0026。本文档记录的是研究产出，不是方案已实现或教学效果已通过。
+
+上述2026-10-27调研阶段只做文献和代码审读、研究材料编制、文档本地链接/编码及样例有限计算核查；证据见[研究核验记录](docs/research/2026-10-27-research-verification.json)。协作助手审读是 AI 编辑性复核，不是独立人类学科认证。该阶段未改业务代码、模型设置或真实数据库，未重新运行真实 AI、桌面包或学习者试验；2026-10-28的实现和实验另列于上方。目标/当前差异：已有可实施的研究方案与对照办法，但在 EnglishNode 中稳定降低内容错误、改善独立/延迟表现的效果尚待实测，不能以研究文档完成替代。
+
+2026-10-11 更正保存的代码修复已完成：针对空白运行 `1791623160555` 的006更正被登记投影覆盖、执行记录与最终候选不一致，按 ADR 0026 增加真实正文来源目录、结构校验后完整字段保留检查和整批失败保护。任何更正丢失时保留原候选与绑定的确定错误，不保存部分成功或虚报 corrections；仅改核对意见不能解除未更正错误。既有三次调用内从保存的原报告修复来源引用；上游有独立同路径证据且最终派生文字实际符合旧更正时，允许只更正上游。局部节点不按同文扩散，身份、依赖、版本与正式用户确认门不变。已成功的一批更正在后续连接失败时仍保留，新候选明确待核对；提示版本为 `planning-knowledge-v3-retained-corrections`。
+
+最终独立 TEMP 串行全量 **690/690** 通过，0失败、0未运行，含隔离 SQLite 用例；全项目 typecheck、lint、encoding 通过。[全量JSON](web/test-results/planning-correction-full-final-2026-10-11.json)、[输出](web/test-results/planning-correction-full-final-2026-10-11.log)、[类型](web/test-results/planning-correction-typecheck-final-2026-10-11.log)、[规范](web/test-results/planning-correction-lint-final-2026-10-11.log)、[编码](web/test-results/planning-correction-encoding-2026-10-11.log)保留。新增23项回归覆盖投影丢失、原地校验、字段缺失/冲突、同字段多更正、来源唯一性、成功保存、无错意见不能清错和连接失败恢复。首次全量687/688通过的唯一失败是新增用例断言了正常提示中不存在的英文标签，已改为核对真实更正段的 findings 与前后指纹；首次[失败JSON](web/test-results/planning-correction-full-2026-10-11.json)保留。开发期两处新增测试类型错误及一处变量命名lint错误修复，原[类型失败](web/test-results/planning-correction-typecheck-2026-10-11.log)与[lint失败](web/test-results/planning-correction-lint-2026-10-11.log)保留，不放宽业务断言。
+
+原006有效报告 `cmv26ke4o000rssa9hk9483ct` 已额外离线重放：从归档还原的输入指纹与原报告完全一致，旧处理实际3项被覆盖、1项保留；新处理整批拒绝，原候选及归档不变。另用明确标识的协议夹具补齐两处来源的独立引用后，四处最终更正全部保留；这不是新的模型输出或数学质量接受。[重放证据](web/test-results/planning-correction-replay-2026-10-11-evidence.json)和[重放/服务针对结果](web/test-results/planning-correction-retention-2026-10-11.json)可回查。本轮未调用真实模型、未改真实数据库、未重新打包桌面；旧包不含修复。此前011知识漏检、008报告合同失败和整产品未完成事实继续有效，后续另行讨论与验证模型输出质量。
+
+本轮新包前全量自动化复验 **667/667** 通过，包含真实隔离SQLite服务用例；[最终JSON](web/test-results/final-core-serial-repaired-2026-10-10.json)与[完整输出](web/test-results/final-core-serial-repaired-2026-10-10.log)保留。首次复验666通过、1失败是旧用例断言已替换提示词的“端点归属”字样；已改为核对实际反馈全文先于历史上下文及前提条件，未放宽业务。首次[失败JSON](web/test-results/final-core-serial-2026-10-10.json)保留。全量lint、类型、编码与Prisma schema检查通过；新版[build:app输出](web/test-results/final-core-build-2026-10-10.log)通过，包括空白seed、合成旧库备份迁移/外键保真及包检查；新空白及两个失败恢复隔离模拟正启动，尚无本轮完整结果。自动化通过不代替原041数学内容、032逻辑反馈、City规划合同等实际失败的纠正证据。
+
+恢复副本 `1791619941485` 的042还有独立备课合同失败：无领域提问的实际回应与保存恢复成功，但准备教学的三份模型原文把 requiredOutput 写为 optional，合同只允许 none/attempt/record，最终框架未生成。现只在生成解析把语义明确的 optional 规范为既有 none，原raw/parsed保留；不新增状态、不把任何必要尝试改可选，其它未知值与覆盖门仍拒绝。备课与生成提示明确三值，日志用 flexible-learning-reliability-v4 区分新包。相关79/79纯合同、typecheck及模块lint通过，[结果](web/test-results/knowledge-output-reliability-contracts-2026-10-10.json)；尚未做新包实际同号恢复或新空白备课验证。
+
+最新空白桌面 `1791617868526` 已正常停止并归档，不是完整产品通过：前两部分实际五步阅读、两类困难、两次动态活动和一次框架必需尝试已到达；041第三部分仅生成，独立审读发现题目只给外层极限而参考断言外层逐点恒值、常值反例的失败理由错误、回应依据混用分支、单侧文字过强，发布前模型报告仍 no_error_found。原 `cmv24y4it005avlferim5z6js/v1` 与核对 `cmv24ybv0005evlfea8vlodpd`、原回应、材料版本和失败保留；第三部分必需活动、第四/第五部分、专项反例节点和后续完整主链未到达。42检查点、原文件指纹不变、临时设置删除、已知凭据命中0；没有把知识错改成格式通过。[实际内容审读](web/test-results/reliability-verified-empty-2026-10-10-1791617868526/AUDIT-PART-3.md)及[原运行结果](web/test-results/reliability-verified-empty-2026-10-10-1791617868526/result.json)可回查。框架步数和实际阅读范围按冻结快照分别记录，未使用的新补讲活动不计完成。
+
+独立恢复 `1791619941485` 的City规划还出现通用传播修复合同失败：三份报告均给十二项claims却为四处错误给findings，学习目标登记的更正缺其同path错误claim。原报告/候选保留，正式版本仍0、没有误创建节点。新增失败候选缺证据位置目录，修复优先其实际原文与父级范围并省略无关重复职责，不自动造claim或放宽同path引用门；42/42纯规划核对通过，类型及模块检查通过，[结果](web/test-results/planning-propagation-repair-2026-10-10.json)。通用正文生成/核对同时要求逐活动以本题条件检查参考与分支依据，区分具体取值与趋势、支持与证明、全称与存在；不增加学科词表、状态或调用。旧包中的City两次修订、个人探索量词问题与后续未达到的能力仍是失败/待验收，新包及新的空白完整链尚待完成。
+
+2026-10-10 教学新文字优先与唯一活动缺身份补丁的纯针对验证22/22通过（两文件，0失败、0未运行），typecheck、模块lint通过；没有运行SQLite服务套件、构建或生成client。首次TEMP权限导致两个文件导入失败且0测试运行，原失败JSON/log保留，改用独立工作区TEMP后验证通过；原真实正文假阴性和三次局部核对身份失败继续保留。[最终JSON](web/test-results/learning-knowledge-publication-ready-2026-10-10.json)、[输出](web/test-results/learning-knowledge-publication-ready-2026-10-10.log)、[全部失败与范围](web/test-results/learning-knowledge-publication-development-failures-2026-10-10.md)分别记录。当前桌面旧包不含补丁，自动化结果不能替代实际知识纠正或产品验收；node_knowledge_check仅更新提示记录版本为learning-knowledge-current-text-v1，数据/报告版本和原记录不变。
+
+新空白主流程 `1791617868526` 的032反馈另暴露理由错误：将原命题 P=H→C 的角色误写成 Q=(H∧¬C)→C 后，反馈称 Q 自相矛盾且不能用于同一反例；在经典逻辑下两者都等价 ¬H∨C。角色还原不忠实与真值/等价不同，不能把前件含结论否定直接判成条件句恒假。原反馈 `cmv24kkjt004evlfeb8fxeuh7` 与核对日志 `cmv24kptl004ivlfeo4sq651s` 的 no_error_found 保留，新动态段尚未用于答题。通用提示补逻辑角色与实际推理区别；反馈借用 mainIdea 的新文字和动态材料同时优先，不把新反馈误当旧框架。既有 checkGeneratedKnowledge 最多3轮事实核对，每轮 generate 最多3次合同尝试，原嵌套上界9次；本次没有增加循环或调用，不能误报为全过程总3次。真实正文和反馈仍须新包有限复验。
+
+本轮教学核对目标/当前差异：恢复副本 `supplementary-recovery-2026-10-09-1791611505708` 的034/035第五部分正文与参考回应将逆推结论的否定称为命题前提；实际独立核对输入20,033字符已包含全部当次正文、活动、参考、依据和提示，仍返回 no_error_found，不能误记为正文缺输入或知识质量通过。其前面是较长的旧上下文和整框架，当前提示及总摘要没有明确新文字优先与实际覆盖边界。按 ADR 0026 先补通用新材料优先、逻辑角色及独立推导提示，保留原失败与核对原文；这不保证模型知识正确，仍需新包有限实际复验。
+
+后续独立恢复副本 `supplementary-resume-2026-10-10-1791619941485` 的007三份局部核对已正确指出两处错误并给正确替换，但活动 answer finding 只给真实 activityKey、漏 stepKey，三次通用修复原样重复，服务端拒绝“核对引用了未知步骤”。新增严格唯一活动归属规范化与真实目录修复提示，仅补可确定的缺步骤身份，不放宽错引用、假活动或非可改字段。原三份失败调用 `cmv24eopq0007hw4or2rnmw04`、`cmv24er7t0009hw4oi5k2oyx5`、`cmv24et12000bhw4ocq0jhrw6` 及原数据库保留。当前运行中的主流程72761与恢复18649使用旧包，不含此补丁；未到达的后续教学和完整产品能力不得记通过。[只读审计](web/test-results/reliability-verified-empty-2026-10-10-1791617868526/AUDIT-TEACHING-KNOWLEDGE-CHAIN.md)另列事实与建议，针对结果随后单列。
+
+2026-10-10 最新整合验证：独立 TEMP 的串行全量637/637通过，0失败、0未运行，编码检查通过，见 [全量 JSON](web/test-results/reliability-core-final-serial-2026-10-10.json)和[输出](web/test-results/reliability-core-final-serial-2026-10-10.log)。桌面重新打包、空白 seed、旧库副本升级及外键/打包边界检查通过，见 [构建输出](web/test-results/reliability-verified-final-build-2026-10-10.log)。新的空白目录 `reliability-verified-empty-2026-10-10-1791617868526` 已实际启动并取得业务库全0、隔离配置保存、历史只读不导入的证据；独立失败恢复副本另行执行。以下旧失败和未到达项目继续有效，自动化通过不代替真实教学与完整产品验收。
+
+最新空白运行 `1791615468937` 已在第二部分活动反馈处真实停止：回答已保存，模型把框架部分 key `compare-directions` 填作当前材料 stepKey，三次有界生成仍同样无效，服务端阻断反馈发布。原调用、失败输入和库已归档，清理完成；第三至第五部分和后续主流程未到达，不能记通过。继续修正行动目标契约、材料活动不能暗增框架完成要求，以及局部纠错新材料的可进入性，再在副本中实际重试和完成独立能力验收。上一轮框架步数以实际21为准，人工门理由的20是计数笔误，原理由保留。
+
+本轮反馈行动目标/当前差异：实际失败的三份反馈正文正确区分两种内层取值及额外充分条件，但将真实尚未准备的框架部分当作当前正文步骤；原通用结构修复提示未说明目录差异，三次重复同一无效目标。按 ADR 0026 补当前正文与后续计划的身份合同及有界修复，计划建议只能成为 continue 说明，不能执行不存在的步骤；真实未知目标仍阻断。旧失败记录不改写，保存输入的同号显式重试与后续完整桌面恢复验收仍待实际验证，不能计为已完成。
+
+2026-10-10 此合同修复的针对验证67/67通过（5个文件，新增19项，包含原服务36项、活动要求10项与局部更正2项），使用独立TEMP下版本化 seed SQLite；typecheck、模块lint、encoding与diffcheck通过，无构建或生成client。真实保存输入同号重试、最多三次错误后保持失败、伪目标拒绝、原raw/解析/规范结果分开保留及当前/历史框架要求投影已由协议夹具验证；新包实际恢复与剩余教学仍待验收。[JSON](web/test-results/learning-feedback-contract-targeted-2026-10-10.json)、[输出](web/test-results/learning-feedback-contract-targeted-2026-10-10.log)、[本次真实失败与UI恢复条件](web/test-results/reliability-complete-final-empty-2026-10-09-1791615468937/FEEDBACK-ACTION-FAILURE-AUDIT.md)保留，不将合同通过写成完整产品通过。
+
+本轮实际正文还发现任务承诺不一致：空白运行 `1791615468937` 的 015 教案所有步骤 requiredOutput=none，但 035 第二段活动 raw required=true，页面显示必须留下一次尝试，完成校验却按教案不要求该活动。原教案、正文、尝试及失败证据保留。现按 ADR 0026 修正后续正文解析与旧材料读取显示，以绑定框架作为产出要求唯一依据；attempt 缺实际活动仍拒绝。此修正不增加复核调用、不重写历史，flexibleTeaching 的10项针对验证与类型检查通过；绑定框架调用整合及真实恢复副本仍须检查，不能记为完整产品已验收。
+
+本轮当前运行：`reliability-complete-final-empty-2026-10-09-1791615468937` 已在新打包桌面、新临时用户目录和版本化空白 seed 上启动，尚未完成整产品验收。新包构建、空白 seed、备份迁移和外键检查通过，见 `web/test-results/reliability-complete-final-build-2026-10-09.log`。前一空白运行 `1791613883671` 在首次草稿编辑时失败：页面漏传已保存候选的课程绑定，课程实际并未变化；服务端版本门未放宽，已修页面并取得15项针对验证通过。驱动悬空等待导致异常退出另行修复，原失败、数据库、模型原文、REPORT及TRACE保留，临时设置已清理、原库及设置未改。必要条件的逻辑方向、逐路径选学范围继承和实际来源支持与独立推导的区分已补入通用复核提示，34项针对验证通过；这些是合同验证，不是模型消除知识误判的证明。公开 MIT 来源在本机实际解析到保留网络地址198.18.0.21，被原安全规则拒绝，正文未取得；不修改安全边界或宣称教材安排已核实。后续教学、个人网络、探索、跨域及恢复仍须逐项实际到达，未到达不记通过。
+
+本轮继续实施 ADR 0026：新空白模拟的规划知识失败是有效的新证据。当前目标是实际材料快照、独立主张核对及上游有界修正，并重新完成全产品空白桌面模拟；尚未取得这轮完整验收证据，以下历史通过不能代替本轮结果。补充桌面验收还发现主题改名使用 Electron 不支持的 window.prompt，已改为保存前可编辑、可取消的页面输入；这属于任务书要求的主题管理操作，实际桌面改名验收仍待执行。正式路线提供“修改目标与路线”入口，进入现有持久化草稿与 AI 修订流程；正式变化仍需复审和用户确认，恢复/调整后的内容保留待本轮实际验收。
+
+最新 `reliability-final-empty-2026-10-09-1791612175000` 使用旧打包副本，已在正式确认前停止并保留，代码修复后新的空白运行尚待启动，不能视为本轮修复后的通过。真实反馈修订暴露三处边界问题：模型把服务器实际用户正文的 pasted 内部身份回填公开 sources，服务端随后将其送往 HTTPS 抓取并让批判报告把 URL 校验失败误读为“用户正文未取得”，尽管持久化原始材料仍有881字符；规划复审把已经登记但尚未展开条件/例子的范围与公开正文缺口混为 criticalCoverageGap；全图修订强制原阶段数量和全部稳定 key，导致无法取消无展开详情的 planned 基础阶段，模型为保留容器发明必学基础责任。对应 ADR 0026 已补来源生命周期、范围/证据分离和 planned 阶段可取消/合并的决定。来源生命周期针对验证61/61通过，最新独立 TEMP 串行全量598/598通过（88个文件，0失败、0未运行），lint、encoding、typecheck通过；[全量 JSON](web/test-results/planning-source-final-serial-2026-10-09.json)、[全量输出](web/test-results/planning-source-final-serial-2026-10-09.log)和[来源修复失败记录](web/test-results/planning-source-lifecycle-development-failures-2026-10-09.md)分别保留。随后须重新构建并用新的空白桌面验证；本轮原生成、复审、修订及失败记录保留，原数据库只读核对。停止时正式节点为0，23条模型调用、1条确认审计，临时设置已删除，原指纹不变、外键违例0；教学正文、作答与后续产品步骤未到达，不能记为通过。
+
+## 已有实现与本轮验收差异
+
+当前空白运行 `1791615468937` 的011阶段候选已由真实模型复审并在012正式确认，版本/材料/候选绑定可回查，但独立知识报告12项中只有1项引用新节点文字，其余11项重查全局登记；实际复合节点的新知识、任务和序列反例没有本路径核对。模型已收到这些文字，问题是有限预算没有优先此次展开范围，报告局限也未明确列出这些新节点的未覆盖范围。通用目录排序及范围提示已修，新增5条非学科专用回归，连同原报告与服务测试59/59通过，typecheck通过，证据见[数据链审读](web/test-results/reliability-complete-final-empty-2026-10-09-1791615468937/AUDIT-DATA-CHAIN.md)及[针对结果](web/test-results/planning-stage-scope-targeted-2026-10-10.json)。当前桌面包不含该改动，原011报告、原数据库和确认审计不能追改为已经充分核对。当前教学验收可以继续提供实际证据，但此缺口仍须在新包中重新验证，不代表整个阶段知识已核实。
+
+后续新空白运行 `reliability-complete-empty-2026-10-09-1791613883671` 已到达实际 AI 课程研究、路线生成及知识/来源展示；在首次正式确认前编辑4处介值定理相关原句时，保存草稿 PATCH 因页面漏传课程生成记录绑定返回400。数据库课程、草稿和复审三者的课程记录ID一致，并非输入真的变化；原接口事件、失败与候选记录保留。修复仅补页面恢复的候选绑定随编辑请求传递，不把最新课程ID重绑旧候选，也不放宽服务端版本门。新增4条真实 SQLite 和实际地图 GET/PATCH 处理器回归，连同原生命周期与复审测试15/15通过，typecheck、lint、encoding通过；[归因及验证记录](web/test-results/planning-creation-binding-repair-2026-10-09.md)另列。这是接口与数据回归，尚待新包中的实际页面操作验收。该运行未到达正式确认及后续教学，仍不能记为完整产品通过。
+
+此前改造已接通《EnglishNode_Implementation_Plan.docx》的主要核心入口并取得部分完整链证据，可以启动桌面；本轮不能据此宣告全部任务完成。新的隔离空白模拟仍暴露规划知识漏检、来源内部标识处理和复审范围误判，正在修复并逐项重验。当前库会话、个人记录支持分页和服务端主题筛选。原有未提交工作保留在 codex/complete-learning-product；旧规则和旧执行代码先归档再替换，未重写历史迁移或真实项目数据库。
+
+目标/当前差异：路线、灵活教学、真实反馈及动态活动、独立探索和返回、个人记录与修订、多处引用、普通跨域关系、主题、三态审计、历史只读、桌面和配置持久化均已接通。既有自动化和真实模型流程通过，不代表整门课程所有知识已准确、模型达到优秀教师水平或长期学习有效。最新全新模拟发现规划定理条件遗漏而复审漏检，独立内容接受在首阶段确认前暂停；下列早期完整链证据不覆盖这次新生成内容。
+
+## 最新全新用户模拟：规划内容核对暂停
+
+用户要求从零再次观察实际使用，本轮独立运行 fresh-user-2026-10-09-1791604544968。通过最终 packaged Electron、全新临时用户目录及空白 seed 启动，未导入旧课程或旧测试库，只复制已授权的模型设置。初始业务表和 AI 日志均为0。
+
+- 实际到达：名称和目标输入、模型课程研究、8阶段骨架生成、明确接受、首阶段展开及页面恢复；全部相关接口正常返回，renderer错误0。正式地图版本1；保留1领域、8阶段骨架、6个候选节点，正式节点/会话/记录/关系均0。
+- 内容阻断：复合极限节点的 newKnowledge 与 teachingTasks 把“内层极限存在、外层连续或极限存在”列为法则前提，却漏掉仅用外层去心极限时内层不得取逼近值等必要条件。取 g(x)=0、F(t)=1（t≠0）且 F(0)=2，两个极限存在却不能按外层极限得到复合极限1。生成与阶段复审均成功，复审仍 passed；停止是本轮独立核对作出的接受判断，产品没有自动识别该错误。
+- 本轮共有7次真实 deepseek/deepseek-v4-flash 请求及2条 model=null 确认审计，6个页面检查点、13个接口事件；模型结构成功与知识正确明确区分。教案、正文、反馈、作答、个人修订/关系、探索返回和重启恢复均未到达，不能记为本轮通过。
+- 非阻断问题：未取得来源正文时仍借权威顺序解释安排；选学承诺在具体路线变成普通掌握目标；教学次序被说成数学必要性；基础已写在目标中但页面仍显示未知，初始各Stage位置理由为空。独立核对与官方来源定位见报告。
+- 原库与原设置指纹不变；临时设置副本已删除，隔离数据库和全部原回应保留，外键违例0、已知凭据命中0。没有修改业务代码、AI原文或以前测试结果。下一步应让规划中的核心定理事实检查与课程问题/节点任务的局部修正相连，而不是再次拆分合讲或增加格式门槛。
+
+本轮 [详细报告](web/test-results/fresh-user-2026-10-09-1791604544968/REPORT.md)、[每一步、模型原文及原失败](web/test-results/fresh-user-2026-10-09-1791604544968/TRACE.html)、[实际统计与数据保护](web/test-results/fresh-user-2026-10-09-1791604544968/summary.json)。
+
+## 立即启动
+
+打开 [Antigravity.exe](web/dist-electron/win-unpacked/Antigravity.exe)，保留完整 win-unpacked 目录。页面显示 EnglishNode，沿用旧应用名与数据目录以保护原安装。实际桌面目录为 C:\Users\79067\AppData\Local\Antigravity，现有 DeepSeek / deepseek-v4-flash 配置已复制到本机应用目录并经重开读取验证，原设置未修改。详细步骤见 [Windows 启动与数据说明](docs/windows-start-and-data.md)。
+
+最终程序已为用户打开，可见窗口与进程证据见 [实际桌面交付](web/test-results/implementation-2026-10-09/actual-desktop-handoff.json)。
+
+“学习路线”输入名称和目标，审阅并接受具体安排后按需展开阶段；“当前学习”可直接探索问题；“个人知识网络”可随时保存、修订、建立关系和归入主题。保存、结束、完成分开，下一步指向真实可进入对象。旧内容从“历史内容”读取，不触发模型。
+
+## 逐项验收
+
+下面的“通过”指本行实际行为和数据保护，不表示已证实学习效果。模型内容与流程证据分别记录；无需模型的业务用真实 SQLite 和页面操作验证。
+
+| 任务书场景 | 自动化、数据或页面结果 | 真实模型／桌面证据与范围 | 结论 |
+| --- | --- | --- | --- |
+| 明确目标与开放探索 | 名称和目标最小输入；未知基础可开始；独立会话无伪造节点；开放回应允许无标准答案和分数 | 微积分仅名称/目标的正式规划与公共空间开放讨论均实际调用配置模型 | 核心行为通过；理解效果未观察 |
+| 确认与自由选择 | 未接受不写正式地图，确认绑定草稿和版本；拒绝建议不改图；前置仅提示，跳学可进入 | 实际模型路线经用户接受，首阶段展开后再确认；后续自由选择由页面和 SQLite 证据覆盖 | 通过 |
+| 灵活学习 | 不依赖九维五段或每步必练，范围和前置责任仍校验；相关知识允许合讲 | 微积分真实框架3部分、公共空间真实框架7部分，按需生成正文 | 通过；不等于内容全部准确 |
+| 两类实际困难 | 回应绑定真实输入与材料，不能仅换理由文案 | 把 a 当横坐标和临界点重复计数得到不同的真实解释、题目与活动身份；原文保留 | 通过；已知数学错误经后续资料纠正 |
+| 动态新活动 | 材料与动作原子保存，可进入作答、重载、反馈和返回；幂等不重复造题，迟到响应隔离 | 实际进入第二类数学活动作答、得到对应反馈，再处理 x≥0 变式；公共空间讨论也可进入 | 通过 |
+| 独立记录与修订 | 六类记录；先保存疑问，多节点/领域引用同一身份；追加不可覆盖修订，并发旧修订拒绝 | 实际桌面备课前保存疑问、学习后保存理解，随后修订并重开；原来源和旧正文可回看 | 通过 |
+| 跨域与主题 | 不同领域端点普通关系可建立；对称类型判重、方向类型保留；一记录多主题，移出不删内容 | 实际模型提出候选，经明确接受；实际桌面建立联系、加入主题、修订和重启恢复 | 通过；关系确认不表示科学证明 |
+| 自由探索与返回 | 路线、记录和临时问题共用服务；稳定 scopeKey、无虚构练习；返回位置持久化 | 真实数学和公共空间独立会话 nodeId=null；页面操作验证探索后返回原步骤 | 通过 |
+| 状态与结果 | 节点仅 available/in_progress/completed；开始和完成追加审计；保存不完成、结束可留问题、完成后可复访；错误尝试不冒充掌握 | 实际桌面记录保存、学习与下一步分别运行；三态及产出校验由真实数据库验证 | 通过 |
+| 恢复与历史 | 失败先保存输入；同号重试、过期结果、材料换版和帮助曝光保持绑定；旧格式只读、分页及明确沿用 | 打包窗口多次关闭重开恢复正文、输入、关系、修订与配置；实际原库内容在应用内可读 | 通过 |
+| 桌面与模型 | 最终打包、新安装、旧库升级及安全交互通过；开发启动提供实际库和配置路径 | 实际用户目录再次启动并打开知识网络、历史及模型设置；配置模型跑过规划、学习、反馈、记录和下一步 | 通过 |
+| 数据与删除 | 原库未改；先备份再迁移并验外键及保真；重复启动不增项；归档/改图保留积累，删除主题/关系不删记录 | 已把真实旧库副本升级到实际桌面目录，8记录、8修订、4关系保持，外键违例0；原库与备份留存 | 通过 |
+
+## 实际执行的验证
+
+- 最终开发检查：类型、lint、编码、Prisma schema 校验及生产／Electron 构建通过。最新全量单元与业务检查 **512/512**；包括统一会话、历史、事实更正候选、源引用、权限、事务、修订、状态、分页及安全契约。退役的旧写入断言和原文件在 docs/history 保留，不把它们追记为新业务通过。
+- 最新隔离页面全量复验 **16/16**（59.9秒），涵盖真实按钮与读写：动态活动、探索返回、记录修订、跨域/主题、提示曝光、输入恢复、草稿失败恢复、旧格式、归属及分页。模型在此轮为明确标识的协议夹具，不用于证明知识正确。证据 [journey-1791575522145](web/test-results/journey-1791575522145)。随后修正删除当前所选主题时的筛选复位，相关页面再验 **1/1**（6.6秒），见 [journey-1791575678432](web/test-results/journey-1791575678432)。
+- 分页实际数据库检查覆盖152条会话与302条记录的后续读取；页面覆盖第二页历史学习与记录、服务器按主题筛选较早记录、删除所选主题后返回全部记录。读取不调用模型，也不复制记录身份。
+- 真实配置 **deepseek / deepseek-v4-flash** 完整链 **3/3**：微积分新路线到首节点教学和记录、两类数学困难及 x≥0 迁移、公共空间开放问题。[原始隔离库](web/test-results/journey-1791569814815/journey.db)、[模型与活动摘要](web/test-results/implementation-2026-10-09/real-model-evidence.json)。审计中的 model=null 确认事件不是模型请求，fallback 也不算真实模型成功。
+- 打包桌面真实任务分段保留：公共空间从备课到活动、反馈、记录、下一步见 [1431214](web/test-results/desktop-full-1791571431214/result.json)；关系候选接受、主题、修订和重启恢复见 [1865259](web/test-results/desktop-full-1791571865259/result.json)。两份早期报告各自仍记录当时的失败，不追改整轮通过。失败位置修复后的最终内容核对及设置重启见 [4354273](web/test-results/desktop-full-1791574354273/result.json)。
+- [逐步记录与模型原文](web/test-results/implementation-2026-10-09/TRACE.html) 汇集上述真实模型和桌面运行，保留原失败、原回应、版本、反馈更正与请求顺序；凭据不进入可读导出。
+- 最终 packaged Electron [干净 seed](web/test-results/implementation-2026-10-09/desktop-clean.json)、[旧库升级](web/test-results/implementation-2026-10-09/desktop-upgrade.json)、[本地身份/Host/Origin及危险导航保护](web/test-results/implementation-2026-10-09/desktop-security.json) 均通过；截图在部分 Windows 原生捕获中不可用，逐步可见文字、请求、数据库及事件仍完整保存，没有把缺截图改写成有像素证据。
+- 真实原库副本 [最终保真复验](web/test-results/implementation-2026-10-09/migration-final.json)：首次及重复启动均8记录、8修订、4关系，外键违例0，备份存在且原库不变。实际桌面目录 [启动](web/test-results/implementation-2026-10-09/actual-desktop-runtime.json)、[迁移数据](web/test-results/implementation-2026-10-09/actual-desktop-data.json)、[真实页面读取](web/test-results/implementation-2026-10-09/actual-desktop-ui.json) 均通过，当前知识网络可见8条已有记录。
+
+## 实测失败、修正与知识质量边界
+
+实际模型曾漏字段、误用反馈字段或返回未约定的关系类型，已补明确合同及有界结构修复；旧反馈没有新 action 时原读取崩溃，已改为历史专用只读适配。原强制 GPU 参数造成桌面捕获时退出，已去除冲突参数，仍保留沙箱、本地认证和现有加速关闭入口。旧诊断生成及阶段写入的残留入口也已退役，归档操作不再提示“删除全部内容”。
+
+更关键的知识失败也完整保留：数学原回应根数正确，但理由把 |a|>2 写为两侧各相交一次，并混淆不同实根、几何交点与重数；x≥0 回应把 a=0 的左根错误归入 (0,1)。第一次更正又生成了“2个实根、1个几何交点”的错误。更正候选现复用发布前事实检查；原回应不覆盖，不确定候选不发布。随后复核对已修正的区间继续沿用旧指控，还给原样替换，已改为核对当前候选、明确传入执行过的改动并拒绝无实际变化的修正。
+
+[最终更正原文](web/test-results/desktop-full-1791574354273/feedback-corrections.json) 已独立对照因式分解、单调区间与端点：全实轴3/2/1，x≥0按 a<-2、=-2、(-2,0)、=0、>0 分别为0/1/2/2/1；不同实根与不同几何交点一一对应。使用的是实际粘贴的 [本轮独立推导](web/test-results/desktop-full-1791574354273/independent-derivation.txt)，不是虚构外部来源或权威认证。旧错误、错误更正与后续修正、模型原始返回、请求和反馈版本均保留。
+
+这些证据说明流程可运行、已知错误能够回到具体内容修正，仍不能证明以后每条解释都准确。联网或资料抓取不可用时显示未取得正文，允许粘贴实际资料继续；不假装搜索成功。尚未做真实初学者教学观察、长期保持或整门课程内容逐条人工验收，也未据此宣布分发发布合格。
+
+## 主要改动与删除／替换
+
+| 能力 | 主要位置 |
+| --- | --- |
+| 目标与资料驱动路线、一次正式确认、阶段局部修复 | courseDesignService、domainWorkflowService、domainMapService、roadmapService、ai/tasks与tutorService、domains/new和领域页 |
+| 统一灵活备课、按需正文、实际反馈与动态活动、恢复及下一步 | flexibleTeaching、learningSessionService、learningContentReview、nextLearningActionService、LearningWorkspace、learning-sessions API；节点入口复用同一服务 |
+| 随时保存、六类记录、不可覆盖修订、多处引用、普通跨域与主题 | personalKnowledgeService、knowledgeService、knowledgeGraphService、PersonalNetworkWorkspace、knowledge-points/knowledge-collections API |
+| 三态与只追加审计、保存/结束/完成分离 | learningActivityService、LearningProgress及节点start/complete适配 |
+| 历史分页、旧格式、显式摘录及冲突身份 | historyService、learning/history、原节点历史适配、retiredLearningOperation |
+| 数据调整与安全桌面生命周期 | web/prisma/schema.prisma、20261009120000前向迁移、teaching-database/database-lifecycle、main.js与启动/打包脚本 |
+
+已替换固定九维五段、每段必练、一概念一节点、保存即完成、作答即掌握、普通跨域必须 WORMHOLE、Unit 独立总评写入及固定 L1/L2/L3 新建议流水线。旧 nodeTeachingService/nodeTeachingTasks/progressiveTeachingTasks 生成执行退出，共享解析、错误、AI调用、来源和事务工具保留。旧诊断与节点 hint/practice、旧阶段与长期包 POST 返回只读退役响应；旧诊断页面进入历史。已删除无正式引用的旧诊断／练习／固定建议生成与写入函数，未删除个人关系或共享模型函数。兼容 Word/Relations 不再承担新写入或知识镜像。
+
+旧页面、接口、断言及实现快照见 [docs/history](docs/history/)，包括 pre-0025-browser-contracts 和 pre-0025-remaining-execution。AGENTS、CONTEXT、ADR、顶层设计、实施说明与当前合同同步；旧历史证据保留其当时含义。
+
+## 旧数据与恢复
+
+真实 F:\englishnode\web\prisma\dev.db 不改写，最终 SHA256 仍为 2fa3adb7a07b49216e61914ac77b2e9dcf29fcff831203d7f9c1f4097cd85fc0。原 AI 设置同样未改。经副本验证后，把一致性副本和已有配置接入实际桌面目录，没有覆盖既有用户文件：
+
+- 当前库：C:\Users\79067\AppData\Local\Antigravity\englishnode-teaching-v2.db，已有8条个人记录、8份首修订、4条关系，可在个人知识网络继续使用。
+- 保留旧库副本 englishnode.db、englishnode.db.before-teaching-v2.db，以及 englishnode-teaching-v2.backup-2026-10-09T19-35-52-919Z.db。项目原 dev.db 另可在历史入口只读查看；旧来源原始字段与快照不伪装成用户新写内容。
+- 当前配置在同目录 ai-settings.json，重建不替换。设置及用户数据库、测试证据与构建产物保持 Git 忽略；不提交或分享密钥。原开发设置仍在 web/.electron-user-data。
+- 历史已跟踪的 web/.env 已仅取消 Git 跟踪，磁盘原文件保留，现有忽略规则生效；该文件只有数据库地址字段，没有改写本机配置或删除数据。
+
+关闭或重启后从“当前学习”恢复；失败只重试对应操作，不重新生成所有内容。启动迁移失败保留原库、备份与 backend-error.log 并停止，不通过清空或破坏性同步绕过。来源、原输入、旧材料及历史修订均可回看。完整恢复说明见 [启动与数据说明](docs/windows-start-and-data.md)。
+
+以下为历史证据，结果不追改为新版通过。
+# 当前设计与开发进度
+
 更新日期：2026-10-08
 
 ## 当前判断
@@ -441,3 +652,14 @@ Course Design Direction 与完整 Stage 骨架合并审查并在同一地图事�
 ## 已确认的产品边界
 
 正式 Domain Map 的首次创建和重新生成必须经过 AI 规划。云端联网 AI 是推荐主路径；LM Studio/其他本地 OpenAI-compatible API 仍属于可配置 AI Provider，但不能降低质量门，也不代表存在离线或无 AI 建图路径。可信材料只能作为 AI 输入或来源；用户可以编辑和确认 AI 草稿，但不能用人工创建或直接导入替代 AI 规划。见 [ADR 0009](docs/adr/0009-formal-domain-map-creation-requires-ai-planning.md)。
+
+
+## 2026-10-10 全新空白主线1791623160555：Stage确认前已停止并封存
+
+本轮实际新包桌面在全新隔离用户目录运行，无DB或旧结果导入；已到达空白启动、隔离设置、独立旧历史只读且新库保持空、AI课程/整路线、两次有限正常UI修订、正式路线确认（mapRevision0→1、11正式Stage/0Node）及用户按真实内容/key触发展开。12checkpoint、20实际模型调用和2非模型审计，result.ok=false/flowCompleted=false；不能以667工程检查或首Stage生成宣告本轮全产品完成。
+
+006有效知识更正4项仅实际保留1项：上游登记投影吞掉派生蓝图极限更正，corrections仍记4项；007/008用户经真实UI同时修改上游登记/副本才保存正确，软件缺陷仍未修。008三次合同/语法失败明确uncertain，不称知识核对通过。011模型实际12claim全部优先新items，但新任务把“不取L”适用前提称未限定范围的结论必要条件；模型同path漏检，并在g=x²去心邻域/复合值上推导错及虚归属用户材料原句。需区分对所有可能F(L)的普遍保证与个例成立；F≡1、g≡0为个例必要性反例。Stage尚未正式确认，不能让该问题传播进教学。
+
+本轮于独立审读011 stop、012保留失败后安全关闭，临时设置删除=true、TEMP不存在、原三文件指纹不变、凭据匹配0、FK0。Stage确认、完整真实教学/活动/反馈、原条件专项全文、个人网络/修订/引用、独立探索/返回、跨域、主题、结束/完成及重启均未到达，保持pending。当前目标/当前差异仍是全产品未完成；不会把未到达步骤记通过。
+
+证据：[本轮报告](web/test-results/final-core-blank-2026-10-10-1791623160555/REPORT.md)、[完整轨迹](web/test-results/final-core-blank-2026-10-10-1791623160555/TRACE.html)、[数据链](web/test-results/final-core-blank-2026-10-10-1791623160555/AUDIT-DATA-CHAIN.md)、[011实质审读](web/test-results/final-core-blank-2026-10-10-1791623160555/AUDIT-STAGE-011.md)。仅追加本轮实证状态，旧失败/raw/报告不重写。
