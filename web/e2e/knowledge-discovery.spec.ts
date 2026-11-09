@@ -80,7 +80,7 @@ test("引用选择、固定修订回看、反向引用与两层图谱形成真�
   await page.getByText("添加记录引用", { exact: true }).click();
   await page.getByLabel("搜索要引用的记录").fill(`条件概率-${key}`);
   await page.getByRole("button", { name: `引用“条件概率-${key}”`, exact: true }).click();
-  await expect(page.getByText(`已把“条件概率-${key}”加入编辑草稿，尚未保存。`, { exact: true })).toBeVisible();
+  await expect(page.getByRole("article", { name: `草稿引用：${original.title} · 全文`, exact: true })).toBeVisible();
   // Selection is a draft: no backlink exists before explicit revision save.
   let context = await (await request.get(`/api/knowledge-points/${original.id}/context`)).json();
   expect(context.backlinks.page.total).toBe(0);

@@ -10,6 +10,10 @@
 
 第二批已发布 [PR #2](https://github.com/VivianAnnsesta/learningnode/pull/2)，源提交 `25ac9edea83969e1a8f0fe46bfb567b33327fdc5`。首轮[专项 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42576471693)为56/57：形状与JSON1分页一致性断言预期3、实际4；浏览器步骤未运行。旧Prisma内嵌SQLite对hash中的NUL提取可能提前截断，Python较新SQLite未复现，不能以本机替代目标引擎。已在JSON原始hash字段先排除NUL表示，再执行原有decoded guard；仅检查hash，不误滤正文/摘录中的合法NUL。原计数3不变，增加精确引用者ID断言及引擎/提取诊断，修复待新CI确认。原失败日志保留，不将未运行页面/桌面记通过。
 
+段落修复源提交 `1827ba489a2c3e6d7a2cc8186a6e10db765a1d5e` 的[专项 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42577713913)真实57/57通过，NUL原始hash过滤后原计数/精确ID断言通过。6条页面链为5通过/1失败：新的全文+多段/旧摘录/反向回看及伪造拒绝/冲突保留两条均通过；唯一旧全文测试仍精确匹配更新前提示，UI已增加引用范围“全文”。已将其改为确认实际全文草稿卡片可见，保留保存前无backlink等业务断言，未改变生产行为；新完整页面/桌面仍待验证，不以57项或5条部分通过宣告整批完成。
+
+同提交[完整 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42577713854)已实际通过106文件/847测试，完整E2E为16通过/9跳过/1旧提示断言失败，桌面未运行。目标引擎诊断实测 `sqlite_version=3.41.2`：64个a+NUL的hash解码长度成为64，`->`原始JSON仍保留NUL转义，确认了原始层过滤的必要性；原3条合法引用及坏选择器拒绝断言均通过。原完整日志 `pr-ci-42577713854-full-e2e-failure.log` 保留，下一CI仍须完成完整页面及桌面门禁。
+
 首批已通过全部本轮门禁并合并 GitHub main：[PR #1](https://github.com/VivianAnnsesta/learningnode/pull/1)，合并提交 `106cd708c3ad4841080a607772cb85f79cdce150`。已验证源代码 HEAD 为 `8ebe33b41963ba219f56e9fba43bb16d30f4bb0a`；PR 与 push 两套完整CI均成功。功能包含固定修订引用与快照、当前反向引用分页、已确认局部图谱、类型/领域/主题视图、Ctrl+K查找，以及普通返回/引用/图谱/快捷查找沿用源筛选。正式地图、语义关系确认及学习履历的业务边界保持原规则。
 
 [完整 Windows CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42571477526)真实通过：105文件、825/825测试；完整页面15通过/9按原配置跳过；Prisma校验、归档旧schema夹具生成、迁移保真；Electron42.11.16打包、空白seed运行、旧库升级运行和安全交互全部通过。[专项 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42571477458)为35/35和4/4页面流程通过。成功/原失败日志在 `web/test-results/obsidian-discovery-2026-11-08/`，发布树/敏感扫描/保真核验在相邻 `obsidian-publication-2026-11-08/`；原工作区index与旧历史未改。
