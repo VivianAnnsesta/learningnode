@@ -38,6 +38,12 @@ jobs:
       - run: npm run verify:migration-fidelity
       - run: npx playwright install chromium
       - run: npm run test:e2e
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: full-browser-evidence
+          path: web/test-results/browser-*/
+          if-no-files-found: ignore
 
   desktop-release-gates:
     needs: quality

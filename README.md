@@ -32,6 +32,8 @@ npm run dev:electron
 
 个人网络可按类型、领域、主题与标题/正文筛选，页面地址保留当前视图。任意页面点击“查找记录”或按 `Ctrl+K` 可快速查阅；详情页可选择另一条记录的固定修订作为引用，明确保存后查看原文及反向引用，并从一至两层已确认联系的局部图谱跳转。实现约定见 [ADR 0027](docs/adr/0027-personal-knowledge-discovery-and-reading.md)，本轮验证和桌面包限制仍以当前状态为准。
 
+添加记录引用时可选择全文或一个修订中的多个完整段落，先预览和撤销草稿，再明确保存。同文不同位置分别保留；源记录后来修订也不会移动旧引用。段落与全文都能从历史及反向引用中回看，规则见 [ADR 0028](docs/adr/0028-fixed-paragraph-record-references.md)。
+
 ## 数据与安全
 
 打包用户目录是 `%LOCALAPPDATA%\Antigravity`，开发默认 `web/.electron-user-data`。使用稳定 `englishnode-teaching-v2.db` 与同目录 `ai-settings.json`。已有安装库通过一致性备份、前向迁移、保真与外键检查升级；原文件与历史只读入口保留。新安装只从版本化空白 seed 初始化，后续启动不清空。

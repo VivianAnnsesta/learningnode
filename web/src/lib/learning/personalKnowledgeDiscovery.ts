@@ -2,22 +2,14 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../prisma";
 import { listPage } from "./listPage";
 import { NodeTeachingError } from "./nodeTeaching";
-
-export type RecordReferenceSnapshot = {
-  kind: "record";
-  knowledgePointId: string;
-  revisionId: string;
-  title: string;
-  body: string;
-  sourceType: string;
-};
+import { isRecordReferenceSnapshot, type RecordReferenceSnapshot } from "./recordReferences";
+export type { RecordReferenceSnapshot } from "./recordReferences";
 
 function recordReferences(json: string | null | undefined): RecordReferenceSnapshot[] {
   let sources: unknown;
   try { sources = JSON.parse(json || "[]"); } catch { return []; }
   if (!Array.isArray(sources)) return [];
-  return sources.filter((source): source is RecordReferenceSnapshot => !!source && typeof source === "object" &&
-    source.kind === "record" && ["knowledgePointId", "revisionId", "title", "body", "sourceType"].every(key => typeof source[key] === "string"));
+  return sources.filter(isRecordReferenceSnapshot);
 }
 
 // Guard both the container and each entry: historical sources may contain malformed
@@ -34,6 +26,26 @@ const backlinkPredicate = (id: string) => Prisma.sql`EXISTS (
     AND json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.title') = 'text'
     AND json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.body') = 'text'
     AND json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.sourceType') = 'text'
+    AND (json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector') IS NULL OR (
+      json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector') = 'object'
+      AND json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.type') = 'paragraph-v1'
+      AND json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.start') IN ('integer', 'real')
+      AND json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.end') IN ('integer', 'real')
+      AND CAST(json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.start') AS INTEGER) = json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.start')
+      AND CAST(json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.end') AS INTEGER) = json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.end')
+      AND json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.start') >= 0
+      AND json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.end') > json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.start')
+      AND json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.start') <= 9007199254740991
+      AND json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.end') <= 9007199254740991
+      AND json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.quoteHash') = 'text'
+      -- SQLite 3.41 can truncate decoded JSON strings at NUL. Inspect the hash's
+      -- JSON text before decoding; NUL in the quoted body or excerpt stays valid.
+      AND instr((CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END -> '$.selector.quoteHash'), char(92) || 'u0000') = 0
+      AND length(CAST(json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.quoteHash') AS BLOB)) = 64
+      AND instr(json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.quoteHash'), char(0)) = 0
+      AND json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.quoteHash') NOT GLOB '*[^0-9a-f]*'
+      AND json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.quote') = 'text'
+    ))
 )`;
 
 export async function getPersonalKnowledgeContext(id: string, options: { offset?: unknown; limit?: unknown } = {}) {

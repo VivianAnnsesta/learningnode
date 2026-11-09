@@ -13,6 +13,7 @@ import type { SourceFragment } from "./teachingContracts";
 import { historyRecordSnapshot } from "./historyService";
 import { listPage } from "./listPage";
 import { titleOrderedPersonalKnowledgeIds } from "./personalKnowledgeDiscovery";
+import { isRecordReferenceSnapshot, recordReferenceKey, verifyParagraphSelector } from "./recordReferences";
 const kinds = ["note", "question", "example", "experience", "excerpt", "understanding"];
 const symmetric = new Set(["related", "analogy", "contrast"]);
 const contentInclude = { currentRevision: true, nodeLinks: { include: { node: { select: { id: true, domainId: true, title: true } } } }, memberships: { include: { groupNode: { select: { id: true, title: true, domainId: true } } } }, graphNodes: { select: { domainId: true } } } satisfies Prisma.KnowledgePointInclude;
@@ -67,7 +68,12 @@ async function sourceSnapshots(v: unknown) {
             const r = await prisma.knowledgePointRevision.findFirst({ where: { id: String(s.revisionId), knowledgePointId: String(s.knowledgePointId) } });
             if (!r)
                 throw new NodeTeachingError("引用的个人记录修订不存在。");
-            result.push({ kind: "record", knowledgePointId: r.knowledgePointId, revisionId: r.id, title: r.title, body: r.body, sourceType: r.sourceType });
+            let selector;
+            if (Object.prototype.hasOwnProperty.call(s, "selector")) {
+                try { selector = await verifyParagraphSelector(r.body, s.selector); }
+                catch (error) { throw new NodeTeachingError(error instanceof Error ? error.message : "段落选择器无效。"); }
+            }
+            result.push({ kind: "record", knowledgePointId: r.knowledgePointId, revisionId: r.id, title: r.title, body: r.body, sourceType: r.sourceType, ...(selector ? { selector } : {}) });
         }
         else if (s.kind === "source") {
             const source = await prisma.teachingSource.findFirst({ where: { sessionId: String(s.sessionId), id: String(s.sourceId) } });
@@ -89,7 +95,14 @@ async function sourceSnapshots(v: unknown) {
         else
             throw new NodeTeachingError("来源类型无效。");
     }
-    return result;
+    const recordKeys = new Set<string>();
+    return result.filter(source => {
+        if (!isRecordReferenceSnapshot(source)) return true;
+        const key = recordReferenceKey(source);
+        if (recordKeys.has(key)) return false;
+        recordKeys.add(key);
+        return true;
+    });
 }
 function recordInput(v: unknown) { const d = teachingObject(v); const kind = String(d.kind || "understanding"); if (!kinds.includes(kind))
     throw new NodeTeachingError("记录类型无效。"); const sourceType = String(d.sourceType || "user"); if (!["user", "accepted_ai", "excerpt"].includes(sourceType))
@@ -141,20 +154,31 @@ async function revisionSourceSnapshots(id: string, d: Record<string, unknown>) {
     const revision = await prisma.knowledgePointRevision.findFirst({ where: { id: d.expectedRevisionId, knowledgePointId: id } });
     if (!revision) throw new NodeTeachingError("记录修订不存在或不属于当前记录。", 409);
     const saved = parseSaved<unknown>(revision.sourcesJson, []), prior = Array.isArray(saved) ? saved : [];
-    const result: Record<string, unknown>[] = [];
-    for (const input of d.sources) {
+    const preservedSources = d.sources.map(input => {
         if (input && typeof input === "object" && !Array.isArray(input) && input.kind === "retained") {
             const index = input.sourceIndex;
             if (typeof index !== "number" || !Number.isSafeInteger(index) || index < 0 || index >= prior.length)
                 throw new NodeTeachingError("保留来源的索引无效。");
             const source = prior[index];
             if (!source || typeof source !== "object" || Array.isArray(source)) throw new NodeTeachingError("保留来源不是有效快照。");
-            result.push(source as Record<string, unknown>);
-            continue;
+            return source as Record<string, unknown>;
         }
         const preserved = prior.find(source => isDeepStrictEqual(source, input));
-        if (preserved && typeof preserved === "object" && !Array.isArray(preserved)) result.push(preserved as Record<string, unknown>);
-        else result.push(...await sourceSnapshots([input]));
+        return preserved && typeof preserved === "object" && !Array.isArray(preserved) ? preserved as Record<string, unknown> : null;
+    });
+    const recordKeys = new Set(preservedSources.filter(isRecordReferenceSnapshot).map(recordReferenceKey));
+    const result: Record<string, unknown>[] = [];
+    for (const [index, input] of d.sources.entries()) {
+        const preserved = preservedSources[index];
+        if (preserved) { result.push(preserved); continue; }
+        for (const source of await sourceSnapshots([input])) {
+            if (isRecordReferenceSnapshot(source)) {
+                const key = recordReferenceKey(source);
+                if (recordKeys.has(key)) continue;
+                recordKeys.add(key);
+            }
+            result.push(source);
+        }
     }
     return result;
 }

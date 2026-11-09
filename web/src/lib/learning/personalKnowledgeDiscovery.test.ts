@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getPersonalKnowledgeContext, getPersonalKnowledgeNeighborhood } from "./personalKnowledgeDiscovery";
@@ -8,8 +9,9 @@ import { createPersonalKnowledge, listPersonalKnowledge, revisePersonalKnowledge
 import { exposureKey } from "./flexibleTeaching";
 import { GET as getContextRoute } from "../../app/api/knowledge-points/[pointId]/context/route";
 import { GET as getNeighborhoodRoute } from "../../app/api/knowledge-points/[pointId]/neighborhood/route";
-import { GET as getListRoute } from "../../app/api/knowledge-points/route";
+import { GET as getListRoute, POST as postRecordRoute } from "../../app/api/knowledge-points/route";
 import { PATCH as patchRecordRoute } from "../../app/api/knowledge-points/[pointId]/route";
+import type { ParagraphSelector } from "./recordReferences";
 
 const deps = vi.hoisted(() => ({ db: null as PrismaClient | null, ai: vi.fn() }));
 vi.mock("../prisma", () => ({ get prisma() { return deps.db!; } }));
@@ -48,6 +50,9 @@ async function point(id: string, options: { title?: string; body?: string; sourc
   return id;
 }
 function reference(id: string, revisionId = `${id}-v1`) { return { kind: "record", knowledgePointId: id, revisionId, title: `${id} 当时标题`, body: `${id} 当时原文`, sourceType: "user" }; }
+function selectedParagraph(body: string, start: number, end: number): ParagraphSelector {
+  return { type: "paragraph-v1", start, end, quoteHash: createHash("sha256").update(body.slice(start, end), "utf8").digest("hex") };
+}
 async function edge(id: string, from: string, to: string, status = "confirmed") {
   await db.knowledgeGraphEdge.create({ data: { id, fromKnowledgePointId: from, toKnowledgePointId: to, relationType: "related", detail: `联系 ${id}`, status } });
 }
@@ -218,5 +223,98 @@ describe("个人记录发现：真实隔离 SQLite，不调用 AI 或改写学�
     const unrelated = await patchRecordRoute(new Request("http://localhost/api/knowledge-points/large", { method: "PATCH", body: JSON.stringify({ ...requestBody, expectedRevisionId: "long-a-v1", sources: [{ kind: "retained", sourceIndex: 0 }] }) }), params);
     expect(unrelated.status).toBe(409);
     expect(deps.ai).not.toHaveBeenCalled();
+  });
+
+  it("同一固定修订的全文和多个段落共存，重复原文按真实位置保留且原文由服务器拥有", async () => {
+    const original = "第一段🙂\r\n保留尾空格  \r\n\r\n重复段\r\n \r\n重复段";
+    await point("paragraph-target", { title: "服务器标题", body: original });
+    const first = selectedParagraph(original, 0, original.indexOf("\r\n\r\n"));
+    const repeated = [original.indexOf("重复段"), original.lastIndexOf("重复段")].map(start => selectedParagraph(original, start, start + "重复段".length));
+    const response = await postRecordRoute(new Request("http://localhost/api/knowledge-points", { method: "POST", body: JSON.stringify({ requestId: "paragraphs", title: "引用笔记", body: "我的比较", kind: "note", sources: [undefined, first, ...repeated, first, undefined].map(selector => ({ kind: "record", knowledgePointId: "paragraph-target", revisionId: "paragraph-target-v1", title: "客户端伪造标题", body: "客户端伪造全文", ...(selector ? { selector: { ...selector, quote: "客户端伪造片段" } } : {}) })) }) }));
+    expect(response.status).toBe(200);
+    const saved = await response.json();
+    const snapshots = saved.knowledgePoint.sources;
+    expect(snapshots).toHaveLength(4);
+    expect(snapshots.every((source: { title: string; body: string }) => source.title === "服务器标题" && source.body === original)).toBe(true);
+    expect(snapshots[0]).not.toHaveProperty("selector");
+    expect(snapshots[1].selector).toEqual({ ...first, quote: original.slice(first.start, first.end) });
+    expect(snapshots.slice(2).map((source: { selector: unknown }) => source.selector)).toEqual(repeated.map(selector => ({ ...selector, quote: "重复段" })));
+    expect(repeated[0].quoteHash).toBe(repeated[1].quoteHash);
+    expect(repeated[0].start).not.toBe(repeated[1].start);
+    const context = await getPersonalKnowledgeContext("paragraph-target", { limit: 1 });
+    expect(context.backlinks.page.total).toBe(1);
+    expect(context.backlinks.items[0].sources).toHaveLength(4);
+    expect((await getPersonalKnowledgeContext(saved.knowledgePoint.id)).outgoing).toEqual(snapshots);
+    await point("historic-duplicates", { sources: [snapshots[1], snapshots[1]] });
+    const duplicateRetained = await revisePersonalKnowledge("historic-duplicates", { expectedRevisionId: "historic-duplicates-v1", title: "保留旧重复", body: "旧来源不被重排", kind: "note", sources: [{ kind: "record", knowledgePointId: "paragraph-target", revisionId: "paragraph-target-v1", selector: first }, { kind: "retained", sourceIndex: 0 }, { kind: "retained", sourceIndex: 1 }] });
+    expect(duplicateRetained.knowledgePoint.sources).toEqual([snapshots[1], snapshots[1]]);
+    expect(await db.knowledgeGraphEdge.count()).toBe(0);
+    expect(deps.ai).not.toHaveBeenCalled();
+  });
+
+  it("HTTP拒绝空值、未知类型、错哈希和非完整Unicode段落范围，错误归属不写入任何记录", async () => {
+    const body = "段落🙂原文\n\n另一个段落";
+    await point("selection-target", { body }); await point("other-owner");
+    const valid = selectedParagraph(body, 0, body.indexOf("\n\n"));
+    const badSelectors: unknown[] = [null, [], "paragraph-v1", {}, { ...valid, type: "sentence-v1" }, { ...valid, quoteHash: "0".repeat(64) }, { ...valid, quoteHash: valid.quoteHash.toUpperCase() }, { ...valid, quoteHash: valid.quoteHash + "\n" }, { ...valid, start: -1 }, { ...valid, start: 0.5 }, { ...valid, end: 0 }, { ...valid, end: body.length + 1 }, { ...valid, end: 3 }, { ...valid, end: 2 }];
+    const before = { records: await db.knowledgePoint.count(), revisions: await db.knowledgePointRevision.count(), audit: await db.learningProgress.count() };
+    for (const [index, selector] of badSelectors.entries()) {
+      const response = await postRecordRoute(new Request("http://localhost/api/knowledge-points", { method: "POST", body: JSON.stringify({ requestId: `bad-selector-${index}`, title: "不能保存", body: "无效引用", sources: [{ kind: "record", knowledgePointId: "selection-target", revisionId: "selection-target-v1", selector }] }) }));
+      expect(response.status).toBe(400);
+    }
+    const wrongOwner = await postRecordRoute(new Request("http://localhost/api/knowledge-points", { method: "POST", body: JSON.stringify({ requestId: "wrong-owner", title: "不能保存", body: "错误归属", sources: [{ kind: "record", knowledgePointId: "other-owner", revisionId: "selection-target-v1", selector: valid }] }) }));
+    expect(wrongOwner.status).toBe(400);
+    expect(await db.knowledgePoint.count()).toBe(before.records);
+    expect(await db.knowledgePointRevision.count()).toBe(before.revisions);
+    expect(await db.learningProgress.count()).toBe(before.audit);
+    expect(deps.ai).not.toHaveBeenCalled();
+  });
+
+  it("源记录后续修订不移动旧段落，retained与失败保存保持固定快照及并发原子性", async () => {
+    const original = "原来第一段\n\n被引用的原段🙂";
+    await point("moving-source", { body: original });
+    const start = original.indexOf("被引用"), selector = selectedParagraph(original, start, original.length);
+    const saved = await createPersonalKnowledge({ requestId: "fixed-paragraph", title: "保留原段", body: "我的理解", kind: "note", sources: [{ kind: "record", knowledgePointId: "moving-source", revisionId: "moving-source-v1", selector }] });
+    const snapshot = saved.knowledgePoint.sources[0];
+    await revisePersonalKnowledge("moving-source", { expectedRevisionId: "moving-source-v1", title: "源记录新标题", body: "全新开头改变位置\n\n原来第一段\n\n重新表达了这个段落", kind: "note" });
+    const retained = await revisePersonalKnowledge(saved.knowledgePoint.id, { expectedRevisionId: saved.knowledgePoint.currentRevisionId, title: "保留原段", body: "补充理解", kind: "note", sources: [{ kind: "retained", sourceIndex: 0 }] });
+    expect(retained.knowledgePoint.sources).toEqual([snapshot]);
+    expect((await getPersonalKnowledgeContext(saved.knowledgePoint.id)).outgoing[0]).toEqual(snapshot);
+    expect((await getPersonalKnowledgeContext("moving-source")).backlinks.items[0].sources).toEqual([snapshot]);
+    const revisionCount = await db.knowledgePointRevision.count();
+    const params = { params: Promise.resolve({ pointId: saved.knowledgePoint.id }) };
+    const conflict = await patchRecordRoute(new Request("http://localhost/api/knowledge-points/fixed", { method: "PATCH", body: JSON.stringify({ expectedRevisionId: saved.knowledgePoint.currentRevisionId, title: "过期写入", body: "不应保存", kind: "note", sources: [{ kind: "retained", sourceIndex: 0 }, { kind: "record", knowledgePointId: "moving-source", revisionId: "moving-source-v1", selector }] }) }), params);
+    expect(conflict.status).toBe(409);
+    const invalid = await patchRecordRoute(new Request("http://localhost/api/knowledge-points/fixed", { method: "PATCH", body: JSON.stringify({ expectedRevisionId: retained.knowledgePoint.currentRevisionId, title: "部分错误", body: "不应保存", kind: "note", sources: [{ kind: "retained", sourceIndex: 0 }, { kind: "record", knowledgePointId: "moving-source", revisionId: "moving-source-v1", selector: null }] }) }), params);
+    expect(invalid.status).toBe(400);
+    expect(await db.knowledgePointRevision.count()).toBe(revisionCount);
+    expect((await db.knowledgePoint.findUniqueOrThrow({ where: { id: saved.knowledgePoint.id } })).currentRevisionId).toBe(retained.knowledgePoint.currentRevisionId);
+    expect((await getPersonalKnowledgeContext(saved.knowledgePoint.id)).outgoing).toEqual([snapshot]);
+  });
+
+  it("段落读取shape与JSON1计数一致，坏selector不会退成全文或挤占分页", async () => {
+    await point("shape-target");
+    const selector = { type: "paragraph-v1", start: 0, end: 1, quoteHash: "a".repeat(64), quote: "A\0保留" };
+    const good = { ...reference("shape-target"), body: "正文\0仍可读取", selector };
+    const invalid: unknown[] = [null, [], {}, { ...selector, type: "unknown" }, { ...selector, start: -1 }, { ...selector, start: "0" }, { ...selector, start: 0.5 }, { ...selector, end: 0 }, { ...selector, end: 9007199254740992 }, { ...selector, quoteHash: "A".repeat(64) }, { ...selector, quoteHash: "a".repeat(64) + "\n" }, { ...selector, quoteHash: "a".repeat(63) + "\0" }, { ...selector, quoteHash: "a".repeat(64) + "\0" }, { ...selector, quote: null }];
+    for (const [index, value] of invalid.entries()) await point(`bad-shape-${index}`, { sources: [{ ...reference("shape-target"), selector: value }] });
+    await point("good-shape", { sources: [good] });
+    await point("mixed-shape", { sources: [good, ...invalid.map(value => ({ ...reference("shape-target"), selector: value }))] });
+    // JSON numeric spelling does not change JS integer semantics.
+    await point("real-spelling", { sources: JSON.stringify([good]).replace('"start":0', '"start":0.0').replace('"end":1', '"end":1e0') });
+    const first = await getPersonalKnowledgeContext("shape-target", { limit: 1 });
+    const rest = await getPersonalKnowledgeContext("shape-target", { limit: 2, offset: 1 });
+    const all = await getPersonalKnowledgeContext("shape-target", { limit: 300 });
+    const probeJson = JSON.stringify({ quoteHash: "a".repeat(64) + "\0" });
+    const [probe] = await db.$queryRaw<{ version: string; decoded: string; raw: string }[]>(Prisma.sql`SELECT sqlite_version() AS version, json_extract(${probeJson}, '$.quoteHash') AS decoded, (${probeJson} -> '$.quoteHash') AS raw`);
+    console.info("Paragraph JSON1 compatibility", JSON.stringify({ version: probe.version, decodedHashLength: probe.decoded.length, rawHash: probe.raw }));
+    expect(all.backlinks.items.map(item => item.id).sort()).toEqual(["good-shape", "mixed-shape", "real-spelling"]);
+    expect(first.backlinks.page.total).toBe(3);
+    expect(first.backlinks.items).toHaveLength(1);
+    expect(rest.backlinks.items).toHaveLength(2);
+    expect(rest.backlinks.page.nextOffset).toBeNull();
+    expect([...first.backlinks.items, ...rest.backlinks.items].every(item => item.sources.length === 1)).toBe(true);
+    expect((await getPersonalKnowledgeContext("mixed-shape")).outgoing).toEqual([good]);
+    expect((await getPersonalKnowledgeContext("bad-shape-0")).outgoing).toEqual([]);
   });
 });

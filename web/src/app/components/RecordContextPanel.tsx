@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActionButton, SectionPanel } from "./ui";
-import { readRecordJson, type RecordSnapshot } from "./recordDiscoveryTypes";
+import { readRecordJson, recordReferenceKey, recordReferenceLabel, type RecordSnapshot } from "./recordDiscoveryTypes";
+import { RecordReferencePreview } from "./RecordReferencePreview";
 import { knowledgeRecordHref, PERSONAL_KNOWLEDGE_PATH } from "./knowledgeNavigation";
 
 type Context = {
@@ -53,9 +54,9 @@ export function RecordContextPanel({ pointId, refresh, returnTo = PERSONAL_KNOWL
     {context && <>
       <h3 className="font-semibold">这条记录引用了什么 · {context.outgoing.length}</h3>
       {context.outgoing.length === 0 && <p>当前修订尚未引用其他个人记录。</p>}
-      {context.outgoing.map(source => <article className="rounded-lg border p-3" key={`${source.knowledgePointId}:${source.revisionId}`}>
+      {context.outgoing.map(source => <article aria-label={`已保存引用：${source.title} · ${recordReferenceLabel(source)}`} className="rounded-lg border p-3" key={recordReferenceKey(source)}>
         <p className="font-medium">{source.title}</p>
-        <details><summary>展开引用时的原文</summary><p className="whitespace-pre-wrap">{source.body}</p><p className="text-xs">固定修订：{source.revisionId}</p></details>
+        {source.selector ? <RecordReferencePreview source={source} /> : <details><summary>展开引用时的原文</summary><RecordReferencePreview source={source} /></details>}
         <Link className="underline" href={knowledgeRecordHref(source.knowledgePointId, returnTo)}>查看“{source.title}”当前版本</Link>
       </article>)}
       <h3 className="font-semibold">哪些记录引用了这里 · {context.backlinks.page.total}</h3>
@@ -63,10 +64,9 @@ export function RecordContextPanel({ pointId, refresh, returnTo = PERSONAL_KNOWL
       {context.backlinks.items.map(item => <article className="rounded-lg border p-3" key={item.id}>
         <Link className="font-medium underline" href={knowledgeRecordHref(item.id, returnTo)}>{item.title}</Link>
         <p className="whitespace-pre-wrap text-sm">{item.body}</p>
-        {item.sources.map(source => <details key={`${source.knowledgePointId}:${source.revisionId}`}>
-          <summary>对方引用的本记录版本：{source.title}</summary>
-          <p className="whitespace-pre-wrap">{source.body}</p>
-          <p className="text-xs">固定修订：{source.revisionId}</p>
+        {item.sources.map(source => <details key={recordReferenceKey(source)}>
+          <summary>对方引用的本记录版本：{source.title}{source.selector ? ` · ${recordReferenceLabel(source)}` : ""}</summary>
+          <RecordReferencePreview source={source} />
         </details>)}
       </article>)}
       {context.backlinks.page.nextOffset !== null && <ActionButton variant="secondary" disabled={loading} onClick={() => void load(context.backlinks.page.nextOffset!)}>继续查看反向引用</ActionButton>}
