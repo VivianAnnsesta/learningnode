@@ -1,8 +1,7 @@
-export const PERSONAL_KNOWLEDGE_PATH = "/learning/knowledge";
+import { knowledgeViewConfigFromQuery, knowledgeViewConfigToQuery, type KnowledgeViewConfig } from "../../lib/learning/knowledgeViewContracts";
 
-const filterNames = ["q", "domainId", "collectionId", "kind", "sort"] as const;
-const recordKinds = new Set(["note", "question", "understanding", "example", "experience", "excerpt"]);
-const sortKinds = new Set(["updated_desc", "title_asc"]);
+export const PERSONAL_KNOWLEDGE_PATH = "/learning/knowledge";
+const filterNames = ["q", "domainId", "collectionId", "kind", "sourceType", "sort", "dateField", "dateMode", "dateFrom", "dateTo", "dateDays", "timeZone", "fields"] as const;
 const controlCharacters = /[\u0000-\u001f\u007f]/;
 type KnowledgeFilters = Partial<Record<typeof filterNames[number], string>>;
 
@@ -13,19 +12,14 @@ export function normalizeKnowledgeView(value: unknown): string | null {
   let url: URL;
   try { url = new URL(value, "http://knowledge.invalid"); } catch { return null; }
   if (url.origin !== "http://knowledge.invalid" || url.pathname !== PERSONAL_KNOWLEDGE_PATH || url.hash) return null;
-  const seen = new Set<string>();
-  for (const [name, entry] of url.searchParams) {
-    if (!(filterNames as readonly string[]).includes(name) || seen.has(name) || controlCharacters.test(entry) || (name !== "q" && entry.includes("\\"))) return null;
-    seen.add(name);
-    if (name === "kind" && entry && !recordKinds.has(entry)) return null;
-    if (name === "sort" && entry && !sortKinds.has(entry)) return null;
-  }
-  const canonical = new URLSearchParams();
-  for (const name of filterNames) {
-    const entry = url.searchParams.get(name);
-    if (entry && !(name === "sort" && entry === "updated_desc")) canonical.set(name, entry);
-  }
+  let canonical: URLSearchParams;
+  try { canonical = knowledgeViewConfigToQuery(knowledgeViewConfigFromQuery(url.searchParams)); } catch { return null; }
   const query = canonical.toString();
+  return `${PERSONAL_KNOWLEDGE_PATH}${query ? `?${query}` : ""}`;
+}
+
+export function knowledgeViewForConfig(config: KnowledgeViewConfig): string {
+  const query = knowledgeViewConfigToQuery(config).toString();
   return `${PERSONAL_KNOWLEDGE_PATH}${query ? `?${query}` : ""}`;
 }
 

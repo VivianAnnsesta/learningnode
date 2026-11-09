@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { knowledgeRecordHref, knowledgeReturnView, knowledgeSourceView, knowledgeViewForFilters, normalizeKnowledgeView, PERSONAL_KNOWLEDGE_PATH } from "./knowledgeNavigation";
+import { knowledgeRecordHref, knowledgeReturnView, knowledgeSourceView, knowledgeViewForConfig, knowledgeViewForFilters, normalizeKnowledgeView, PERSONAL_KNOWLEDGE_PATH } from "./knowledgeNavigation";
+import { knowledgeViewConfigFromQuery, parseKnowledgeViewConfig } from "../../lib/learning/knowledgeViewContracts";
 
 describe("personal-network return navigation", () => {
   it("normalizes only the five view filters with stable ordering and defaults", () => {
@@ -48,5 +49,31 @@ describe("personal-network return navigation", () => {
     expect(knowledgeRecordHref("a/b?x=1", "https://evil.example")).toBe("/learning/knowledge/a%2Fb%3Fx%3D1");
     expect(knowledgeSourceView("/settings/ai", "?returnTo=https://evil.example")).toBe(PERSONAL_KNOWLEDGE_PATH);
     expect(knowledgeSourceView("/learning/knowledge", "?q=x&sort=title_asc")).toBe("/learning/knowledge?q=x&sort=title_asc");
+  });
+
+  it("preserves source, date timezone and selected display fields across record navigation", () => {
+    const config = parseKnowledgeViewConfig({ filters: { q: "概率", sourceType: "legacy_ai_or_unknown", date: { mode: "range", field: "created", from: "2026-11-01", to: "2026-11-09", timeZone: "America/Los_Angeles" } }, displayFields: ["kind", "createdAt", "sourceType"] });
+    const view = knowledgeViewForConfig(config);
+    const record = knowledgeRecordHref("source-record", view);
+    const returned = knowledgeReturnView(new URL(record, "http://localhost").search);
+    expect(returned).toBe(view);
+    expect(knowledgeViewConfigFromQuery(new URL(returned, "http://localhost").searchParams)).toEqual(config);
+    expect(knowledgeSourceView("/learning/knowledge/source-record", new URL(record, "http://localhost").search)).toBe(view);
+  });
+
+  it("distinguishes title-only and relative-date preferences from omitted defaults", () => {
+    const view = knowledgeViewForFilters({ fields: "none", dateMode: "last_days", dateDays: "7", dateField: "created", timeZone: "UTC" });
+    const parsed = knowledgeViewConfigFromQuery(new URL(view, "http://localhost").searchParams);
+    expect(parsed.displayFields).toEqual([]);
+    expect(parsed.filters.date).toEqual({ mode: "last_days", field: "created", timeZone: "UTC", days: 7 });
+    const alias = knowledgeSourceView("/learning/domains/math/knowledge-graph", new URL(view, "http://localhost").search);
+    expect(knowledgeViewConfigFromQuery(new URL(alias, "http://localhost").searchParams).filters.domainId).toBe("math");
+  });
+
+  it.each([
+    "sourceType=scientifically_verified", "dateMode=range&dateFrom=2026-02-30", "dateMode=all&dateDays=7", "dateMode=last_days&dateDays=0",
+    "dateMode=last_days&dateDays=7&dateFrom=2026-11-01", "timeZone=%2B08%3A00", "fields=summary,summary", "fields=execute", "sourceType=user&sourceType=excerpt"
+  ])("does not broaden an invalid extended view: %s", query => {
+    expect(normalizeKnowledgeView(`${PERSONAL_KNOWLEDGE_PATH}?${query}`)).toBeNull();
   });
 });

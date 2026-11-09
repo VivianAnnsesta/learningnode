@@ -24,6 +24,18 @@ const validateEmptySeedDatabase = async ({ databasePath, migrationsDirectory, Pr
     if (!aliases || Number(aliases.notnull) !== 1 || String(aliases.dflt_value).trim() !== "'[]'") {
       throw new Error("Versioned seed must contain a non-null aliasesJson column defaulting to [].");
     }
+    const viewColumns = await client.$queryRawUnsafe('PRAGMA table_info("SavedKnowledgeView")');
+    const expectedViewColumns = { id: "TEXT", title: "TEXT", schemaVersion: "INTEGER", configJson: "TEXT", version: "INTEGER", createdAt: "DATETIME", updatedAt: "DATETIME" };
+    if (viewColumns.length !== Object.keys(expectedViewColumns).length || viewColumns.some(column => expectedViewColumns[column.name] !== String(column.type).toUpperCase() || Number(column.notnull) !== 1)) {
+      throw new Error("Versioned seed must contain all seven required saved-view configuration fields.");
+    }
+    const viewColumn = name => viewColumns.find(column => column.name === name);
+    if (Number(viewColumn("id").pk) !== 1 || String(viewColumn("schemaVersion").dflt_value) !== "1" || String(viewColumn("version").dflt_value) !== "1" || String(viewColumn("createdAt").dflt_value).toUpperCase() !== "CURRENT_TIMESTAMP" || viewColumn("updatedAt").dflt_value !== null) {
+      throw new Error("Versioned seed has invalid saved-view identity, version or timestamp defaults.");
+    }
+    if (businessCounts.SavedKnowledgeView !== 0 || (await client.$queryRawUnsafe('PRAGMA foreign_key_list("SavedKnowledgeView")')).length) {
+      throw new Error("Saved views must start empty without content or learning foreign keys.");
+    }
     const expectedMigrations = fs.readdirSync(migrationsDirectory, { withFileTypes: true })
       .filter(entry => entry.isDirectory())
       .map(entry => ({ name: entry.name, sqlPath: path.join(migrationsDirectory, entry.name, "migration.sql") }))
@@ -45,7 +57,7 @@ const validateEmptySeedDatabase = async ({ databasePath, migrationsDirectory, Pr
     if (violations.length > 0) throw new Error(`Seed database foreign-key check failed with ${violations.length} violation(s).`);
     const integrity = await client.$queryRawUnsafe("PRAGMA integrity_check");
     if (integrity.length !== 1 || Object.values(integrity[0])[0] !== "ok") throw new Error("Seed integrity check failed.");
-    return { businessCounts, migrationCount: ledger.length, checksumsMatch: true, aliasesDefault: "[]", foreignKeyViolations: 0, integrity: "ok" };
+    return { businessCounts, migrationCount: ledger.length, checksumsMatch: true, aliasesDefault: "[]", savedViewSchemaVersionDefault: 1, savedViewVersionDefault: 1, savedViewColumns: Object.keys(expectedViewColumns), foreignKeyViolations: 0, integrity: "ok" };
   } finally {
     await client.$disconnect();
   }

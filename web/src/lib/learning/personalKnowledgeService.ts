@@ -15,44 +15,59 @@ import { listPage } from "./listPage";
 import { titleOrderedPersonalKnowledgeIds } from "./personalKnowledgeDiscovery";
 import { isRecordReferenceSnapshot, recordReferenceKey, verifyParagraphSelector } from "./recordReferences";
 import { compareRecordIds, compareRecordTitles, matchRecordSearch, readRecordAliases, recordAliases } from "./recordNames";
+import { createKnowledgeDateMatcher, parseKnowledgeFilters, recordSourceCategory, type KnowledgeViewFilters } from "./knowledgeViewContracts";
+import { knowledgeViewScopeIssue } from "./savedKnowledgeViewService";
 const kinds = ["note", "question", "example", "experience", "excerpt", "understanding"];
 const symmetric = new Set(["related", "analogy", "contrast"]);
 const contentInclude = { currentRevision: true, nodeLinks: { include: { node: { select: { id: true, domainId: true, title: true } } } }, memberships: { include: { groupNode: { select: { id: true, title: true, domainId: true } } } }, graphNodes: { select: { domainId: true } } } satisfies Prisma.KnowledgePointInclude;
 function present(point: Prisma.KnowledgePointGetPayload<{
     include: typeof contentInclude;
-}>) { return { id: point.id, domainId: point.domainId, title: point.currentRevision ? point.currentRevision.title : point.title, body: point.currentRevision ? point.currentRevision.body : point.userUnderstanding || point.coreEssence || "", aliases: readRecordAliases(point.currentRevision?.aliasesJson), kind: point.recordKind, currentRevisionId: point.currentRevisionId, sourceType: point.currentRevision?.sourceType || "legacy_unknown", sources: parseSaved(point.currentRevision?.sourcesJson, []), createdAt: point.createdAt, updatedAt: point.updatedAt, nodes: point.nodeLinks.map(x => x.node), collections: point.memberships.map(x => x.groupNode), domainIds: [...new Set([point.domainId, ...point.nodeLinks.map(x => x.node.domainId), ...point.graphNodes.map(x => x.domainId), ...point.memberships.map(x => x.groupNode.domainId)].filter((x): x is string => !!x))] }; }
-export async function listPersonalKnowledge(q = "", domainId?: string, options:{offset?:unknown;limit?:unknown;collectionId?:string;kind?:string;sort?:string}={}) {
-    const page=listPage(options.offset,options.limit,300);
-    if(options.kind&&!kinds.includes(options.kind))throw new NodeTeachingError("记录类型筛选无效。");
-    if(options.sort&&!["updated_desc","title_asc"].includes(options.sort))throw new NodeTeachingError("记录排序方式无效。");
-    const where:Prisma.KnowledgePointWhereInput={...(domainId?{OR:[{domainId},{nodeLinks:{some:{node:{domainId}}}},{graphNodes:{some:{domainId}}},{memberships:{some:{groupNode:{domainId}}}}]}:{}),...(options.collectionId?{memberships:{some:{groupNodeId:options.collectionId}}}:{}),...(options.kind?{recordKind:options.kind}:{})};
-    if(q)return prisma.$transaction(async tx=>{
-        const matches:{id:string;title:string;updatedAt:Date}[]=[];
-        let cursor:string|undefined;
-        for(;;){
-            const rows=await tx.knowledgePoint.findMany({where:{AND:[where,...(cursor?[{id:{gt:cursor}}]:[])]},orderBy:{id:"asc"},take:128,select:{id:true,title:true,userUnderstanding:true,coreEssence:true,updatedAt:true,currentRevision:{select:{title:true,body:true,aliasesJson:true}}}});
-            for(const row of rows){
-                const content={title:row.currentRevision?row.currentRevision.title:row.title,body:row.currentRevision?row.currentRevision.body:row.userUnderstanding||row.coreEssence||"",aliases:readRecordAliases(row.currentRevision?.aliasesJson)};
-                if(matchRecordSearch(content,q).matches)matches.push({id:row.id,title:content.title,updatedAt:row.updatedAt});
+}>) { return { id: point.id, domainId: point.domainId, title: point.currentRevision ? point.currentRevision.title : point.title, body: point.currentRevision ? point.currentRevision.body : point.userUnderstanding || point.coreEssence || "", aliases: readRecordAliases(point.currentRevision?.aliasesJson), kind: point.recordKind, currentRevisionId: point.currentRevisionId, sourceType: point.currentRevision ? point.currentRevision.sourceType : "legacy_unknown", sourceCategory: recordSourceCategory(point.currentRevision?.sourceType), sources: parseSaved(point.currentRevision?.sourcesJson, []), createdAt: point.createdAt, updatedAt: point.updatedAt, nodes: point.nodeLinks.map(x => x.node), collections: point.memberships.map(x => x.groupNode), domainIds: [...new Set([point.domainId, ...point.nodeLinks.map(x => x.node.domainId), ...point.graphNodes.map(x => x.domainId), ...point.memberships.map(x => x.groupNode.domainId)].filter((x): x is string => !!x))] }; }
+export async function listPersonalKnowledge(q = "", domainId?: string, options: { offset?: unknown; limit?: unknown; collectionId?: string; kind?: string; sort?: string; sourceType?: string; date?: unknown } = {}) {
+    const page = listPage(options.offset, options.limit, 300);
+    let filters: KnowledgeViewFilters;
+    try { filters = parseKnowledgeFilters({ q, domainId, collectionId: options.collectionId, kind: options.kind, sort: options.sort, sourceType: options.sourceType, date: options.date }); }
+    catch (error) { throw new NodeTeachingError(error instanceof Error ? error.message : "检索条件无效。"); }
+    const date = createKnowledgeDateMatcher(filters.date), dateWindow = date.window;
+    const where: Prisma.KnowledgePointWhereInput = {
+        ...(filters.domainId ? { OR: [{ domainId: filters.domainId }, { nodeLinks: { some: { node: { domainId: filters.domainId } } } }, { graphNodes: { some: { domainId: filters.domainId } } }, { memberships: { some: { groupNode: { domainId: filters.domainId } } } }] } : {}),
+        ...(filters.collectionId ? { memberships: { some: { groupNodeId: filters.collectionId } } } : {}), ...(filters.kind ? { recordKind: filters.kind } : {})
+    };
+    return prisma.$transaction(async tx => {
+        const unavailableReason = await knowledgeViewScopeIssue(filters, tx);
+        if (unavailableReason) return { knowledgePoints: [], filters, dateWindow, unavailableReason, page: { ...page, total: 0, nextOffset: null } };
+        if (filters.q || filters.sourceType || filters.date.mode !== "all") {
+            const matches: { id: string; title: string; updatedAt: Date }[] = [];
+            let cursor: string | undefined;
+            for (;;) {
+                const rows = await tx.knowledgePoint.findMany({ where: { AND: [where, ...(cursor ? [{ id: { gt: cursor } }] : [])] }, orderBy: { id: "asc" }, take: 128, select: {
+                    id: true, title: true, createdAt: true, updatedAt: true, ...(filters.q ? { userUnderstanding: true, coreEssence: true } : {}),
+                    currentRevision: { select: { title: true, sourceType: true, ...(filters.q ? { body: true, aliasesJson: true } : {}) } }
+                } });
+                for (const row of rows) {
+                    if (filters.sourceType && recordSourceCategory(row.currentRevision?.sourceType) !== filters.sourceType || !date.matches(row)) continue;
+                    const content = { title: row.currentRevision ? row.currentRevision.title : row.title, body: row.currentRevision ? row.currentRevision.body || "" : row.userUnderstanding || row.coreEssence || "", aliases: readRecordAliases(row.currentRevision?.aliasesJson) };
+                    if (!filters.q || matchRecordSearch(content, filters.q).matches) matches.push({ id: row.id, title: content.title, updatedAt: row.updatedAt });
+                }
+                if (rows.length < 128) break;
+                cursor = rows[rows.length - 1].id;
             }
-            if(rows.length<128)break;
-            cursor=rows[rows.length-1].id;
+            const ids = matches.sort((a, b) => (filters.sort === "title_asc" ? compareRecordTitles(a.title, b.title) : b.updatedAt.getTime() - a.updatedAt.getTime()) || compareRecordIds(a.id, b.id)).slice(page.offset, page.offset + page.limit).map(row => row.id);
+            const points = await tx.knowledgePoint.findMany({ where: { id: { in: ids } }, include: contentInclude }), byId = new Map(points.map(point => [point.id, point]));
+            return { knowledgePoints: ids.map(id => { const point = present(byId.get(id)!); return { ...point, matchedAliases: filters.q ? matchRecordSearch(point, filters.q).matchedAliases : [] }; }), filters, dateWindow, page: { ...page, total: matches.length, nextOffset: page.offset + ids.length < matches.length ? page.offset + ids.length : null } };
         }
-        const ids=matches.sort((a,b)=>(options.sort==="title_asc"?compareRecordTitles(a.title,b.title):b.updatedAt.getTime()-a.updatedAt.getTime())||compareRecordIds(a.id,b.id)).slice(page.offset,page.offset+page.limit).map(row=>row.id);
-        const points=await tx.knowledgePoint.findMany({where:{id:{in:ids}},include:contentInclude}),byId=new Map(points.map(point=>[point.id,point]));
-        return {knowledgePoints:ids.map(id=>{const point=present(byId.get(id)!);return{...point,matchedAliases:matchRecordSearch(point,q).matchedAliases};}),page:{...page,total:matches.length,nextOffset:page.offset+ids.length<matches.length?page.offset+ids.length:null}};
-    },{timeout:30000});
-    if(options.sort==="title_asc")return prisma.$transaction(async tx=>{
-        const ids=await titleOrderedPersonalKnowledgeIds(domainId,{...page,collectionId:options.collectionId,kind:options.kind},tx);
-        const [points,total]=await Promise.all([tx.knowledgePoint.findMany({where:{id:{in:ids.map(row=>row.id)}},include:contentInclude}),tx.knowledgePoint.count({where})]);
-        const byId=new Map(points.map(point=>[point.id,point]));
-        return {knowledgePoints:ids.map(row=>({...present(byId.get(row.id)!),matchedAliases:[]})),page:{...page,total,nextOffset:page.offset+points.length<total?page.offset+points.length:null}};
-    });
-    const [points,total]=await prisma.$transaction([prisma.knowledgePoint.findMany({where,include:contentInclude,orderBy:[{updatedAt:"desc"},{id:"asc"}],skip:page.offset,take:page.limit}),prisma.knowledgePoint.count({where})]);
-    return {knowledgePoints:points.map(point=>({...present(point),matchedAliases:[]})),page:{...page,total,nextOffset:page.offset+points.length<total?page.offset+points.length:null}};
+        if (filters.sort === "title_asc") {
+            const ids = await titleOrderedPersonalKnowledgeIds(filters.domainId, { ...page, collectionId: filters.collectionId, kind: filters.kind }, tx);
+            const [points, total] = await Promise.all([tx.knowledgePoint.findMany({ where: { id: { in: ids.map(row => row.id) } }, include: contentInclude }), tx.knowledgePoint.count({ where })]);
+            const byId = new Map(points.map(point => [point.id, point]));
+            return { knowledgePoints: ids.map(row => ({ ...present(byId.get(row.id)!), matchedAliases: [] })), filters, dateWindow, page: { ...page, total, nextOffset: page.offset + points.length < total ? page.offset + points.length : null } };
+        }
+        const [points, total] = await Promise.all([tx.knowledgePoint.findMany({ where, include: contentInclude, orderBy: [{ updatedAt: "desc" }, { id: "asc" }], skip: page.offset, take: page.limit }), tx.knowledgePoint.count({ where })]);
+        return { knowledgePoints: points.map(point => ({ ...present(point), matchedAliases: [] })), filters, dateWindow, page: { ...page, total, nextOffset: page.offset + points.length < total ? page.offset + points.length : null } };
+    }, { timeout: 30000 });
 }
 export async function getPersonalKnowledge(id: string) { const p = await prisma.knowledgePoint.findUnique({ where: { id }, include: contentInclude }); if (!p)
-    throw new NodeTeachingError("个人记录不存在。", 404); const revisions = await prisma.knowledgePointRevision.findMany({ where: { knowledgePointId: id }, orderBy: { sequence: "desc" } }); const relations = await prisma.knowledgeGraphEdge.findMany({ where: { OR: [{ fromKnowledgePointId: id }, { toKnowledgePointId: id }] }, include: { fromKnowledgePoint: { include: { currentRevision: true } }, toKnowledgePoint: { include: { currentRevision: true } } } }); return { knowledgePoint: present(p), revisions: revisions.map(r => ({ ...r, aliases: readRecordAliases(r.aliasesJson), sources: parseSaved(r.sourcesJson, []) })), relations: relations.map(relationView) }; }
+    throw new NodeTeachingError("个人记录不存在。", 404); const revisions = await prisma.knowledgePointRevision.findMany({ where: { knowledgePointId: id }, orderBy: { sequence: "desc" } }); const relations = await prisma.knowledgeGraphEdge.findMany({ where: { OR: [{ fromKnowledgePointId: id }, { toKnowledgePointId: id }] }, include: { fromKnowledgePoint: { include: { currentRevision: true } }, toKnowledgePoint: { include: { currentRevision: true } } } }); return { knowledgePoint: present(p), revisions: revisions.map(r => ({ ...r, sourceCategory: recordSourceCategory(r.sourceType), aliases: readRecordAliases(r.aliasesJson), sources: parseSaved(r.sourcesJson, []) })), relations: relations.map(relationView) }; }
 async function sourceSnapshots(v: unknown) {
     if (v === undefined)
         return [];

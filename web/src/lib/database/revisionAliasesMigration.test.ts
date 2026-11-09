@@ -26,7 +26,9 @@ describe("revision-owned aliases data migration", () => {
       const result = await validateEmptySeedDatabase({
         databasePath, migrationsDirectory: path.resolve("prisma", "migrations"), PrismaClient
       });
-      expect(result.migrationCount).toBe(28);
+      const migrationCount = fs.readdirSync(path.resolve("prisma", "migrations"), { withFileTypes: true })
+        .filter(entry => entry.isDirectory() && fs.existsSync(path.resolve("prisma", "migrations", entry.name, "migration.sql"))).length;
+      expect(result.migrationCount).toBe(migrationCount);
       expect(result.checksumsMatch).toBe(true);
       expect(result.aliasesDefault).toBe("[]");
       expect(Object.keys(result.businessCounts)).toContain("KnowledgePointRevision");
