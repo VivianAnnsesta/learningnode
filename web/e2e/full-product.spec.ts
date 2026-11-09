@@ -68,7 +68,7 @@ test('个人记录：独立保存、修订、主题和普通关系可使用',asy
   await expect(page.getByRole('button',{name:/保存新修订/})).toBeVisible();
   const id=page.url().split('/').at(-1)!;
   const original=await db.knowledgePoint.findUniqueOrThrow({where:{id}});
-  await page.getByLabel('修订记录内容').fill('公共空间的活力与不同人群的可达性需要分别解释。');await page.getByRole('button',{name:'确认保存新修订'}).click();await expect(page.getByText('已保存新修订，原内容仍可回看。')).toBeVisible();
+  await page.getByLabel('修订记录内容').fill('公共空间的活力与不同人群的可达性需要分别解释。');await page.getByRole('button',{name:'确认保存新修订'}).click();await expect(page.getByText('已保存新修订，原内容和引用快照仍可回看。')).toBeVisible();
   const revisions=await db.knowledgePointRevision.findMany({where:{knowledgePointId:id},orderBy:{sequence:'asc'}});expect(revisions).toHaveLength(2);expect(revisions[0].body).toBe('不同人如何分享同一个场所？');expect(revisions[0].id).toBe(original.currentRevisionId);
   for(const domainId of [space.id,math.id]){await page.getByLabel('引用到领域').selectOption(domainId);const response=page.waitForResponse(r=>r.url().endsWith('/references')&&r.request().method()==='POST');await page.getByRole('button',{name:'引用同一记录到该领域'}).click();expect((await response).ok()).toBeTruthy();}
   for(const name of ['空间与公共性','边界比较']){await page.getByLabel('加入主题').selectOption({label:name});const response=page.waitForResponse(r=>r.url().includes('/knowledge-collections/')&&r.request().method()==='PATCH');await page.getByRole('button',{name:'加入主题',exact:true}).click();expect((await response).ok()).toBeTruthy();}

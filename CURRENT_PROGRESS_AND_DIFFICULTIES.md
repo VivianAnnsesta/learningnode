@@ -22,6 +22,8 @@
 
 提交 `79b103f02b2dcdab323fc7179da88cb3d218a6f2` 的[专项验证](https://github.com/VivianAnnsesta/learningnode/actions/runs/42568415623)再次通过；[全量](https://github.com/VivianAnnsesta/learningnode/actions/runs/42568415616)为801/803。Discovery10项实际15.037秒全部通过，原造数/清理超时已消除；剩余学习反馈证据与PDF提取为5秒时限失败，没有出现业务断言不符。前者失败项在时限触发后仍于7.852秒结束，PDF套件6.225秒；PDF独立本机11/11、2.11秒通过（本机旧安装依赖），不能代替 CI。依照既有隔离串行验收方式，下一全量改为单 worker 串行，仍保留全部断言、原时限和原失败日志，迁移及桌面阶段继续待实际到达。
 
+提交 `03508aa56e647c82ff5dc7f88ddff091524dfab2` 的[全量](https://github.com/VivianAnnsesta/learningnode/actions/runs/42569103756)已真实通过803/803、Prisma校验、归档旧schema夹具生成和迁移保真；[专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42569103690)继续通过。完整E2E为11通过/9跳过/3失败：两项全库只读计数被另一并行测试写入污染；一项旧测试仍匹配更新前的保存提示。已将共享隔离SQLite的浏览器文件默认串行、更新提示断言，保留全库无写入及后续旧原文/修订保真断言。没有改业务规则；下一E2E及桌面阶段仍待实际结果。
+
 更新日期：2026-11-08
 
 本轮路线输入与显式修复的代码改动已完成，最新隔离串行全量 **766/766** 通过，0失败、0未运行；全项目 typecheck、lint、encoding 通过。[全量JSON](web/test-results/planning-evidence-final-full-2026-10-28.json)、[输出](web/test-results/planning-evidence-final-full-2026-10-28.log)、[类型](web/test-results/planning-evidence-final-typecheck-2026-10-28.log)、[规范](web/test-results/planning-evidence-final-lint-2026-10-28.log)、[编码](web/test-results/planning-evidence-final-encoding-2026-10-28.log)保留。此前中间态755/755仍有效但不覆盖后来新增的旁路修复；编码命令首次误指向不存在的check-encoding.js，原[失败输出](web/test-results/planning-evidence-encoding-2026-10-28.log)保留，改用package脚本实际指向的check-mojibake.js后通过。未修改schema、真实用户数据库或Provider默认推理模式，未重新打包。

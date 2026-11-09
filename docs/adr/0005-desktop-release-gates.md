@@ -26,6 +26,8 @@ CI installs the package-manager version declared by the application before `npm 
 
 The full Windows unit run executes files serially with one worker to avoid saturating the shared runner with native SQLite engines and PDF worker startup. All cases, assertions and test deadlines remain enabled; fixture preparation uses bounded batch transactions rather than hundreds of independent commits. Parallel scheduling is not part of the product's correctness contract.
 
+Browser suites share one isolated SQLite database and assert that read-only interactions do not create records, revisions, AI calls or audit facts. They run with one worker by default so unrelated tests cannot contaminate those global before/after counts. Explicit concurrency scenarios within a test remain enabled; do not weaken the no-write assertions to accommodate cross-test writes.
+
 Security maintenance retains the existing Electron/Next.js architecture. When the installed Electron major has no supported patch for a blocking advisory, move to the minimum supported fixed runtime after checking its official migration notes, and re-run the complete desktop runtime, upgrade and security gates. A runtime version change alone is not evidence of desktop compatibility.
 
 Electron 42 no longer downloads its executable during package postinstall. The supported development command explicitly runs the installed `install-electron` command before loading Electron's path; installation failure blocks launch. Packaging continues to use electron-builder's pinned target-runtime download and validates the produced executable, rather than assuming the development executable has already been downloaded.
