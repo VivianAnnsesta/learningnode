@@ -2,6 +2,20 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第四批来源/记录日期筛选、命名保存检索视图和只读显示字段已完成本批既定验证并合并GitHub main：[PR #4](https://github.com/VivianAnnsesta/learningnode/pull/4)，合并提交 `388f6390c74ac9fb987a050ef2b8128b5f8e7332`，已验证源HEAD `8134a922ff746146afd1e775193e2cf6c7828e3a`。视图保存查询规则，重新打开读取当前记录；不复制正文，不写学习、掌握或语义关系事实。日期明确为记录创建/更新日期并显示时区；草稿归属、字段/条件返回、失效条件保留、未知配置不可运行、幂等及并发CAS均有真实回归。
+
+该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42606050659)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42606044118)均真实全成功：113文件/968测试，含13项新SQLite/HTTP及2项新迁移；完整页面24通过/9按原配置跳过。原主题删除分页、记录探索和视图双冲突恢复均实际通过，原5秒断言及60秒整例保留，有限JSON同步不替代业务断言。Typecheck、lint、encoding、Prisma、历史夹具和迁移保真通过；两边Electron42.11.16打包、空白seed运行、旧库备份升级和安全交互全过。两套[专项PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42606050902)/[专项push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42606044111)均11文件/178测试及13页面全过。完整日志/哈希索引 `813-full-evidence.json`、专项 `813-target-evidence.json` 位于 `web/test-results/knowledge-views-2026-11-09/`，前两头的原失败及官方trace完整保留，未重跑旧失败。
+
+正式29空白seed为官方工件原字节，SHA256 `0ade6591a708733d12adc28a9136968ed5c9f817f69651edc42b2799e1d107c9`、495616字节；26业务表全空、29条迁移与远端LF Git blob逐项匹配、版本默认1/aliases默认[]、FK0/integrity ok。27→28独立历史边界及28→29非空副本生命周期均实际先备份、保留原字段/来源/别名/当前修订指针/旧ledger，配置更新至版本2后断开重开及重复启动仍保真。新表仅存配置且无学习/记录外键，旧迁移没有改写；原28seed已保留在ignored证据中。
+
+发布累计37路径（16新增/21修改/0删除），84个既有受保护blob保真，原工作区index/历史、真实用户库和AI设置未改；安全发布与完整树核验位于 `web/test-results/obsidian-saved-views-publication-2026-11-09/`。本机已安装桌面包未替换；上述是隔离SQLite/页面及GitHub Windows包运行证据，真实AI教学、长期学习效果及既有分发限制仍分别处理。
+
+持续优化目标保持进行中，下一批转入个人记录模板的预览、插入、撤销和明确保存边界；日期回看、剪藏及导出仍保留，未实现部分不算交付，也不替代既有教学质量阻断工作。
+
+### 第四批过程记录
+
+以下保留对应源HEAD当时结果；最新完成事实以上方已验证8134源与合并提交为准。
+
 第四批增量1源HEAD `efc0edba5de02ec6d4b44a2a7c1e77b6b00d4e79` 已含官方29seed，仍为草稿PR4。两套专项均178测试/13页面全过；两套完整unit均113文件/968测试全过，失效主题旧用例已通过。完整[PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42603376393)页面23过/9原配置跳过/1失败，[push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42603361417)22过/9跳过/2失败，desktop均未执行。root新增页面`finished()`等待耗尽60秒，不能记作生产功能失败或跳过：官方PR工件13666234185真实trace显示页面200但receive未完成，而两个对应会话API均200、JSON已完整返回且id同POST，最终截图已进入正确学习表单。正改为点击前注册精确POST和对应会话API、200及完整JSON身份校验后再原5秒URL断言，保留原60秒总门和全部业务断言；不再等待页面流结束。push另有保存视图冲突恢复后5秒内缺保存提示，正取其官方工件13666648687由UI支独立核因，不推定为同一个问题。原失败日志/trace保留，当前不合并。
 
 push官方工件13666648687已按head/run/digest核验后取trace：恢复后的PATCH在原5秒提示断言期间仍pending，页面busy且基础v2，无成功/错误提示；服务日志显示同一PATCH在5359ms后200，晚于约5022ms的提示采样。没有收到成功后被界面覆盖的证据；也不能以未落入trace的响应体证明版本3，或推定延迟底层原因。回归先核对应viewId/expectedVersion2的PATCH成功及完整JSON版本3/名称/来源条件，再执行原5秒成功提示和全部后续删除CAS/事实不变断言；保留60秒整例，生产UI/服务不改。两个页面文件独立TypeScript、定向ESLint及全项目encoding通过，backend/UI独立审读同步与原断言保留通过；此同步与探索JSON同步均待增量2真实CI，不把原失败改写为通过。
@@ -12,10 +26,6 @@ push官方工件13666648687已按head/run/digest核验后取trace：恢复后的
 
 PR浏览器官方工件13665439670已核验ZIP digest后读取：真实探索POST成功并携带正确记录/修订/问题/returnTo，目标页面GET为200；URL断言最后采样仍是记录页，紧接失败后的frame已是该POST创建的会话URL。trace支持导航/冷编译与5秒采样重叠，未完成的会话API请求不算失败响应，也不据此声称无限期正常。回归补充点击前注册精确创建回应及对应会话页面回应、校验200并等待页面响应结束，再执行原5秒URL断言；保留60秒总门、来源修订/返回和删除关系数据断言，生产代码不变。两个页面文件独立TypeScript、full-product定向ESLint及全项目encoding通过；此修复与失效主题回归尚待新头实际CI。
 
-### 第四批过程记录
-
-以下保留对应提交当时状态；最新失败、seed与待验以上方源HEAD记录为准。
-
 第四批依据[ADR 0030](docs/adr/0030-saved-knowledge-views-and-date-filters.md)实现来源/日期筛选、命名保存检索视图和只读显示字段。目标/当前差异：公共合同、配置模型/CAS、界面及回归已接通，尚未完成本批真实SQLite、迁移、页面或桌面验收；日期指记录创建/更新时间，视图不复制内容或改变学习事实。真实用户库、原index和旧迁移不动；旧27→28回归固定历史边界，新28→29保真及官方29 seed仍待CI，不复用上一批成功覆盖本批未验证状态。
 
 本批全项目typecheck/lint/encoding、Prisma schema validate及脚本/YAML静态检查通过；6个纯文件136/136通过，含58公共配置/日期和33导航规则，新增4条页面文件独立TypeScript通过。UI六组合成API交互及两张已目视检查截图在 `web/test-results/obsidian-views-2026-11-09/ui-preview/`，覆盖点击时配置快照、迟到打开保护、双CAS、草稿领域、跨日重置和菜单错误隔离；另有外部删除404后主动刷新列表的独立交互及第三张截图通过，pageerror为0。root/协作审读新增页面测试后补了删除冲突前的菜单就绪等待，保持原断言/时限；这些仍不是真实数据库/E2E证据。
@@ -23,6 +33,8 @@ PR浏览器官方工件13665439670已核验ZIP digest后读取：真实探索POS
 数据支4项原生用例本机唯一尝试在首次query被Application Control阻止加载query-engine DLL，0业务expect；未反复重试或绕过。SQL-only副本完成新表形状/default、raw别名/来源/指针/旧ledger及配置version2重开、固定27→28投影检查，明确不是Prisma或正式seed成功。证据在 `web/test-results/saved-views-migration-2026-11-09/`；正式source seed28仍为原官方 `1d3e3089…ea37`，待成功CI产出29工件、核验远端LF/哈希后更新。损坏持久化配置新增完整规范形状guard，不能缺省补为全库；仅URL/新输入允许公共默认值。
 
 第四批共享配置/URL/日期合同58/58纯测试已通过，含标题-only字段、六类来源、旧来源独立、无效配置/重复参数拒绝、闰年、时区别名和数值偏移拒绝、DST跳时/重复小时、请求跨日now固定及原时间字段选择。新模型/client与数据代码已接通，原生SQL/配置CRUD、迁移和页面仍待实际结果；不能把纯规则通过替代这些门禁。
+
+### 第三批完成记录
 
 第三批收尾文档源 `0bacf71a687ab1e07d4c2686f38674b153df2b1d` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42592447109)已真实全成功：884测试、20页面通过/9原配置跳过、28空白seed、保真和完整桌面门禁。它相对已验证f213仅两文档不同；当前第四批仍须独立完成验证，旧成功不覆盖新代码。
 
