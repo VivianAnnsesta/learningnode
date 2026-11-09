@@ -48,9 +48,11 @@ jobs:
           src/lib/learning/personalKnowledgeNames.test.ts src/lib/learning/personalKnowledgeViews.test.ts src/lib/learning/personalKnowledgeTemplates.test.ts src/lib/learning/personalKnowledgeDates.test.ts src/lib/learning/personalKnowledgeClips.test.ts
           src/lib/database/revisionAliasesMigration.test.ts src/lib/database/savedKnowledgeViewsMigration.test.ts src/lib/database/recordTemplatesMigration.test.ts src/lib/database/recordDatesMigration.test.ts
           src/app/components/recordDiscoveryTypes.test.ts src/app/components/recordAliasesInput.test.ts src/app/components/recordTemplateInsertion.test.ts src/app/components/knowledgeNavigation.test.ts
+          src/lib/learning/knowledgeExportContracts.test.ts src/lib/learning/knowledgeExportControl.test.ts src/lib/learning/personalKnowledgeExport.test.ts
+          src/lib/exports/knowledgeExportZip.test.ts src/lib/exports/knowledgeExportArchive.test.ts src/app/components/knowledgeExportDownload.test.ts
           --reporter=default --reporter=json --outputFile=test-results/obsidian-discovery.json
       - run: npx playwright install chromium
-      - run: npm run test:e2e -- knowledge-discovery.spec.ts knowledge-paragraph-references.spec.ts knowledge-aliases-mentions.spec.ts knowledge-saved-views.spec.ts knowledge-record-templates.spec.ts knowledge-record-calendar.spec.ts knowledge-record-clipping.spec.ts
+      - run: npm run test:e2e -- knowledge-discovery.spec.ts knowledge-paragraph-references.spec.ts knowledge-aliases-mentions.spec.ts knowledge-saved-views.spec.ts knowledge-record-templates.spec.ts knowledge-record-calendar.spec.ts knowledge-record-clipping.spec.ts knowledge-export.spec.ts
       - uses: actions/upload-artifact@v6
         if: always()
         with:

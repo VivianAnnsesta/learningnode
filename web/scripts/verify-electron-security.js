@@ -111,11 +111,33 @@ child.on("exit", (code) => {
     !security.clipping?.tamperRejected ||
     !security.clipping?.evictedReceiptRejected ||
     !security.clipping?.creationReplay ||
-    !security.clipping?.authenticationBoundary
+    !security.clipping?.authenticationBoundary ||
+    !security.exportDownload?.completed ||
+    !security.exportDownload?.cancelled ||
+    !security.exportDownload?.windowUnchanged ||
+    !security.exportDownload?.businessRecordsUnchanged ||
+    !security.exportDownload?.authenticationBoundary
   ) {
     fail("one or more packaged security checks did not pass", JSON.stringify(result, null, 2));
   }
 
+  const exported = security.exportDownload;
+  const expectedZip = path.join(verificationUserRoot, "export-downloads", "completed.zip"), cancelledZip = path.join(verificationUserRoot, "export-downloads", "cancelled.zip");
+  if (exported.completedPath !== expectedZip || exported.cancelledPath !== cancelledZip || exported.cancelledBytes !== 0 || fs.existsSync(cancelledZip) && fs.statSync(cancelledZip).size !== 0) {
+    fail("packaged export did not retain its isolated completed/cancelled paths", JSON.stringify(exported));
+  }
+  let inspection;
+  try {
+    // This verification-only outer process uses an independent platform reader after Electron exits.
+    inspection = require("./inspect-knowledge-export-zip").inspectKnowledgeExportZip(expectedZip);
+    if (inspection.zipSha256 !== exported.completedSha256 || inspection.zipBytes !== exported.completedBytes || inspection.manifest?.records.length !== 1 || inspection.bodySlicesVerified !== 2 || inspection.entries.length !== 4 || inspection.manifest.records[0].revisions.length !== 2) throw new Error("Packaged export ZIP identity/history/body slices did not match the isolated fixture.");
+    const savedZip = path.join(resultDir, "electron-security-export.zip");
+    fs.copyFileSync(expectedZip, savedZip);
+    fs.writeFileSync(path.join(resultDir, "electron-security-export-inspection.json"), JSON.stringify(inspection, null, 2));
+    result.security.exportDownload.independentZipVerified = true;
+    result.security.exportDownload.reader = inspection.reader;
+    fs.writeFileSync(resultPath, JSON.stringify(result, null, 2));
+  } catch (error) { fail(error.message); }
   cleanupVerificationUserRoot();
   console.log("Electron security verification passed.");
   console.log("- renderer token injection accepted by the local API");
@@ -123,4 +145,6 @@ child.on("exit", (code) => {
   console.log("- javascript:, data:, and file: navigation were isolated from the app window");
   console.log("- packaged preview/create/revise routes shared clipping receipts and preserved immutable history");
   console.log("- forged and evicted receipts were rejected; frozen creation replay preserved the saved revision");
+  console.log("- actual export UI downloads completed and cancelled without navigation or record writes");
+  console.log(`- independent platform ZIP reader verified ${inspection.entries.length} files and ${inspection.bodySlicesVerified} exact raw body slices`);
 });

@@ -2,6 +2,18 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第八批依据[ADR0034](docs/adr/0034-consistent-portable-personal-knowledge-export.md)推进可携带导出：整个已应用检索结果/单条已保存记录、明确历史范围、同一只读事务及原始修订/来源/日期保真、Markdown+清单ZIP与真实下载。目标/当前差异：词汇/公共决策与共享合同已先落盘，48项合同测试及定向lint通过，服务、两入口和真实浏览器/packaged下载正在实施/待验；不以第七批或整库备份替代。首跑47/48的唯一失败在夹具用Headers构造非ByteString中文文件名，尚未执行parser；已改为真实HTTP可表示的RFC5987编码文件名后48/48，原JSON与修后JSON在 `web/test-results/knowledge-export-2026-11-09/`，业务拒绝门未改。读取范围与页面日期窗口绑定，完整成功或超限失败，不截断成一页。原index、31seed、真实用户库/设置和旧迁移不动。
+
+本批服务和两入口已接通，root独立实际执行共享合同/单活动生命周期/下载读取三文件63项全过（含取消或30秒超时后后台未settle仍占slot）；报告 `root-control-ui-pure.json`。UI六文件type/lint/encoding通过，四组合成API浏览器验证实际下载四个合成ZIP并由Python zipfile独立读取，覆盖整个视图、历史开关、空范围、详情草稿；异常响应、取消、换范围不下载。root独立目视详情截图，mock及首harness编码/多匹配问题保留在 `ui-preview/`，临时服务已关闭。它们不是正式SQLite或packaged验收。新增七条真实E2E已定向TypeScript/ESLint通过，覆盖305条全结果、原raw/历史/current指针、固定/包外引用、日期窗口及下载失败/取消；本机按已知AppControl不执行native，等待CI，不记为页面已通过。
+
+root后续独立执行16文件498/498纯回归通过，含新五文件104项和旧剪藏/模板/日期/月历/导航394项；`combined-pure.json`。ZIP实际65535项/下一项拒绝、64MiB精确边界与头部开销、原字节切片和同ID坏固定来源不误链接均在其中。全项目type/lint/encoding亦通过；标准reader和packaged链仍须真实证据。只读范围审计对照ADR0027–0034未发现须另起第九功能批的约定漏项，但本批尚未满足真实门禁/合并条件，不能提前记整轮完成；审计在同目录 `obsidian-scope-audit.md`。
+
+之后用真实writer产物分别经Python标准zipfile与PowerShell/.NET ZipArchive读取，通用UTF8/NUL/CRC包、恰65535项ZIP32包和6文件/4正文切片的typed snapshot包均成功，记录在 `independent-writer-verification.json`。root另独立执行.NET读取后者13773字节包，CRC、全部文件SHA和四份原正文切片均一致，ZIP SHA256 `72d28492c33fad35270e8da1ff56de13945f2a7d48b0445f7c8d2b6cdc92f9ec`，`root-independent-writer-zip.json`；这仍不是浏览器或桌面实际下载证据。后端5文件已冻且定向tsc/lint通过，20项native用例本机执行0次；含335完整结果、真实修订writer重叠发起/后续成功、旧快照一致、超过64MiB原行完整413与历史关闭保留小当前。原生测试待CI，不声称SQLite在读事务中已允许另一个writer提交。
+
+### 第七批完成记录
+
+第七批收尾文档源 `6fc5ad16da5b20966e515ca6c2406174735f70da` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42651073301)已真实全成功：1325测试、44页面通过/9原配置跳过、31seed、四条迁移边界和完整桌面/新增剪藏门禁；相对已验证1f8b源仅两文档不同。两份全日志/SHA索引 `6fc-main-evidence.json` 在 `web/test-results/record-clips-2026-11-09/`；不覆盖第八批待验。
+
 第七批记录剪藏已完成本批既定门禁并合并GitHub main：[PR #7](https://github.com/VivianAnnsesta/learningnode/pull/7)，合并提交 `92f925e9b6e41445897240cdb9b904412e9659be`，已验证源HEAD `1f8b333d8053fa873b8fa18210e575ce0bef9348`。两处编辑入口可预览公开HTML或本人提供文字、选择固定片段、把正文和来源一起插入/安全撤销，最终仍明确保存；标题、类型、别名、日期、领域和已有来源保留。过期/淘汰可重读后明确替换来源，正文保留供合并；保存结果不明时冻结原payload核对，既有保存可在凭据失效后复用原命令找回。修订继续原CAS与retained，当前/历史来源离线固定可读；系统取得和本人提供分别标明，均不表示内容核实或学习完成。
 
 该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42647177876)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42647167137)均真实全成功：127文件/1325测试，含20项新SQLite/HTTP、41项剪藏合同、10项store及73传输/13提取（含5个真实受控TLS case）；完整页面44通过/9按原配置跳过，新7条剪藏链和旧视图返回两边均通过，真正公开HTTPS预览→保存→历史也实际执行。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42647177873)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42647167166)各24文件/532测试及33页面全过。四份完整日志/SHA索引 `1f8b-full-evidence.json` 和专项 `1f8b-target-evidence.json` 在 `web/test-results/record-clips-2026-11-09/`；root独立核验四完整日志hash和fresh job/commit状态。依赖高危门通过，11项moderate仍保留，不记为零漏洞。
@@ -10,7 +22,7 @@
 
 发布累计30路径（14新增/16修改/0删除），合并树 `92ec6831ac97dfd75c6e3026846452ff567b0634` 的621blob精确等于已验证1f8b源；99项保护文件、原index/历史、Word及真实用户数据库/设置保持，发布和整树证明在 `web/test-results/obsidian-record-clipping-publication-2026-11-09/`。最初4项安全夹具失败、8f6b两套页面失败和官方trace均保留；增量仅收窄提示locator、绑定新返回请求/JSON及状态记录，原业务断言/5秒和60秒门保留，无全局重试或生产改动。新网络读取保持CA/hostname、逐跳公开地址pin/peer、整次deadline/byte限制和纯文本展示，预览截取/启发式限制可见；取得来源不等于内容准确。
 
-持续优化目标保持进行中，下一批为可携带导出：从整个已应用检索结果或单记录捕获一致只读快照，保留固定修订、原始来源/别名/日期字段与显式关系，用可读Markdown及版本化manifest交接。当前仅有只读适配审查，须先形成ADR/合同再实现，不以整库备份或兼容画布导出代替。本机已安装桌面包未替换；上述为隔离SQLite/页面和GitHub Windows包运行证据，不等同于真实AI教学、学习效果或分发发布合格。
+截至第七批合并时，持续优化目标保持进行中，下一批为可携带导出：从整个已应用检索结果或单记录捕获一致只读快照，保留固定修订、原始来源/别名/日期字段与显式关系，用可读Markdown及版本化manifest交接。当时仅有只读适配审查，须先形成ADR/合同再实现，不以整库备份或兼容画布导出代替；第八批最新状态见文首。本机已安装桌面包未替换；上述为隔离SQLite/页面和GitHub Windows包运行证据，不等同于真实AI教学、学习效果或分发发布合格。
 
 ### 第七批过程记录
 
