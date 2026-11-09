@@ -7,7 +7,8 @@ import { ActionButton, AppShell, PageHeader, SectionPanel } from "../../../compo
 import { RecordContextPanel } from "../../../components/RecordContextPanel";
 import { RecordNeighborhood } from "../../../components/RecordNeighborhood";
 import { RecordReferencePicker } from "../../../components/RecordReferencePicker";
-import { isRecordSnapshot, readRecordJson, recordKindLabels, recordSourceInputs, recordSourceLabels, relationKindLabels, sameRecordSource, type RecordChoice, type RecordSnapshot } from "../../../components/recordDiscoveryTypes";
+import { RecordReferencePreview } from "../../../components/RecordReferencePreview";
+import { isRecordSnapshot, readRecordJson, recordKindLabels, recordReferenceKey, recordReferenceLabel, recordSourceInputs, recordSourceLabels, relationKindLabels, sameRecordSource, type RecordChoice, type RecordSnapshot } from "../../../components/recordDiscoveryTypes";
 import { knowledgeRecordHref, knowledgeReturnView } from "../../../components/knowledgeNavigation";
 
 type Point = {
@@ -43,6 +44,7 @@ function KnowledgePageContent() {
   const [savedSources, setSavedSources] = useState<unknown[]>([]);
   const [sourcesChanged, setSourcesChanged] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerHashing, setPickerHashing] = useState(false);
   const [target, setTarget] = useState("");
   const [relationType, setRelationType] = useState("related");
   const [detail, setDetail] = useState("");
@@ -90,7 +92,7 @@ function KnowledgePageContent() {
   useEffect(() => {
     const counter = generation.current;
     setPoint(null); setRevisions([]); setRelations([]); setError(""); setMessage("");
-    setTarget(""); setTheme(""); setDomain(""); setQuestion(""); setDetail(""); setBusy(false); setPickerOpen(false);
+    setTarget(""); setTheme(""); setDomain(""); setQuestion(""); setDetail(""); setBusy(false); setPickerOpen(false); setPickerHashing(false);
     void load(true).catch(cause => setError(cause instanceof Error ? cause.message : "无法读取个人记录。"));
     return () => { counter.value++; activeRequest.current?.abort(); };
   }, [load]);
@@ -118,11 +120,11 @@ function KnowledgePageContent() {
   };
   const addSource = (source: RecordSnapshot) => {
     if (draftSources.length >= 30) { setError("一份修订最多保存30个来源，请保留必要引用。"); return; }
-    setDraftSources(previous => previous.some(value => isRecordSnapshot(value) && value.knowledgePointId === source.knowledgePointId && value.revisionId === source.revisionId) ? previous : [...previous, source]);
-    setSourcesChanged(true); setMessage(`已把“${source.title}”加入编辑草稿，尚未保存。`);
+    setDraftSources(previous => previous.some(value => isRecordSnapshot(value) && recordReferenceKey(value) === recordReferenceKey(source)) ? previous : [...previous, source]);
+    setSourcesChanged(true); setMessage(`已把“${source.title}”的${recordReferenceLabel(source)}加入编辑草稿，尚未保存。`);
   };
   const draftRecords = draftSources.filter(isRecordSnapshot);
-  const savedKeys = new Set(savedSources.filter(isRecordSnapshot).map(source => `${source.knowledgePointId}:${source.revisionId}`));
+  const savedKeys = new Set(savedSources.filter(isRecordSnapshot).map(recordReferenceKey));
   const unavailable = busy || !point;
 
   return <AppShell>
@@ -136,12 +138,12 @@ function KnowledgePageContent() {
         <input aria-label="记录标题" className="workshop-input w-full" disabled={unavailable} value={title} onChange={event => setTitle(event.target.value)} />
         <textarea aria-label="修订记录内容" className="workshop-input min-h-40 w-full" disabled={unavailable} value={body} onChange={event => setBody(event.target.value)} />
         <select aria-label="记录类型" className="workshop-input" disabled={unavailable} value={kind} onChange={event => setKind(event.target.value)}>{Object.entries(recordKindLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-        <details onToggle={event => setPickerOpen(event.currentTarget.open)}><summary>添加记录引用</summary>{pickerOpen && <RecordReferencePicker key={id} pointId={id} selected={draftRecords} disabled={unavailable} onAdd={addSource} />}</details>
+        <details onToggle={event => setPickerOpen(event.currentTarget.open)}><summary>添加记录引用</summary>{pickerOpen && <RecordReferencePicker key={id} pointId={id} selected={draftRecords} disabled={unavailable} onAdd={addSource} onPendingChange={setPickerHashing} />}</details>
         <div aria-label="当前编辑草稿的记录引用" className="space-y-2">{draftRecords.map(source => {
-          const key = `${source.knowledgePointId}:${source.revisionId}`, isSaved = savedKeys.has(key);
-          return <div key={key} className="rounded-lg border p-3"><p>{source.title} · {isSaved ? "已有引用" : "新增引用，尚未保存"}</p><details><summary>预览所选修订原文</summary><p className="whitespace-pre-wrap">{source.body}</p></details>{!isSaved && <button className="underline" disabled={unavailable} onClick={() => setDraftSources(previous => previous.filter(value => !isRecordSnapshot(value) || `${value.knowledgePointId}:${value.revisionId}` !== key))}>取消新增引用“{source.title}”</button>}</div>;
+          const key = recordReferenceKey(source), isSaved = savedKeys.has(key), range = recordReferenceLabel(source);
+          return <article key={key} aria-label={`草稿引用：${source.title} · ${range}`} className="rounded-lg border p-3"><p>{source.title} · {range} · {isSaved ? "已有引用" : "新增引用，尚未保存"}</p><details><summary>{source.selector ? "预览所选段落原文" : "预览所选修订原文"}</summary><RecordReferencePreview source={source} /></details>{!isSaved && <button className="underline" disabled={unavailable} onClick={() => setDraftSources(previous => previous.filter(value => !isRecordSnapshot(value) || recordReferenceKey(value) !== key))}>取消新增引用“{source.title}”{source.selector ? `的${range}` : ""}</button>}</article>;
         })}</div>
-        <ActionButton disabled={unavailable || !title.trim() || !body.trim()} onClick={async () => {
+        <ActionButton disabled={unavailable || pickerHashing || !title.trim() || !body.trim()} onClick={async () => {
           let sources;
           try { sources = sourcesChanged ? recordSourceInputs(draftSources, savedSources) : undefined; }
           catch (cause) { setError(cause instanceof Error ? cause.message : "无法保存引用，请回看最新来源。"); return; }
@@ -198,7 +200,7 @@ function KnowledgePageContent() {
       </SectionPanel>
       <SectionPanel>
         <h2 className="text-xl">修订与原始来源</h2>
-        {revisions.map(revision => <details key={revision.id}><summary>修订 {revision.sequence} · {revision.title} · {revision.sourceType}</summary><p className="whitespace-pre-wrap">{revision.body}</p><p>{new Date(revision.createdAt).toLocaleString()}</p>{revision.sources.filter(isRecordSnapshot).map(source => <div key={`${source.knowledgePointId}:${source.revisionId}`} className="my-3 rounded-lg border p-3"><p>引用：{source.title}</p><p className="whitespace-pre-wrap">{source.body}</p><Link className="underline" href={knowledgeRecordHref(source.knowledgePointId,sourceView)}>打开记录当前版本</Link></div>)}<details><summary>查看完整来源快照</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(revision.sources, null, 2)}</pre></details></details>)}
+        {revisions.map(revision => <details key={revision.id}><summary>修订 {revision.sequence} · {revision.title} · {revision.sourceType}</summary><p className="whitespace-pre-wrap">{revision.body}</p><p>{new Date(revision.createdAt).toLocaleString()}</p>{revision.sources.filter(isRecordSnapshot).map(source => <article key={recordReferenceKey(source)} aria-label={`历史引用：${source.title} · ${recordReferenceLabel(source)}`} className="my-3 rounded-lg border p-3"><p>引用：{source.title} · {recordReferenceLabel(source)}</p><RecordReferencePreview source={source} /><Link className="underline" href={knowledgeRecordHref(source.knowledgePointId,sourceView)}>打开记录当前版本</Link></article>)}<details><summary>查看完整来源快照</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(revision.sources, null, 2)}</pre></details></details>)}
       </SectionPanel>
     </>}
   </AppShell>;

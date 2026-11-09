@@ -2,6 +2,12 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第二批依据 ADR 0028 实施段落级固定引用：共享原文段落/选择器算法，服务端校验指定修订的完整段落及哈希，多段草稿与预览、历史/反向引用回看。目标/当前差异：尚未记为实现或验证通过；保留全文引用、不可覆盖来源、retained短描述符、明确保存和返回原视图。当前源码及远端头须以本轮实际检查为准，不复用首批通过声明替代本批结果。
+
+本批段落代码已接通：同一修订全文+多个完整段落可并存，重复原文按位置区分；服务器从真实修订生成固定摘录，新引用去重但旧retained快照不被删改；当前/历史/反向引用统一片段身份。搜索变动立即隐藏旧结果，迟到哈希不能加入旧引用，失败读取提供重试。共享算法/来源短输入/导航合计43项本机纯测试通过，typecheck、全项目lint、encoding通过，新E2E文件独立TS校验通过。14项隔离SQLite的唯一一次本机尝试仍在初始化被AppControl阻断，0业务断言运行，日志在 `web/test-results/paragraph-references-2026-11-08/`。
+
+段落界面另有4组合成API浏览器操作及截图，通过全文+3段/撤销重选、1002字节短请求、固定旧摘录和迟到哈希取消；前期换行转义/嵌套details的harness失败及旧卡片时序问题原证据保留在首批UI证据目录，不能把mock写成真实后端通过。新2条页面链与14项SQLite/HTTP必须由本批GitHub CI实际执行，发布与主分支结果待完成后追加；无schema/seed变更，真实用户数据未动。
+
 首批已通过全部本轮门禁并合并 GitHub main：[PR #1](https://github.com/VivianAnnsesta/learningnode/pull/1)，合并提交 `106cd708c3ad4841080a607772cb85f79cdce150`。已验证源代码 HEAD 为 `8ebe33b41963ba219f56e9fba43bb16d30f4bb0a`；PR 与 push 两套完整CI均成功。功能包含固定修订引用与快照、当前反向引用分页、已确认局部图谱、类型/领域/主题视图、Ctrl+K查找，以及普通返回/引用/图谱/快捷查找沿用源筛选。正式地图、语义关系确认及学习履历的业务边界保持原规则。
 
 [完整 Windows CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42571477526)真实通过：105文件、825/825测试；完整页面15通过/9按原配置跳过；Prisma校验、归档旧schema夹具生成、迁移保真；Electron42.11.16打包、空白seed运行、旧库升级运行和安全交互全部通过。[专项 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42571477458)为35/35和4/4页面流程通过。成功/原失败日志在 `web/test-results/obsidian-discovery-2026-11-08/`，发布树/敏感扫描/保真核验在相邻 `obsidian-publication-2026-11-08/`；原工作区index与旧历史未改。

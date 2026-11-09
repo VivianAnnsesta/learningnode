@@ -2,7 +2,7 @@ name: Knowledge discovery
 
 on:
   push:
-    branches: ["codex/obsidian-knowledge-discovery"]
+    branches: ["codex/obsidian-*"]
   pull_request:
 
 concurrency:
@@ -28,9 +28,9 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run check:encoding
-      - run: npx vitest run src/lib/learning/personalKnowledgeDiscovery.test.ts src/app/components/recordDiscoveryTypes.test.ts src/app/components/knowledgeNavigation.test.ts --reporter=default --reporter=json --outputFile=test-results/obsidian-discovery.json
+      - run: npx vitest run src/lib/learning/personalKnowledgeDiscovery.test.ts src/lib/learning/recordReferences.test.ts src/app/components/recordDiscoveryTypes.test.ts src/app/components/knowledgeNavigation.test.ts --reporter=default --reporter=json --outputFile=test-results/obsidian-discovery.json
       - run: npx playwright install chromium
-      - run: npm run test:e2e -- knowledge-discovery.spec.ts
+      - run: npm run test:e2e -- knowledge-discovery.spec.ts knowledge-paragraph-references.spec.ts
       - uses: actions/upload-artifact@v6
         if: always()
         with:

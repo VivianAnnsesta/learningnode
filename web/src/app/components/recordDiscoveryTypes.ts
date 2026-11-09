@@ -1,11 +1,7 @@
-export type RecordSnapshot = {
-  kind: "record";
-  knowledgePointId: string;
-  revisionId: string;
-  title: string;
-  body: string;
-  sourceType: string;
-};
+import { isRecordReferenceSnapshot, paragraphSelectorInput, referenceParagraphs, type RecordReferenceSnapshot } from "../../lib/learning/recordReferences";
+
+export type RecordSnapshot = RecordReferenceSnapshot;
+export { recordReferenceKey, recordReferenceQuote } from "../../lib/learning/recordReferences";
 
 export type RecordChoice = {
   id: string;
@@ -31,10 +27,13 @@ export const recordSourceLabels: Record<string, string> = {
 };
 
 export function isRecordSnapshot(value: unknown): value is RecordSnapshot {
-  if (!value || typeof value !== "object") return false;
-  const source = value as Record<string, unknown>;
-  return source.kind === "record" && ["knowledgePointId", "revisionId", "title", "body", "sourceType"]
-    .every(key => typeof source[key] === "string");
+  return isRecordReferenceSnapshot(value);
+}
+
+export function recordReferenceLabel(source: RecordSnapshot): string {
+  if (!source.selector) return "全文";
+  const index = referenceParagraphs(source.body).findIndex(paragraph => paragraph.start === source.selector?.start && paragraph.end === source.selector?.end);
+  return index >= 0 ? `第${index + 1}段` : "固定段落";
 }
 
 export function sameRecordSource(left: unknown, right: unknown): boolean {
@@ -46,7 +45,10 @@ export function recordSourceInputs(draftSources: unknown[], savedSources: unknow
   return draftSources.map(source => {
     const sourceIndex = savedSources.findIndex(saved => sameRecordSource(saved, source));
     if (sourceIndex >= 0) return { kind: "retained" as const, sourceIndex };
-    if (isRecordSnapshot(source)) return { kind: "record" as const, knowledgePointId: source.knowledgePointId, revisionId: source.revisionId };
+    if (isRecordSnapshot(source)) return {
+      kind: "record" as const, knowledgePointId: source.knowledgePointId, revisionId: source.revisionId,
+      ...(source.selector ? { selector: paragraphSelectorInput(source.selector) } : {})
+    };
     throw new Error("原始来源已变化，请回看最新保存版本后合并引用。");
   });
 }

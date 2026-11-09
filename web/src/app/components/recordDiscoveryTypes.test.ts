@@ -1,25 +1,47 @@
 import { describe, expect, it } from "vitest";
-import { recordSourceInputs } from "./recordDiscoveryTypes";
+import { paragraphSelector } from "../../lib/learning/recordReferences";
+import { isRecordSnapshot, recordReferenceKey, recordReferenceLabel, recordReferenceQuote, recordSourceInputs, type RecordSnapshot } from "./recordDiscoveryTypes";
 
-describe("引用草稿的请求边界", () => {
-  it("保留超过请求上限的历史来源时只发送索引与新引用身份", () => {
-    const saved = [{ kind: "session", sessionId: "s", material: "原始已展示材料".repeat(12000) }];
-    const added = { kind: "record", knowledgePointId: "p", revisionId: "r", title: "解释", body: "引用原文".repeat(10000), sourceType: "user" };
-    expect(JSON.stringify([...saved, added]).length).toBeGreaterThan(64000);
-    const payload = recordSourceInputs([...saved, added], saved);
-    expect(JSON.stringify(payload).length).toBeLessThan(200);
-    expect(payload).toEqual([{ kind: "retained", sourceIndex: 0 }, { kind: "record", knowledgePointId: "p", revisionId: "r" }]);
+const whole: RecordSnapshot = { kind: "record", knowledgePointId: "source", revisionId: "source-v1", title: "原始解释", body: "第一段。\n\n第二段。\n\n第一段。", sourceType: "user" };
+
+describe("record-reference UI descriptors", () => {
+  it("keeps old full-record references compact and unchanged", () => {
+    expect(recordSourceInputs([whole], [])).toEqual([{ kind: "record", knowledgePointId: "source", revisionId: "source-v1" }]);
+    expect(recordReferenceQuote(whole)).toBe(whole.body);
+    expect(recordReferenceLabel(whole)).toBe("全文");
   });
 
-  it("新增引用固定到所选修订，不按同名标题替换原引用", () => {
-    const prior = { kind: "record", knowledgePointId: "p", revisionId: "old", title: "同一标题", body: "旧理解", sourceType: "user" };
-    const next = { ...prior, revisionId: "new", body: "后来更正" };
-    expect(recordSourceInputs([prior, next], [prior])).toEqual([{ kind: "retained", sourceIndex: 0 }, { kind: "record", knowledgePointId: "p", revisionId: "new" }]);
-    expect(prior.body).toBe("旧理解");
+  it("sends only range/hash identity for a new paragraph, never snapshot text", async () => {
+    const selector = await paragraphSelector(whole.body, 0, 4);
+    const paragraph = { ...whole, selector: { ...selector, quote: "第一段。" } };
+    const [input] = recordSourceInputs([paragraph], []);
+    expect(input).toEqual({ kind: "record", knowledgePointId: "source", revisionId: "source-v1", selector });
+    expect(JSON.stringify(input)).not.toContain("第一段");
+    expect(recordReferenceQuote(paragraph)).toBe("第一段。");
+    expect(recordReferenceLabel(paragraph)).toBe("第1段");
   });
 
-  it("不把被修改的会话材料重新提交成可信历史快照", () => {
-    const prior = { kind: "session", sessionId: "s", material: "当时未显示答案" };
-    expect(() => recordSourceInputs([{ ...prior, material: "后来显示的答案" }], [prior])).toThrow("来源已变化");
+  it("retains existing full/paragraph/session snapshots by their original index", async () => {
+    const selector = await paragraphSelector(whole.body, 6, 10);
+    const paragraph = { ...whole, selector: { ...selector, quote: "第二段。" } };
+    const session = { kind: "session", material: "旧正文".repeat(30000) };
+    const saved = [whole, paragraph, session];
+    expect(recordSourceInputs([paragraph, session, whole], saved)).toEqual([
+      { kind: "retained", sourceIndex: 1 }, { kind: "retained", sourceIndex: 2 }, { kind: "retained", sourceIndex: 0 }
+    ]);
+  });
+
+  it("keeps full references and identical text at different paragraph positions distinct", async () => {
+    const first = { ...whole, selector: { ...await paragraphSelector(whole.body, 0, 4), quote: "第一段。" } };
+    const repeated = { ...whole, selector: { ...await paragraphSelector(whole.body, 12, 16), quote: "第一段。" } };
+    expect(new Set([whole, first, repeated].map(recordReferenceKey)).size).toBe(3);
+    expect(recordSourceInputs([whole, first, repeated], [])).toHaveLength(3);
+    expect(recordReferenceLabel(repeated)).toBe("第3段");
+  });
+
+  it.each([null, {}, { type: "unknown" }, { type: "paragraph-v1", start: 0, end: 4, quoteHash: "not-a-hash", quote: "第一段。" }])("does not reinterpret an invalid selector as a whole-record reference: %j", selector => {
+    const invalid = { ...whole, selector };
+    expect(isRecordSnapshot(invalid)).toBe(false);
+    expect(() => recordSourceInputs([invalid], [])).toThrow("原始来源已变化");
   });
 });
