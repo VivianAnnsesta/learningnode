@@ -2,6 +2,20 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第六批本人指定记录日期、只读月历和过去日期补写已完成本批既定门禁并合并GitHub main：[PR #6](https://github.com/VivianAnnsesta/learningnode/pull/6)，合并提交 `00efa54fec08b440b7e98efbcebb4679c5c020aa`，已验证源HEAD `53ebdfd15283bae1b2de7acdb9225a2a548ab20f`。日期可新增、修改、清空并随不可覆盖修订保留；旧坏日期不阻断正文，省略日期保留原值，409保留已编辑日期、未编辑日期在明确采用新基础后继承。月历按同一基础条件读取整月，选日替换列表日期范围，“为这一天填写记录”只进入草稿；一天可存多条记录，浏览时区不搬移本人日期，日期不代表学习完成或掌握。旧SavedView完整配置、来源/别名、创建hash及明确保存边界保持兼容。
+
+该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42630877432)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42630868700)均真实全成功：122文件/1166测试，含18项新日期SQLite/HTTP及2项新迁移；完整页面37通过/9按原配置跳过，新7条月历链及两处同步修正两边均通过。Typecheck、lint、encoding、Prisma、历史夹具及27→28/28→29/29→30/30→31备份保真全过；两边Electron42.11.16打包、空白seed运行、备份后旧库升级（各2份备份）和安全交互全部成功。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42630877451)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42630868773)各19文件/373测试及26页面全过。四份完整日志/SHA索引 `53eb-full-evidence.json` 与专项 `53eb-target-evidence.json` 在 `web/test-results/record-dates-2026-11-09/`，root独立核验全部日志hash和实际结果；11项moderate依赖审计结果仍保留，不因高危门通过而记为零漏洞。
+
+正式31空白seed为已核验官方工件原字节，SHA256 `165ae84d3fa0bc8edf3b03cf1a998add3425ce1dc885b88e09d346a564ddb714`、503808字节；27业务表全空、31迁移逐远端LF Git blob/checksum匹配，两日期TEXT列nullable/default NULL、原不可覆盖trigger/aliases默认[]、两配置表七字段/default版本1/无FK、FK0/integrity ok。root从原ZIP内存SQLite独立核验，旧30seed保留在ignored证据；30→31非空副本先备份，旧字段/来源/别名/当前指针/4配置/30ledger保留，日期add/change/clear只INSERT新修订，重开和重复生命周期通过。历史SQL/trigger、真实用户数据库/设置及原工作区index未改。
+
+发布累计43路径（17新增/26修改/0删除），合并树 `2e442f3b4875fdab613016780a974aa698a5a18d` 的607blob与已验证53eb源精确一致，发布及整树证明位于 `web/test-results/obsidian-record-calendar-publication-2026-11-09/`。首轮旧GET/导航竞态和额外独立客户端ECONNRESET的官方原trace与失败均保留；前者以保存状态就绪同步修正，后者读取页面实际200JSON，不以无socket证据推定keepalive根因。原业务断言及5秒/60秒门保留，无全局重试或生产改动。本机已安装桌面包未替换；这些是隔离SQLite/页面和GitHub Windows包运行证据，不等同于真实AI教学、学习效果或分发发布合格。
+
+持续优化目标保持进行中，下一批接通公开HTML与人工选文的剪藏预览、来源身份、选片和明确插入/保存；导出仍待实施。两项目前只有只读适配审查，尚未交付，不以记录日期或现有来源入口替代。既有教学质量阻断继续按原状态处理。
+
+### 第六批过程记录
+
+以下保留对应源HEAD当时的开发、待验及原失败状态；最新结果以上方已验证53eb源与合并提交为准。
+
 第六批已发布[草稿PR #6](https://github.com/VivianAnnsesta/learningnode/pull/6)，首轮源HEAD `e957fa0594509432fcf9962c5fe80e0b585af5e3`。两套专项真实均19文件/373测试通过，含18项日期SQLite/HTTP及2项新迁移；[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42627832644)页面26/26全过，[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42627657155)25过/1失败，新增7条月历页面两边均通过。原别名提及用例在UI空候选断言通过后，直接GET mentions遭遇 `read ECONNRESET`，没有收到该次业务JSON；正在核对官方trace，不推断底层原因或以另一套成功覆盖失败。原专项完整日志及SHA索引 `e957-target-evidence.json` 位于 `web/test-results/record-dates-2026-11-09/`。
 
 同首轮[完整PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42627832385)真实122文件/1166测试全过；页面36过/9原配置跳过/1失败，desktop未运行。新月历case4在第二次打开同记录时，测试helper已收到GET 200，读取JSON却报 `Network.getResponseBody: No resource with given identifier found`；失败时尚未执行后半段未编辑日期的409断言，随后核对官方trace中的请求/导航归属。[完整push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42627657120)真实122文件/1166测试、37页面通过/9原配置跳过，全部quality及Electron42.11.16打包、空白运行、备份后旧库升级和安全交互成功；31seed与四条迁移边界/FK0通过。两套原日志/SHA及trace结论在 `e957-full-evidence.json`，位于 `web/test-results/record-dates-2026-11-09/`。首次失败仍保留，当前不合并。
@@ -12,9 +26,7 @@ push专项官方工件13679712041/digest `dad6c254b5c100744d9cb5751b973fb8ef7d4b
 
 正式31空白seed已从push专项官方工件13680250355取回：绑定run42627657155/head e957fa，ZIP SHA256 `d4c9cdfe95e4f9ad610c4929bd284a6d23c4f00ceacad19aba1e52c944729b40`等于官方digest；seed SHA256 `165ae84d3fa0bc8edf3b03cf1a998add3425ce1dc885b88e09d346a564ddb714`、503808字节与官方报告一致。27业务表全空，31项迁移逐远端LF Git blob/checksum匹配，两日期TEXT列nullable/default NULL、原不可覆盖trigger/aliases默认[]、两配置表原七字段/default版本1/无FK、FK0/integrity ok。root另从ZIP原字节反序列化到内存SQLite独立逐项核验；保留旧30seed后已copy官方31 exact至source，尚未发布增量。证据在 `web/test-results/record-dates-migration-2026-11-09/official-seed-42627657155/`；真实用户库、旧SQL/ledger及原index不动，seed成功不等于整批完成。
 
-### 第六批过程记录
-
-以下保留对应源HEAD当时的开发、待验及原失败状态；最新结果以上方实际证据为准。
+#### 开发与本机证据
 
 第六批依据[ADR0032](docs/adr/0032-revision-owned-record-dates-and-calendar.md)推进本人指定记录日期、只读月历与补写：日期归个人修订，创建/更新时间与归档日期分开，打开月份/选日不造空记录，明确保存仍走原writer。目标/当前差异：两nullable字段/31前向迁移、唯一writer/DTO/list、同口径月计数和两入口代码已接通；官方31seed与本批真实SQLite/迁移/页面/桌面仍待验证。未以已有timestamp筛选代替本人日期，旧SavedView完整形状及创建hash兼容；原用户库/index不动。
 
@@ -38,7 +50,7 @@ push专项官方工件13679712041/digest `dad6c254b5c100744d9cb5751b973fb8ef7d4b
 
 发布累计39路径（19新增/20修改/0删除），590blob中86个既有受保护blob保真，原工作区index/历史未改；安全发布和完整树证明在 `web/test-results/obsidian-record-templates-publication-2026-11-09/`。本机已安装桌面包未替换；上述为隔离SQLite/页面及GitHub Windows包运行证据，不等同于真实AI教学、长期学习效果或分发发布合格。
 
-持续优化目标保持进行中，下一批进入日期回看及本人指定日期的日常记录，区分记录创建/更新时间与用户选择的归档日期，支持明确保存和过去日期补写而不制造学习事实；剪藏和导出仍待实施，不算本批交付。
+第五批完成时的后续计划为日期回看及本人指定日期的日常记录，区分记录创建/更新时间与用户选择的归档日期，支持明确保存和过去日期补写而不制造学习事实；对应第六批最新结果见上方，剪藏和导出仍待实施。
 
 ### 第五批过程记录
 
