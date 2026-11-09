@@ -294,8 +294,8 @@ export async function extractPdfText(
     useWorkerFetch: false,
     useSystemFonts: true
   });
-  const document = await loadingTask.promise;
   try {
+    const document = await loadingTask.promise;
     const metadata = await document.getMetadata().catch(() => null);
     const info = metadata?.info as { Title?: unknown } | undefined;
     const parts: string[] = [];

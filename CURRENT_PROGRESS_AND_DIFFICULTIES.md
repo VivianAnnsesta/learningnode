@@ -2,6 +2,14 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第五批已发布[草稿PR #5](https://github.com/VivianAnnsesta/learningnode/pull/5)，首轮源HEAD `da3e5bba93f8de9456c35a5b7b857627e919c108`。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42613332360)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42613246601)均真实15文件/264测试及19页面全过；完整[PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42613332442)真实117文件/1054测试、30页面过/9原配置跳过，以及全部迁移/桌面门禁通过。完整[push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42613246622)unit为117文件中115过/2失败、1054测试中1050过/4失败，后续迁移CLI/页面/desktop未运行，不能以另一套成功抹掉该失败。新17模板SQLite与2迁移全部过；旧sourceGroundingService真实PDF提取5秒超时、旧planning入口两例5秒超时，随后显式concern断言收到前例独有GOAL/BRIEF。旧planning门控仅成功路径resume、无afterEach drain且beforeEach直接reset共享mock，存在超时工作流继续污染后例的确定清理空缺；已补完整工作流追踪、释放与drain及阶段诊断，保留原断言/5秒时限，不以旧prompt放宽concern要求，仍待增量新头实际验收。
+
+PDF夹具为有界单页本地内容；首轮总耗时不能区分import/load/text/destroy，也不能据此断言当时Promise仍pending或归因资源。审读另发现生产extractPdfText在try外等待loadingTask.promise，加载拒绝时无法进入destroy；正将加载等待纳入原finally并加拒绝路径确定性回归。旧真实PDF测试只加完成/清理诊断和pending收束，不移除真实解析、预热代替原流程或增大原5秒门。上述修复均待新头验证，原日志保留在 `web/test-results/record-templates-2026-11-09/`。
+
+增量修复代码已完成：规划fixture显式在beforeAll连接引擎，不预热业务创建；首await前追踪整个case与各phase，关闭后拒绝继续，清理同时释放entered/waiting两个门并drain后才重置mock，清理未完成禁止下一case reset。原5秒测试/默认hook时限及全部材料/意见/任务书断言保留。PDF只把加载等待移进原try，新增3项mock生命周期回归通过，旧真实PDF仍冷导入并保留断言；共3个纯文件70/70通过，定向lint及typecheck通过。它们证明确定的失败清理路径，不证明首轮慢因已定位或新头真实PDF/规划已过；原失败与首次成功日志/哈希分别保存在 `da3-first-full-evidence.json`。
+
+正式CI工件13671845825已按run42613246601/head da3e5bba和ZIP digest核验，seed SHA256 `59eaeccdce4c21a4d1b57eec2bcca13722feb22c2a59b1dd2ca7ecf97a2586f4`、503808字节与官方报告一致；27业务表全空、30迁移逐远端LF Git blob及checksum匹配、两配置表七字段/default版本1/无FK、aliases默认[]、FK0/integrity ok。root另用内存SQLite独立核验全部30本地canonicalLF checksum及表形状。原29seed保留在ignored后已copy官方30exact至source，尚未发布增量；真实用户库/index/旧迁移不动，工件成功不代表整批完成。
+
 第五批依据[ADR0031](docs/adr/0031-personal-record-templates-and-draft-insertion.md)进入个人记录模板：自定义配置管理、纯文本变量预览、两正文入口的定位插入与安全撤销，保存仍使用原记录/修订命令。目标/当前差异：共享合同、配置CRUD及两入口功能已接通，30前向迁移与29历史schema归档已落盘；真实SQLite/迁移/页面/桌面本批验收及官方30空白seed尚未完成。未以第四批成功覆盖本批待验，也不只以内置示例替代可维护的自定义模板。原index、真实用户库和AI设置不动。
 
 第五批全项目typecheck/lint/encoding、Prisma schema validate通过；模板合同56项与插入位置/安全撤销11项合计67/67纯测试通过。新增6条页面文件独立TypeScript与ESLint通过，backend/UI只读审读后修正一处测试误用不存在的修订POST子路径，改为现有记录PATCH及expectedRevision身份同步，未新增记录写入口。17项SQLite/HTTP和2项新迁移回归已编写，未在本机原生执行；已知AppControl阻断不循环重试或绕过，不能记作通过。SQL-only副本完成模板表形状、旧26表/29ledger/4修订/2视图原文与配置版本保留、模板CRLF/孤立CR/emoji更新重开和FK0/integrity；独立27→28与28→29保持固定schema/prefix、仅允许已知空表逆投影，未知未来或非空模板拒绝。它们不是Prisma生命周期或正式seed证据，数据清单/日志在 `web/test-results/record-templates-migration-2026-11-09/`。source seed29仍为官方 `0ade6591…107c9`，待CI正式30工件核验后更新。
