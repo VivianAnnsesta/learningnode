@@ -38,6 +38,9 @@ const backlinkPredicate = (id: string) => Prisma.sql`EXISTS (
       AND json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.start') <= 9007199254740991
       AND json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.end') <= 9007199254740991
       AND json_type(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.quoteHash') = 'text'
+      -- SQLite 3.41 can truncate decoded JSON strings at NUL. Inspect the hash's
+      -- JSON text before decoding; NUL in the quoted body or excerpt stays valid.
+      AND instr((CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END -> '$.selector.quoteHash'), char(92) || 'u0000') = 0
       AND length(CAST(json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.quoteHash') AS BLOB)) = 64
       AND instr(json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.quoteHash'), char(0)) = 0
       AND json_extract(CASE WHEN source.type = 'object' THEN source.value ELSE '{}' END, '$.selector.quoteHash') NOT GLOB '*[^0-9a-f]*'

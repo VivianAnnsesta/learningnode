@@ -294,8 +294,8 @@ describe("个人记录发现：真实隔离 SQLite，不调用 AI 或改写学�
 
   it("段落读取shape与JSON1计数一致，坏selector不会退成全文或挤占分页", async () => {
     await point("shape-target");
-    const selector = { type: "paragraph-v1", start: 0, end: 1, quoteHash: "a".repeat(64), quote: "A" };
-    const good = { ...reference("shape-target"), selector };
+    const selector = { type: "paragraph-v1", start: 0, end: 1, quoteHash: "a".repeat(64), quote: "A\0保留" };
+    const good = { ...reference("shape-target"), body: "正文\0仍可读取", selector };
     const invalid: unknown[] = [null, [], {}, { ...selector, type: "unknown" }, { ...selector, start: -1 }, { ...selector, start: "0" }, { ...selector, start: 0.5 }, { ...selector, end: 0 }, { ...selector, end: 9007199254740992 }, { ...selector, quoteHash: "A".repeat(64) }, { ...selector, quoteHash: "a".repeat(64) + "\n" }, { ...selector, quoteHash: "a".repeat(63) + "\0" }, { ...selector, quoteHash: "a".repeat(64) + "\0" }, { ...selector, quote: null }];
     for (const [index, value] of invalid.entries()) await point(`bad-shape-${index}`, { sources: [{ ...reference("shape-target"), selector: value }] });
     await point("good-shape", { sources: [good] });
@@ -304,6 +304,11 @@ describe("个人记录发现：真实隔离 SQLite，不调用 AI 或改写学�
     await point("real-spelling", { sources: JSON.stringify([good]).replace('"start":0', '"start":0.0').replace('"end":1', '"end":1e0') });
     const first = await getPersonalKnowledgeContext("shape-target", { limit: 1 });
     const rest = await getPersonalKnowledgeContext("shape-target", { limit: 2, offset: 1 });
+    const all = await getPersonalKnowledgeContext("shape-target", { limit: 300 });
+    const probeJson = JSON.stringify({ quoteHash: "a".repeat(64) + "\0" });
+    const [probe] = await db.$queryRaw<{ version: string; decoded: string; raw: string }[]>(Prisma.sql`SELECT sqlite_version() AS version, json_extract(${probeJson}, '$.quoteHash') AS decoded, (${probeJson} -> '$.quoteHash') AS raw`);
+    console.info("Paragraph JSON1 compatibility", JSON.stringify({ version: probe.version, decodedHashLength: probe.decoded.length, rawHash: probe.raw }));
+    expect(all.backlinks.items.map(item => item.id).sort()).toEqual(["good-shape", "mixed-shape", "real-spelling"]);
     expect(first.backlinks.page.total).toBe(3);
     expect(first.backlinks.items).toHaveLength(1);
     expect(rest.backlinks.items).toHaveLength(2);
