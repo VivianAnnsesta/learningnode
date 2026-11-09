@@ -106,14 +106,15 @@ test("当前正文的名称提及经阅读、显式引用保存后退出候选�
 test("提及失败可重试，别名并发冲突保留草稿并经显式合并追加修订", async ({ page, request }) => {
   const key = crypto.randomUUID(), old = `原名称-${key}`, local = `本地名称-${key}`, outside = `另一窗口名称-${key}`;
   const target = await createRecord(request, `并发名称-${key}`, "原始正文。", [old]);
-  let fail = true;
+  let rejectMentions = true;
   await page.route(`**/api/knowledge-points/${target.id}/mentions?*`, route => {
-    if (fail) { fail = false; return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "本次提及读取失败，请重试。" }) }); }
+    if (rejectMentions) return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "本次提及读取失败，请重试。" }) });
     return route.continue();
   });
   await openRecord(page, target);
   const panel = page.getByRole("region", { name: "提到此名称但尚未引用的记录" });
   await expect(panel.getByText("本次提及读取失败，请重试。", { exact: true })).toBeVisible();
+  rejectMentions = false;
   await panel.getByRole("button", { name: "重试读取未引用提及", exact: true }).click();
   await expect(panel.getByText("当前没有找到尚未引用的来源记录。", { exact: true })).toBeVisible();
   await page.getByLabel("记录别名").fill(local);

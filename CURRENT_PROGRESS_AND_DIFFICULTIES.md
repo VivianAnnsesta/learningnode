@@ -2,7 +2,15 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
-第三批依据[ADR 0029](docs/adr/0029-revisioned-record-aliases-and-mentions.md)实施个人记录别名与记录级未引用提及：别名随不可覆盖修订维护，搜索统一字面Unicode匹配，候选只读其他当前正文并按来源记录计数。新字段、前向迁移、服务/界面及回归已接通，尚未完成本批真实数据库、迁移、页面和桌面验收；不能用第二批成功代替第三批证据。真实用户库和旧迁移不动；当前版本化seed仍保留原27版字节，由CI正式生成/验证28版后取回更新，不能把手工SQL或未通过的生成过程写成正式seed成功。
+第三批依据[ADR 0029](docs/adr/0029-revisioned-record-aliases-and-mentions.md)实施个人记录别名与记录级未引用提及：别名随不可覆盖修订维护，搜索统一字面Unicode匹配，候选只读其他当前正文并按来源记录计数。新字段、前向迁移、服务/界面及回归已接通，尚未完成本批完整数据库、页面和桌面验收；不能用第二批成功代替第三批证据。真实用户库和旧迁移不动；版本化seed已取回更新为CI正式生成的28版，原27字节另行保留，不把手工SQL副本或本机未通过的生成过程写成正式seed成功。
+
+第三批已及时发布[草稿 PR #3](https://github.com/VivianAnnsesta/learningnode/pull/3)，源提交 `cd16960cdac9366c57c841fc546997600133739b`，main未改。首轮[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42587602789)真实89/93，[push完整](https://github.com/VivianAnnsesta/learningnode/actions/runs/42587602786)真实879/883；4个失败均为新增夹具直接UPDATE既有KnowledgePointRevision，被原 `KnowledgePointRevision_immutable` trigger拒绝（Prisma呈现P2003），不是别名写入命令的部分保存。正在把所需raw别名/来源于首次INSERT时准备，并保留原业务断言及不可覆盖保护，补充直接修改被拒绝且原值不变的证据；不删trigger、不关FK、不重写旧迁移。页面/桌面未运行，不记通过。
+
+首轮[PR完整](https://github.com/VivianAnnsesta/learningnode/actions/runs/42587832410)同样879/883及同4处夹具失败；原PR/push完整失败日志和哈希已保留。夹具修复已完成，仅改新增测试文件：raw别名/来源在首次INSERT提供，服务创建的去重、历史/搜索/提及/尾页原断言均保留；新增第11项直接修改被拒绝、整个修订与当前DTO及审计数量不变的回归。全项目typecheck与该文件lint通过，修后SQLite尚未运行；官方seed工件取回后与该修复一并发布新头，仍须完整真实验收。
+
+同一首轮CI的正式生成器已实际产出28版空白seed，验证25业务表全空、28迁移checksum全匹配、aliases默认[]、FK0及integrity ok；2项新迁移回归真实通过，含4旧修订/多段来源/指针、先备份和重复生命周期保真。官方工件 `versioned-empty-seed` 已上传，待取回核验后更新版本化seed；它与本机SQL-only副本证据分开。首轮完整失败日志保存在 `web/test-results/record-names-2026-11-09/`，所有新头仍须完成真实专项、完整页面和桌面门禁。
+
+官方seed已从工件13658969001取回并更新 `web/prisma/seed.db`：ZIP SHA-256 `ed14ed37de981dcc15f037d8f53e5baad46bf4b8e37401dc54eb78ad35d54b72` 与GitHub工件digest相等，seed SHA-256 `1d3e30896aa46a13bf5e1f59f1a9a5aced2e6d23610fca7eface32bac30bea37`、487424字节与官方报告一致。生成run/head绑定42587602789/cd16960，28个迁移SQL的canonicalLF Git blob SHA1逐项等于远端tree，ledger SHA256逐项相符；另有独立内存SQLite核验25表0行、默认[]、FK0和integrity ok。原27 seed保留在ignored证据中，旧ledger没有手改。完整证据在 `web/test-results/aliases-migration-2026-11-09/official-seed-42587602789/`。后续增量仅测试夹具、重试模拟稳定性、官方seed和状态，仍保持草稿PR，不用seed成功替代整批验收。
 
 本批全项目typecheck、lint、encoding通过；名称/来源/导航/别名输入5个纯文件合计67/67通过，新增3条页面文件独立TypeScript检查通过。另有5组合成API浏览器交互和已目视检查截图在 `web/test-results/obsidian-aliases-2026-11-09/ui-preview/`，包括三入口命中提示、候选分页/来源跳转/明确引用、409草稿保留、清空/历史和重试；原mock导航/announcer定位问题保留。这些不能当作新10项SQLite/HTTP、2项迁移或真实E2E已通过。本批React清单审读未见新增异步覆盖草稿、未确认写入或HTML执行问题；真实长库性能、迁移与原生引擎结果继续待CI。
 
