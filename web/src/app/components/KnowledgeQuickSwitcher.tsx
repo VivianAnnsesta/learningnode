@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { knowledgeRecordHref, knowledgeSourceView, knowledgeViewForFilters, PERSONAL_KNOWLEDGE_PATH } from "./knowledgeNavigation";
+import { recordAliasSummary, type RecordChoice } from "./recordDiscoveryTypes";
 
-type SearchResult = { id: string; title: string; body: string; kind: string };
+type SearchResult = Pick<RecordChoice, "id" | "title" | "body" | "kind" | "aliases" | "matchedAliases">;
 
 export function KnowledgeQuickSwitcher() {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -64,12 +65,13 @@ export function KnowledgeQuickSwitcher() {
         <h2 id="knowledge-switcher-title" className="text-lg font-semibold">快速查找个人记录</h2>
         <button type="button" className="underline" onClick={close}>关闭查找</button>
       </div>
-      <input ref={input} aria-label="快速查找关键词" placeholder="搜索标题与正文，留空查看最近记录" className="workshop-input my-4 w-full" value={query} onChange={event => setQuery(event.target.value)} />
+      <input ref={input} aria-label="快速查找关键词" placeholder="搜索标题、正文与别名，留空查看最近记录" className="workshop-input my-4 w-full" value={query} onChange={event => setQuery(event.target.value)} />
       {loading && <p role="status">正在查找…</p>}
       {error && <p role="alert">{error} <button type="button" className="underline" onClick={() => setRetry(value => value + 1)}>重试查找</button></p>}
       <ul className="max-h-[55vh] overflow-y-auto">
         {items.map(item => <li key={item.id} className="border-t py-3">
           <Link onClick={close} className="block underline" href={knowledgeRecordHref(item.id, sourceView)}>{item.title}</Link>
+          {recordAliasSummary(item) && <p className="mt-1 text-sm">{recordAliasSummary(item)}</p>}
           <p className="mt-1 whitespace-pre-wrap text-sm">{item.body.slice(0, 160)}</p>
         </li>)}
       </ul>

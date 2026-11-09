@@ -25,12 +25,24 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm install --global npm@11.17.0
       - run: npm ci
+      - run: npx prisma generate
+      - run: node scripts/create-seed-database.js
+        id: empty_seed
+      - uses: actions/upload-artifact@v6
+        if: steps.empty_seed.outcome == 'success'
+        with:
+          name: versioned-empty-seed
+          path: |
+            web/prisma/seed.db
+            web/test-results/empty-seed-validation.json
+          if-no-files-found: error
+          retention-days: 7
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run check:encoding
-      - run: npx vitest run src/lib/learning/personalKnowledgeDiscovery.test.ts src/lib/learning/recordReferences.test.ts src/app/components/recordDiscoveryTypes.test.ts src/app/components/knowledgeNavigation.test.ts --reporter=default --reporter=json --outputFile=test-results/obsidian-discovery.json
+      - run: npx vitest run src/lib/learning/personalKnowledgeDiscovery.test.ts src/lib/learning/recordReferences.test.ts src/lib/learning/recordNames.test.ts src/lib/learning/personalKnowledgeNames.test.ts src/lib/database/revisionAliasesMigration.test.ts src/app/components/recordDiscoveryTypes.test.ts src/app/components/recordAliasesInput.test.ts src/app/components/knowledgeNavigation.test.ts --reporter=default --reporter=json --outputFile=test-results/obsidian-discovery.json
       - run: npx playwright install chromium
-      - run: npm run test:e2e -- knowledge-discovery.spec.ts knowledge-paragraph-references.spec.ts
+      - run: npm run test:e2e -- knowledge-discovery.spec.ts knowledge-paragraph-references.spec.ts knowledge-aliases-mentions.spec.ts
       - uses: actions/upload-artifact@v6
         if: always()
         with:
