@@ -9,9 +9,13 @@ const executablePath = path.join(unpackedDir, "Antigravity.exe");
 const resultDir = path.join(root, "test-results");
 const resultPath = path.join(resultDir, "electron-security-verification.json");
 const timeoutMs = Number(process.env.ELECTRON_SECURITY_TIMEOUT_MS || 45000);
-const verificationUserRoot = fs.mkdtempSync(
+const verificationUserRoot = fs.realpathSync(fs.mkdtempSync(
   path.join(os.tmpdir(), "englishnode-electron-security-")
-);
+));
+if (path.dirname(verificationUserRoot) !== fs.realpathSync(os.tmpdir()) || !path.basename(verificationUserRoot).startsWith("englishnode-electron-security-")) {
+  throw new Error("Security verification root escaped the intended temporary directory.");
+}
+fs.writeFileSync(path.join(verificationUserRoot, ".englishnode-security-isolation"), "isolated packaged security verification\n", { flag: "wx" });
 
 const cleanupVerificationUserRoot = () => {
   fs.rmSync(verificationUserRoot, {
@@ -57,6 +61,7 @@ const child = spawn(executablePath, [], {
     APPDATA: verificationUserRoot,
     ELECTRON_VERIFY_RUNTIME: "1",
     ELECTRON_VERIFY_SECURITY: "1",
+    ENGLISHNODE_SECURITY_VERIFICATION_ROOT: verificationUserRoot,
     ELECTRON_VERIFY_RESULT: resultPath
   },
   stdio: ["ignore", "pipe", "pipe"],
@@ -100,7 +105,13 @@ child.on("exit", (code) => {
     !security.directRequestRejected ||
     !security.foreignHostRejected ||
     !security.foreignOriginRejected ||
-    !security.unsafeNavigationBlocked
+    !security.unsafeNavigationBlocked ||
+    !security.clipping?.crossRouteCapture ||
+    !security.clipping?.immutableHistory ||
+    !security.clipping?.tamperRejected ||
+    !security.clipping?.evictedReceiptRejected ||
+    !security.clipping?.creationReplay ||
+    !security.clipping?.authenticationBoundary
   ) {
     fail("one or more packaged security checks did not pass", JSON.stringify(result, null, 2));
   }
@@ -110,4 +121,6 @@ child.on("exit", (code) => {
   console.log("- renderer token injection accepted by the local API");
   console.log("- direct, foreign-Host, and foreign-Origin local API requests were rejected");
   console.log("- javascript:, data:, and file: navigation were isolated from the app window");
+  console.log("- packaged preview/create/revise routes shared clipping receipts and preserved immutable history");
+  console.log("- forged and evicted receipts were rejected; frozen creation replay preserved the saved revision");
 });

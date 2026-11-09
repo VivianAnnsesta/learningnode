@@ -9,6 +9,8 @@ import { RecordNeighborhood } from "../../../components/RecordNeighborhood";
 import { RecordReferencePicker } from "../../../components/RecordReferencePicker";
 import { RecordReferencePreview } from "../../../components/RecordReferencePreview";
 import { RecordMentionsPanel } from "../../../components/RecordMentionsPanel";
+import { RecordClipper } from "../../../components/RecordClipper";
+import { RecordClipSourceCards } from "../../../components/RecordClipSourceCards";
 import { RecordTemplatePicker } from "../../../components/RecordTemplatePicker";
 import { useRecordTemplateInsertion } from "../../../components/useRecordTemplateInsertion";
 import { RecordDateEditor, recordDateDescription } from "../../../components/RecordDateEditor";
@@ -71,7 +73,7 @@ function KnowledgePageContent() {
   const activeRequest = useRef<AbortController | null>(null);
   const currentId = useRef(id);
   currentId.current = id;
-  const templateEditor = useRecordTemplateInsertion({ body, title, baseKey: `${id}:${draftRevisionId}`, onBodyChange: setBody });
+  const templateEditor = useRecordTemplateInsertion({ body, title, baseKey: `${id}:${draftRevisionId}`, onBodyChange: setBody, sources: draftSources, onSourcesChange: sources => { setDraftSources(sources); setSourcesChanged(true); } });
   const resetTemplateInsertion = templateEditor.reset;
 
   const hydrateDraft = useCallback((record: Point) => {
@@ -119,6 +121,7 @@ function KnowledgePageContent() {
       const response = await fetch(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await response.json();
       if (!response.ok) {
+        if (response.status === 410 && currentId.current === id) setMessage("剪藏预览已过期或重启后不可用；正文与来源草稿保留。请重读并明确采用新预览，正文由你合并。");
         if (response.status === 409 && currentId.current === id) {
           try { await load(false); } catch { /* Keep the original conflict and the local draft. */ }
         }
@@ -157,6 +160,7 @@ function KnowledgePageContent() {
         <RecordDateEditor value={recordDateOverride === undefined ? savedRecordDate : recordDateOverride} unavailableReason={recordDateOverride === undefined ? savedDateUnavailableReason : undefined} onChange={setRecordDateOverride} disabled={unavailable} />
         <textarea aria-label="修订记录内容" ref={templateEditor.textareaRef} onSelect={templateEditor.rememberPosition} onBlur={templateEditor.rememberPosition} className="workshop-input min-h-40 w-full" disabled={unavailable} value={body} onChange={event => templateEditor.editBody(event.target.value)} />
         <RecordTemplatePicker key={`templates-${id}`} editor={templateEditor} disabled={unavailable} />
+        <RecordClipper key={`clips-${id}`} editor={templateEditor} sources={draftSources} disabled={unavailable} onSourcesChange={sources => { setDraftSources(sources); setSourcesChanged(true); }} />
         <select aria-label="记录类型" className="workshop-input" disabled={unavailable} value={kind} onChange={event => setKind(event.target.value)}>{Object.entries(recordKindLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         <details onToggle={event => setPickerOpen(event.currentTarget.open)}><summary>添加记录引用</summary>{pickerOpen && <RecordReferencePicker key={id} pointId={id} selected={draftRecords} disabled={unavailable} onAdd={addSource} onPendingChange={setPickerHashing} />}</details>
         <div aria-label="当前编辑草稿的记录引用" className="space-y-2">{draftRecords.map(source => {
@@ -190,6 +194,7 @@ function KnowledgePageContent() {
           }}>已合并，使用最新修订作为保存基础</ActionButton>
         </div>}
       </SectionPanel>
+      <SectionPanel aria-label="已保存剪藏来源"><h2 className="text-xl">已保存的剪藏与来源</h2><RecordClipSourceCards sources={point.sources} /><details><summary>查看当前完整来源快照</summary><pre className="whitespace-pre-wrap break-words text-xs">{JSON.stringify(point.sources, null, 2)}</pre></details></SectionPanel>
       <RecordContextPanel key={`context-${id}`} pointId={id} refresh={refresh} returnTo={sourceView} />
       <RecordMentionsPanel key={`mentions-${id}`} pointId={id} revisionId={point.currentRevisionId || null} refresh={refresh} returnTo={sourceView} />
       <RecordNeighborhood key={`neighborhood-${id}`} pointId={id} refresh={refresh} returnTo={sourceView} />
@@ -224,7 +229,7 @@ function KnowledgePageContent() {
       </SectionPanel>
       <SectionPanel>
         <h2 className="text-xl">修订与原始来源</h2>
-        {revisions.map(revision => <details key={revision.id}><summary>修订 {revision.sequence} · {revision.title} · {revision.sourceType}</summary><p className="whitespace-pre-wrap">{revision.body}</p><p>该修订别名：{revision.aliases?.join("、") || "无"}</p><p>该修订本人记录日期：{recordDateDescription(revision.recordDate, revision.recordDateUnavailableReason)}</p><p>{new Date(revision.createdAt).toLocaleString()}</p>{revision.sources.filter(isRecordSnapshot).map(source => <article key={recordReferenceKey(source)} aria-label={`历史引用：${source.title} · ${recordReferenceLabel(source)}`} className="my-3 rounded-lg border p-3"><p>引用：{source.title} · {recordReferenceLabel(source)}</p><RecordReferencePreview source={source} /><Link className="underline" href={knowledgeRecordHref(source.knowledgePointId,sourceView)}>打开记录当前版本</Link></article>)}<details><summary>查看完整来源快照</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(revision.sources, null, 2)}</pre></details></details>)}
+        {revisions.map(revision => <details key={revision.id}><summary>修订 {revision.sequence} · {revision.title} · {revision.sourceType}</summary><p className="whitespace-pre-wrap">{revision.body}</p><p>该修订别名：{revision.aliases?.join("、") || "无"}</p><p>该修订本人记录日期：{recordDateDescription(revision.recordDate, revision.recordDateUnavailableReason)}</p><p>{new Date(revision.createdAt).toLocaleString()}</p>{revision.sources.filter(isRecordSnapshot).map(source => <article key={recordReferenceKey(source)} aria-label={`历史引用：${source.title} · ${recordReferenceLabel(source)}`} className="my-3 rounded-lg border p-3"><p>引用：{source.title} · {recordReferenceLabel(source)}</p><RecordReferencePreview source={source} /><Link className="underline" href={knowledgeRecordHref(source.knowledgePointId,sourceView)}>打开记录当前版本</Link></article>)}<RecordClipSourceCards sources={revision.sources} history /><details><summary>查看完整来源快照</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(revision.sources, null, 2)}</pre></details></details>)}
       </SectionPanel>
     </>}
   </AppShell>;

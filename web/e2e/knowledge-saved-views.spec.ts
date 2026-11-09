@@ -142,7 +142,16 @@ test("打开领域视图保留记录草稿归属，隐藏的新记录和全局�
   const outsideRead = page.waitForResponse(r => r.request().method() === "GET" && new URL(r.url()).pathname === `/api/knowledge-points/${outside.id}`);
   await dialog.getByRole("link", { name: outside.title, exact: true }).click();
   expect((await (await outsideRead).json()).knowledgePoint.id).toBe(outside.id);
+  const returningList = page.waitForRequest(r => r.method() === "GET" && new URL(r.url()).pathname === "/api/knowledge-points" && new URL(r.url()).searchParams.get("q") === key && new URL(r.url()).searchParams.get("domainId") === b.id && new URL(r.url()).searchParams.get("sort") === "title_asc" && new URL(r.url()).searchParams.get("offset") === "0" && new URL(r.url()).searchParams.get("limit") === "50");
+  const returnedUrl = page.waitForURL(url => url.pathname === source.pathname && url.searchParams.get("q") === key && url.searchParams.get("domainId") === b.id && url.searchParams.get("sort") === "title_asc" && url.searchParams.get("fields") === "summary");
   await page.getByRole("link", { name: "返回个人网络", exact: true }).click();
+  await returnedUrl;
+  const returnedResponse = await (await returningList).response();
+  if (!returnedResponse) throw new Error("The returned knowledge view request did not receive an HTTP response.");
+  expect(returnedResponse.status()).toBe(200); const returned = await returnedResponse.json();
+  expect(returned.filters).toMatchObject({ q: key, domainId: b.id, sort: "title_asc" });
+  expect(returned.knowledgePoints.map((point: { id: string }) => point.id)).toContain(inside.id);
+  expect(returned.knowledgePoints.map((point: { id: string }) => point.id)).not.toContain(outside.id);
   await expect(page.getByLabel("筛选领域")).toHaveValue(b.id);
   expect(new URL(page.url()).searchParams.get("fields")).toBe("summary");
 });
