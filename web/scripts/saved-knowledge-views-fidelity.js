@@ -3,7 +3,7 @@ const os = require("os");
 const path = require("path");
 const { databaseUrl, runUserDatabaseLifecycle } = require("./database-lifecycle");
 const { savedViewsMigration, fingerprint, snapshot, ledgerSnapshot, same, comparableRows,
-  removeSavedViewsFromFixture, populateHistoricalKnowledge
+  removeSavedViewsFromFixture, populateHistoricalKnowledge, createSavedViewsMigrationBoundary
 } = require("./personal-knowledge-migration-fixture");
 
 const verifySavedKnowledgeViewsUpgrade = async ({ webRoot, PrismaClient }) => {
@@ -13,9 +13,10 @@ const verifySavedKnowledgeViewsUpgrade = async ({ webRoot, PrismaClient }) => {
   const seedDatabasePath = path.join(webRoot, "prisma", "seed.db");
   fs.copyFileSync(seedDatabasePath, databasePath, fs.constants.COPYFILE_EXCL);
   const createClient = () => new PrismaClient({ datasources: { db: { url: databaseUrl(databasePath) } } });
+  const schemaPath = createSavedViewsMigrationBoundary({ webRoot, temporaryRoot });
   const lifecycle = now => runUserDatabaseLifecycle({
     userDatabasePath: databasePath, seedDatabasePath,
-    schemaPath: path.join(webRoot, "prisma", "schema.prisma"),
+    schemaPath,
     prismaCliPath: path.join(webRoot, "node_modules", "prisma", "build", "index.js"),
     PrismaClient, now: () => new Date(now)
   });

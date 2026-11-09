@@ -21,4 +21,16 @@ Run `npm run fixture:migration-legacy` in `web/` to derive the legacy schema, in
 - Original blob size: 19,575 bytes (UTF-8, LF)
 - SHA-256: `5c45ab6b06b304c85de0f6719e250a23b992be4083f14209c10f22f79d2d50c8`
 
-The aliases upgrade helper validates that hash and creates a temporary schema/migrations projection containing exactly the first 28 migrations. Its temporary seed copy removes only the known future saved-view table/ledger entry and then the aliases column/entry to reconstruct the populated 27 boundary. The actual lifecycle deploys only to 28, preserving the historical regression. No source seed, old migration, baseline or user database is rewritten. The separate saved-view upgrade helper reconstructs the 28 boundary in a temporary copy and verifies 28-to-29 preservation including nonempty raw aliases and configuration persistence after reopening and a repeated lifecycle.
+The aliases upgrade helper validates that hash and creates a temporary schema/migrations projection containing exactly the first 28 migrations. Its temporary seed copy removes only known future empty configuration tables and matching ledger entries, then the aliases column/entry to reconstruct the populated 27 boundary. The actual lifecycle deploys only to 28, preserving the historical regression. No source seed, old migration, baseline or user database is rewritten. The separate saved-view upgrade helper reconstructs the 28 boundary in a temporary copy and verifies 28-to-29 preservation including nonempty raw aliases and configuration persistence after reopening and a repeated lifecycle.
+
+## Saved-view boundary
+
+`saved-knowledge-views-29.schema.prisma` is the schema-only archive after saved views and before personal record templates:
+
+- Original repository commit: `a74f5f95fc17df3af6b0a8e77e351a699ec1db28`
+- Original path: `web/prisma/schema.prisma`
+- Original Git blob: `2368c9398bfcbd21a5f57c5f8bb8d36262429182`
+- Original blob size: 19,831 bytes (UTF-8, LF)
+- SHA-256: `097637e12a4cfb613b54ebf80d9d1678eaf7fe43fbef00c3451feb940122b6f9`
+
+The saved-view regression validates this archive and deploys exactly the first 29 migrations. Its temporary seed copy removes only the known empty template table/migration entry before projecting away saved views to construct the populated 28 boundary. The aliases regression similarly removes these known future empty configuration tables before constructing 27. Unknown future migrations, mismatched table/ledger state, nonempty configuration tables, or a missing/changed archive fail closed. The separate 29-to-30 template regression keeps nonempty saved-view configurations and their versions together with all old knowledge and ledger fields, then verifies custom template persistence without creating records or learning facts. All projection operations occur only in isolated synthetic fixture copies.

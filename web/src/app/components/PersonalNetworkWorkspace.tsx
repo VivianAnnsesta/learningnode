@@ -9,6 +9,8 @@ import { readRecordJson, recordAliasesInput, recordAliasSummary, recordKindLabel
 import { knowledgeRecordHref, knowledgeViewForConfig } from "./knowledgeNavigation";
 import { KnowledgeViewFilters } from "./KnowledgeViewFilters";
 import { SavedKnowledgeViews } from "./SavedKnowledgeViews";
+import { RecordTemplatePicker } from "./RecordTemplatePicker";
+import { useRecordTemplateInsertion } from "./useRecordTemplateInsertion";
 
 type RecordItem = { id: string; title: string; body: string; kind: string; sourceType?: string; sourceCategory?: string; aliases?: string[]; matchedAliases?: string[]; createdAt?: string; updatedAt?: string; domainIds: string[]; collections: { id: string; title: string }[] };
 type Collection = { id: string; title: string; memberships: { knowledgePointId: string }[] };
@@ -54,6 +56,7 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
   const generation = useRef({ value: 0 });
   const activeRequest = useRef<AbortController | null>(null);
   const windowKey = useRef<string | null>(null);
+  const templateEditor = useRecordTemplateInsertion({ body, title, baseKey: "new-record", onBodyChange: setBody });
 
   useEffect(() => {
     if (lastWritten.current?.query === rawQuery && lastWritten.current.initialDomain === initialDomain) return;
@@ -176,13 +179,14 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
       <label className="block">别名（每行一个，可选）<textarea aria-label="新记录别名" disabled={busy} className="workshop-input mt-2 min-h-20 w-full" rows={3} value={aliasesText} onChange={event => setAliasesText(event.target.value)} placeholder={"例如：conditional probability\nCP"} /></label>
       <p className="text-sm">最多20个别名，每个最多80个字符。</p>
       <select aria-label="新记录类型" disabled={busy} className="workshop-input" value={kind} onChange={event => setKind(event.target.value)}>{Object.entries(recordKindLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-      <textarea aria-label="新记录内容" disabled={busy} className="workshop-input min-h-28 w-full" value={body} onChange={event => setBody(event.target.value)} />
+      <textarea aria-label="新记录内容" ref={templateEditor.textareaRef} onSelect={templateEditor.rememberPosition} onBlur={templateEditor.rememberPosition} disabled={busy} className="workshop-input min-h-28 w-full" value={body} onChange={event => templateEditor.editBody(event.target.value)} />
+      <RecordTemplatePicker editor={templateEditor} disabled={busy} />
       <ActionButton disabled={busy || !title.trim() || !body.trim()} onClick={async () => {
         let aliases: string[];
         try { aliases = recordAliasesInput(aliasesText); } catch (cause) { setError(cause instanceof Error ? cause.message : "别名输入无效。"); return; }
         const key = JSON.stringify({ title, body, kind, domain: draftDomain, aliases });
         const result = await mutate("/api/knowledge-points", { requestId: requests.current[key] ||= crypto.randomUUID(), title, body, kind, aliases, domainId: draftDomain || undefined });
-        if (result) { setSavedRecord({ id: result.knowledgePoint.id, title: result.knowledgePoint.title }); setTitle(""); setBody(""); setAliasesText(""); setDraftDomainTouched(false); }
+        if (result) { templateEditor.reset(); setSavedRecord({ id: result.knowledgePoint.id, title: result.knowledgePoint.title }); setTitle(""); setBody(""); setAliasesText(""); setDraftDomainTouched(false); }
       }}>确认保存</ActionButton>
       <p>可以独立保存；不要求先完成课程或练习。</p>
     </SectionPanel>

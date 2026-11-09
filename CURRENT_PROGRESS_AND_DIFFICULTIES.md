@@ -2,6 +2,16 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第五批依据[ADR0031](docs/adr/0031-personal-record-templates-and-draft-insertion.md)进入个人记录模板：自定义配置管理、纯文本变量预览、两正文入口的定位插入与安全撤销，保存仍使用原记录/修订命令。目标/当前差异：共享合同、配置CRUD及两入口功能已接通，30前向迁移与29历史schema归档已落盘；真实SQLite/迁移/页面/桌面本批验收及官方30空白seed尚未完成。未以第四批成功覆盖本批待验，也不只以内置示例替代可维护的自定义模板。原index、真实用户库和AI设置不动。
+
+第五批全项目typecheck/lint/encoding、Prisma schema validate通过；模板合同56项与插入位置/安全撤销11项合计67/67纯测试通过。新增6条页面文件独立TypeScript与ESLint通过，backend/UI只读审读后修正一处测试误用不存在的修订POST子路径，改为现有记录PATCH及expectedRevision身份同步，未新增记录写入口。17项SQLite/HTTP和2项新迁移回归已编写，未在本机原生执行；已知AppControl阻断不循环重试或绕过，不能记作通过。SQL-only副本完成模板表形状、旧26表/29ledger/4修订/2视图原文与配置版本保留、模板CRLF/孤立CR/emoji更新重开和FK0/integrity；独立27→28与28→29保持固定schema/prefix、仅允许已知空表逆投影，未知未来或非空模板拒绝。它们不是Prisma生命周期或正式seed证据，数据清单/日志在 `web/test-results/record-templates-migration-2026-11-09/`。source seed29仍为官方 `0ade6591…107c9`，待CI正式30工件核验后更新。
+
+六组合成API浏览器交互与最终视觉检查通过，零pageerror，证据在 `web/test-results/record-templates-2026-11-09/ui-preview/`。覆盖自定义管理/重开/分页、跨分钟冻结预览、选区/CRLF/emoji与撤销、来源/旧修订/明确保存、双CAS、未知/损坏/404、读取503/示例复制/迟到选择；仅有意执行两次模拟记录写入，其余为配置操作。root独立目视41/42及最终44/45截图，位置文案已去原始UTF16索引，仅显示光标/选区后/末尾；示例复制用独立递增事件标识，不以Date.now作唯一性。React清单审读未见新增请求覆盖、HTML执行或未确认记录写入；这些mock不能记作真实SQLite/E2E/桌面验收。最后预览服务器均已关闭。
+
+第五批共享模板配置/渲染合同56/56纯测试及定向ESLint通过，覆盖名称/容量/Unicode/控制字符、原CRLF/缩进、完整配置、有效时区别名、同一now、公历/24小时/DST、单次变量展开及未知变量保留。首轮54/56的两处失败为复用旧日期parser时对时区空白自动trim；新模板入口已单独拒绝raw空白，旧视图合同未改，原失败JSON与修后报告保留在 `web/test-results/record-templates-2026-11-09/`。这不证明新配置CRUD、插入界面、迁移或桌面已通过。
+
+第四批收尾文档源 `a74f5f95fc17df3af6b0a8e77e351a699ec1db28` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42608658249)已真实全成功：968测试、24页面通过/9原配置跳过、29空白seed、历史/新增迁移保真及完整桌面门禁。其相对已验证8134源仅两文档不同，日志/哈希索引 `a74-main-evidence.json` 在 `web/test-results/knowledge-views-2026-11-09/`；本批第五批仍独立待验。
+
 第四批来源/记录日期筛选、命名保存检索视图和只读显示字段已完成本批既定验证并合并GitHub main：[PR #4](https://github.com/VivianAnnsesta/learningnode/pull/4)，合并提交 `388f6390c74ac9fb987a050ef2b8128b5f8e7332`，已验证源HEAD `8134a922ff746146afd1e775193e2cf6c7828e3a`。视图保存查询规则，重新打开读取当前记录；不复制正文，不写学习、掌握或语义关系事实。日期明确为记录创建/更新日期并显示时区；草稿归属、字段/条件返回、失效条件保留、未知配置不可运行、幂等及并发CAS均有真实回归。
 
 该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42606050659)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42606044118)均真实全成功：113文件/968测试，含13项新SQLite/HTTP及2项新迁移；完整页面24通过/9按原配置跳过。原主题删除分页、记录探索和视图双冲突恢复均实际通过，原5秒断言及60秒整例保留，有限JSON同步不替代业务断言。Typecheck、lint、encoding、Prisma、历史夹具和迁移保真通过；两边Electron42.11.16打包、空白seed运行、旧库备份升级和安全交互全过。两套[专项PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42606050902)/[专项push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42606044111)均11文件/178测试及13页面全过。完整日志/哈希索引 `813-full-evidence.json`、专项 `813-target-evidence.json` 位于 `web/test-results/knowledge-views-2026-11-09/`，前两头的原失败及官方trace完整保留，未重跑旧失败。
