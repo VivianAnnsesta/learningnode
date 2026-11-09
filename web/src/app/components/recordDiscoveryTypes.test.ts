@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { paragraphSelector } from "../../lib/learning/recordReferences";
+import { buildRecordClipPreview, makeRecordClipDraftSource, recordClipSnapshot } from "../../lib/learning/recordClipContracts";
 import { isRecordSnapshot, recordReferenceKey, recordReferenceLabel, recordReferenceQuote, recordSourceInputs, type RecordSnapshot } from "./recordDiscoveryTypes";
 
 const whole: RecordSnapshot = { kind: "record", knowledgePointId: "source", revisionId: "source-v1", title: "原始解释", body: "第一段。\n\n第二段。\n\n第一段。", sourceType: "user" };
@@ -43,5 +44,17 @@ describe("record-reference UI descriptors", () => {
     const invalid = { ...whole, selector };
     expect(isRecordSnapshot(invalid)).toBe(false);
     expect(() => recordSourceInputs([invalid], [])).toThrow("原始来源已变化");
+  });
+  it("sends new clips as receipt identities and retains historical clips without a receipt", async () => {
+    const preview = await buildRecordClipPreview({ mode: "pasted", title: "本人提供", requestedUrl: "https://example.com/declared", finalUrl: null, capturedAt: "2026-11-09T10:00:00.000Z", expiresAt: "2026-11-09T10:15:00.000Z", extractionVersion: "pasted-text-v1", truncated: false, limitations: ["未抓取网页"], text: "段一😀\r\n\r\n段二", receiptId: "receipt_for_ui_input_test_1" });
+    const ids = preview.fragments.map(fragment => fragment.id);
+    const draft = makeRecordClipDraftSource(preview, ids);
+    expect(recordSourceInputs([draft], [])).toEqual([{ kind: "clip", snapshotKey: preview.snapshotKey, receiptId: preview.receiptId, fragmentIds: ids }]);
+    expect(JSON.stringify(recordSourceInputs([draft], []))).not.toContain("段一");
+    const saved = recordClipSnapshot(preview, ids);
+    expect(recordSourceInputs([saved, whole], [saved])).toEqual([{ kind: "retained", sourceIndex: 0 }, { kind: "record", knowledgePointId: "source", revisionId: "source-v1" }]);
+    expect(recordSourceInputs([{ unknown: "raw" }, saved], [{ unknown: "raw" }, saved])).toEqual([{ kind: "retained", sourceIndex: 0 }, { kind: "retained", sourceIndex: 1 }]);
+    expect(() => recordSourceInputs([saved], [])).toThrow("原始来源已变化");
+    expect(() => recordSourceInputs([{ ...draft, fragmentIds: ["forged"] }], [])).toThrow("原始来源已变化");
   });
 });

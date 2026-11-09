@@ -35,3 +35,8 @@ export type TemplateUndo = { baseKey: string; epoch: number; before: string; aft
 export function canUndoTemplateInsertion(undo: TemplateUndo | null, current: { baseKey: string; epoch: number; body: string }) {
   return !!undo && undo.baseKey === current.baseKey && undo.epoch === current.epoch && undo.after === current.body;
 }
+
+/** A combined insertion may undo only while its exact resulting sources are still current. */
+export function canUndoRecordSourceInsertion(undo: (TemplateUndo & { sourcesAfter: unknown[] }) | null, current: { baseKey: string; epoch: number; body: string; sources: unknown[] }) {
+  return !!undo && undo.sourcesAfter === current.sources && canUndoTemplateInsertion(undo, current);
+}

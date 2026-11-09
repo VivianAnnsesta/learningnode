@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canUndoTemplateInsertion, planTemplateInsertion, textareaText } from "./recordTemplateInsertion";
+import { canUndoRecordSourceInsertion, canUndoTemplateInsertion, planTemplateInsertion, textareaText } from "./recordTemplateInsertion";
 
 describe("record template draft insertion", () => {
   it("maps textarea LF offsets to original CRLF and lone CR without rewriting text", () => {
@@ -39,5 +39,18 @@ describe("record template draft insertion", () => {
     expect(canUndoTemplateInsertion(undo, { baseKey: "record:r1", epoch: 4, body: "原文模板" })).toBe(false);
     expect(canUndoTemplateInsertion(undo, { baseKey: "record:r1", epoch: 3, body: "后来文字" })).toBe(false);
     expect(canUndoTemplateInsertion(null, { baseKey: "record:r1", epoch: 3, body: "原文模板" })).toBe(false);
+  });
+  it("does not restore an old source array after another source edit or save epoch", () => {
+    const original = { kind: "unknown-history", raw: "原来源" };
+    const sourcesAfter = [original, { kind: "clip-draft" }];
+    const undo = { baseKey: "record:r1", epoch: 3, before: "原文", after: "原文选片", caret: 2, sourcesAfter };
+    const current = { baseKey: "record:r1", epoch: 3, body: undo.after, sources: sourcesAfter };
+    expect(canUndoRecordSourceInsertion(undo, current)).toBe(true);
+    expect(canUndoRecordSourceInsertion(undo, { ...current, sources: [...sourcesAfter, { kind: "record" }] })).toBe(false);
+    expect(canUndoRecordSourceInsertion(undo, { ...current, sources: sourcesAfter.slice() })).toBe(false);
+    expect(canUndoRecordSourceInsertion(undo, { ...current, body: "后来的编辑" })).toBe(false);
+    expect(canUndoRecordSourceInsertion(undo, { ...current, epoch: 4 })).toBe(false);
+    expect(canUndoRecordSourceInsertion(undo, { ...current, baseKey: "record:r2" })).toBe(false);
+    expect(canUndoRecordSourceInsertion(null, current)).toBe(false);
   });
 });

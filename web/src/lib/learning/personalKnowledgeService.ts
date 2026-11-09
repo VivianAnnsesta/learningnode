@@ -18,6 +18,7 @@ import { compareRecordIds, compareRecordTitles, matchRecordSearch, readRecordAli
 import { createKnowledgeDateMatcher, parseKnowledgeFilters, recordSourceCategory, type KnowledgeViewFilters } from "./knowledgeViewContracts";
 import { knowledgeViewScopeIssue } from "./savedKnowledgeViewService";
 import { parseAssignedRecordDate, readAssignedRecordDate } from "./recordDateContracts";
+import { resolveRecordClipSource } from "./recordClipService";
 const kinds = ["note", "question", "example", "experience", "excerpt", "understanding"];
 const symmetric = new Set(["related", "analogy", "contrast"]);
 const contentInclude = { currentRevision: true, nodeLinks: { include: { node: { select: { id: true, domainId: true, title: true } } } }, memberships: { include: { groupNode: { select: { id: true, title: true, domainId: true } } } }, graphNodes: { select: { domainId: true } } } satisfies Prisma.KnowledgePointInclude;
@@ -120,6 +121,9 @@ async function sourceSnapshots(v: unknown) {
                 throw new NodeTeachingError("来源没有提供该片段。");
             result.push({ kind: "source", sessionId: source.sessionId, sourceId: source.id, fragment: f, limitation: source.limitation });
         }
+        else if (s.kind === "clip") {
+            result.push(resolveRecordClipSource(s));
+        }
         else if (s.kind === "external") {
             const url = teachingText(s.url, "来源网址", 2000);
             if (!isSafeExternalUrl(url))
@@ -173,21 +177,22 @@ export async function createPersonalKnowledge(value: unknown) {
     const {d,title,body,aliases,kind,sourceType}=recordInput(value),requestId=teachingText(d.requestId,"保存请求标识",160);
     const recordDate = recordDateInput(d);
     const auditId=`record-save:${digest(requestId)}`,inputHash=digest({title,body,kind,sourceType,domainId:d.domainId||null,nodeIds:d.nodeIds||[],domainIds:d.domainIds||[],sessionId:d.sessionId||null,sources:d.sources||[],...(aliases.length?{aliases}:{}),...(recordDate?{recordDate}:{})});
+    const clipBearing = Array.isArray(d.sources) && d.sources.some(source => source && typeof source === "object" && !Array.isArray(source) && source.kind === "clip");
     const prior=await prisma.learningProgress.findUnique({where:{id:auditId}});
-    if(prior){const p=parseSaved<{inputHash:string;knowledgePointId:string}>(prior.payloadJson,{} as {inputHash:string;knowledgePointId:string});if(p.inputHash!==inputHash)throw new NodeTeachingError("此保存标识已用于另一份内容。",409);return getPersonalKnowledge(p.knowledgePointId);}
+    if(prior){const p=parseSaved<{inputHash:string;knowledgePointId:string;revisionId:string}>(prior.payloadJson,{} as {inputHash:string;knowledgePointId:string;revisionId:string});if(p.inputHash!==inputHash)throw new NodeTeachingError("此保存标识已用于另一份内容。",409);return { ...await getPersonalKnowledge(p.knowledgePointId), ...(clipBearing ? { savedRevisionId: p.revisionId, reused: true } : {}) };}
     const sources=await sourceSnapshots(d.sources);
     const id=await prisma.$transaction(async tx=>{
         const prior=await tx.learningProgress.findUnique({where:{id:auditId}});
-        if(prior){const p=parseSaved<{inputHash:string;knowledgePointId:string}>(prior.payloadJson,{} as {inputHash:string;knowledgePointId:string});if(p.inputHash!==inputHash)throw new NodeTeachingError("此保存标识已用于另一份内容。",409);return p.knowledgePointId;}
+        if(prior){const p=parseSaved<{inputHash:string;knowledgePointId:string;revisionId:string}>(prior.payloadJson,{} as {inputHash:string;knowledgePointId:string;revisionId:string});if(p.inputHash!==inputHash)throw new NodeTeachingError("此保存标识已用于另一份内容。",409);return { pointId: p.knowledgePointId, revisionId: p.revisionId, reused: true };}
         const session=d.sessionId?await tx.nodeTeachingSession.findUnique({where:{id:String(d.sessionId)}}):null;
         if(d.sessionId&&!session)throw new NodeTeachingError("关联学习会话不存在。");
         const point=await tx.knowledgePoint.create({data:{domainId:typeof d.domainId==="string"?d.domainId:null,recordKind:kind,masteryStatus:"seen"}});
         const revision=await tx.knowledgePointRevision.create({data:{knowledgePointId:point.id,sequence:1,title,body,aliasesJson:JSON.stringify(aliases),sourceType,sourcesJson:JSON.stringify(sources),recordDate:recordDate?.date??null,recordDateTimeZone:recordDate?.timeZone??null}});
         await tx.knowledgePoint.update({where:{id:point.id},data:{currentRevisionId:revision.id}});await addReferences(tx,point.id,d);
         await tx.learningProgress.create({data:{id:auditId,domainId:session?.domainId||point.domainId,nodeId:session?.nodeId||null,status:"record_saved",payloadJson:JSON.stringify({requestId,inputHash,sessionId:session?.id||null,knowledgePointId:point.id,revisionId:revision.id})}});
-        return point.id;
+        return { pointId: point.id, revisionId: revision.id, reused: false };
     });
-    return getPersonalKnowledge(id);
+    return { ...await getPersonalKnowledge(id.pointId), ...(clipBearing ? { savedRevisionId: id.revisionId, reused: id.reused } : {}) };
 }
 async function revisionSourceSnapshots(id: string, d: Record<string, unknown>) {
     if (d.sources === undefined) return [];

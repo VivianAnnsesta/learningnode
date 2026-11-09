@@ -1,6 +1,7 @@
 import { isRecordReferenceSnapshot, paragraphSelectorInput, referenceParagraphs, type RecordReferenceSnapshot } from "../../lib/learning/recordReferences";
 import { recordAliases } from "../../lib/learning/recordNames";
 import type { AssignedRecordDate } from "../../lib/learning/recordDateContracts";
+import { isRecordClipDraftSource, recordClipSourceInput } from "../../lib/learning/recordClipContracts";
 
 export type RecordSnapshot = RecordReferenceSnapshot;
 export { recordReferenceKey, recordReferenceQuote } from "../../lib/learning/recordReferences";
@@ -64,6 +65,7 @@ export function recordSourceInputs(draftSources: unknown[], savedSources: unknow
   return draftSources.map(source => {
     const sourceIndex = savedSources.findIndex(saved => sameRecordSource(saved, source));
     if (sourceIndex >= 0) return { kind: "retained" as const, sourceIndex };
+    if (isRecordClipDraftSource(source)) return recordClipSourceInput(source);
     if (isRecordSnapshot(source)) return {
       kind: "record" as const, knowledgePointId: source.knowledgePointId, revisionId: source.revisionId,
       ...(source.selector ? { selector: paragraphSelectorInput(source.selector) } : {})

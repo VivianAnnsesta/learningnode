@@ -2,6 +2,20 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第七批依据[ADR0033](docs/adr/0033-explicit-record-clipping-and-source-receipts.md)推进公开HTML/本人提供文字的剪藏预览、选片、正文与来源一起插入/安全撤销、明确保存和固定历史。目标/当前差异：词汇/公共API与来源凭据合同先落文档，固定预览/process共用凭据、唯一writer及两入口已接通；20项SQLite/HTTP、7条新页面及真实打包跨route验收尚未完成，不以第六批结果覆盖。每次预览固定所见与取得时间，过期明确重读；创建沿用原hash/prior，修订沿用原CAS，不引入通用修订ledger或假学习会话。原index、31seed、真实用户库/设置及历史SQL不动。
+
+本批全项目typecheck、lint和encoding通过，11个纯文件394/394通过，覆盖41项剪藏合同、10项凭据服务、86项安全/提取（含5个真实受控TLS case）、21项来源/插入及旧模板/视图/日期/月历/导航；报告 `web/test-results/record-clips-2026-11-09/pure-final.json`。服务/store单元中的网页请求mock只证明缓存边界；另由默认原生传输真实读取 `https://example.com/` 成功，156字、无截断、833ms，CA/hostname、公开DNS pin、peer检查与无代理保持，初次2023ms成功也保留。代码hash/Node24.19.0和sanitized结果在同目录 `security-branch-result.json`、`live-public-html-result.json`；它们不是已完成跨Next或打包验收。
+
+安全测试首轮77/81、4失败及1项unhandled已按当次真实工具输出重建保存为 `initial-security-failures-reconstructed.json`，明确不是完整原日志，未重跑旧坏夹具。合成证书UTCTime误留T导致先被TLS拒绝，连带超限/取消夹具未到各自目标边界；已修夹具时间格式，并使取消等待保留先发生的真实拒绝。另EMPTY_TEXT发生在完整读完之后，校正“必须强制destroy已完成请求”的夹具预期，保留真正网络失败/取消主动销毁及默认CA/hostname门。修后86项、其中5项真实TLS均通过；不声称未记录的底层OpenSSL错误或以修后结果抹掉原失败。
+
+新增7条页面文件独立TypeScript/ESLint通过，UI/backend只读审查后修正3处卡片文案预期，保留实际obtained/原片段/取得时间、创建同payload/修订CAS及事实计数断言。覆盖真正公开HTTPS读取→选片→保存/历史、人工原子插入/撤销/旧字段、CRLF与未知raw来源、409、实际首写后坏JSON核对、64项容量淘汰后prior、410重读显式替换正文保留、失败与模板撤销交接；这些真实页面仍待CI。本机20项SQLite/HTTP执行0次，按已知AppControl不重试或绕过，无schema/迁移/seed或依赖变化。
+
+两入口模拟API浏览器7组通过、零pageerror，71–76截图及 `clip-evidence.json` 在同目录 `ui-preview/`；root独立目视71/74/75，预览、显式替换和核对锁定说明可读。它们是mock，不能记为真实SQLite/页面或桌面通过。React清单检查纯文本/HTTPSguard、请求abort/generation、正文与来源原子操作和引用身份撤销、原字段/领域/日期、CAS/retained/returnTo；全部临时预览服务已关闭。现有packaged安全验证已在临时目录/marker/userData预校验后接入跨route预览→创建→修订、历史、篡改/淘汰和原命令重放，尚待真实CI执行。
+
+### 第六批完成记录
+
+第六批收尾文档源 `332bd604a3d8daa11f5cee58505cf44b01b2fb74` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42634715048)已真实全成功：1166测试、37页面通过/9原配置跳过、31空白seed、四条历史/新增迁移边界及完整桌面门禁；相对已验证53eb源仅两文档不同。完整日志和SHA索引 `332b-main-evidence.json` 位于 `web/test-results/record-dates-2026-11-09/`，不覆盖第七批待验。
+
 第六批本人指定记录日期、只读月历和过去日期补写已完成本批既定门禁并合并GitHub main：[PR #6](https://github.com/VivianAnnsesta/learningnode/pull/6)，合并提交 `00efa54fec08b440b7e98efbcebb4679c5c020aa`，已验证源HEAD `53ebdfd15283bae1b2de7acdb9225a2a548ab20f`。日期可新增、修改、清空并随不可覆盖修订保留；旧坏日期不阻断正文，省略日期保留原值，409保留已编辑日期、未编辑日期在明确采用新基础后继承。月历按同一基础条件读取整月，选日替换列表日期范围，“为这一天填写记录”只进入草稿；一天可存多条记录，浏览时区不搬移本人日期，日期不代表学习完成或掌握。旧SavedView完整配置、来源/别名、创建hash及明确保存边界保持兼容。
 
 该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42630877432)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42630868700)均真实全成功：122文件/1166测试，含18项新日期SQLite/HTTP及2项新迁移；完整页面37通过/9按原配置跳过，新7条月历链及两处同步修正两边均通过。Typecheck、lint、encoding、Prisma、历史夹具及27→28/28→29/29→30/30→31备份保真全过；两边Electron42.11.16打包、空白seed运行、备份后旧库升级（各2份备份）和安全交互全部成功。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42630877451)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42630868773)各19文件/373测试及26页面全过。四份完整日志/SHA索引 `53eb-full-evidence.json` 与专项 `53eb-target-evidence.json` 在 `web/test-results/record-dates-2026-11-09/`，root独立核验全部日志hash和实际结果；11项moderate依赖审计结果仍保留，不因高危门通过而记为零漏洞。

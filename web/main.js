@@ -28,6 +28,19 @@ const userDataDir = app.isPackaged
   : configuredDevelopmentUserDataDir ||
     path.join(__dirname, ".electron-user-data");
 
+if (securityVerificationEnabled) {
+  // Validate isolation before touching a database or a real user's data directory.
+  const verificationRoot = process.env.ENGLISHNODE_SECURITY_VERIFICATION_ROOT;
+  const temporaryRoot = fs.realpathSync(require("os").tmpdir());
+  if (!app.isPackaged || !verificationRoot ||
+      path.dirname(fs.realpathSync(verificationRoot)) !== temporaryRoot ||
+      !path.basename(verificationRoot).startsWith("englishnode-electron-security-") ||
+      path.resolve(userDataDir) !== path.join(fs.realpathSync(verificationRoot), "Antigravity") ||
+      !fs.existsSync(path.join(verificationRoot, ".englishnode-security-isolation"))) {
+    throw new Error("Packaged security verification requires its isolated temporary user directory.");
+  }
+}
+
 app.setPath("userData", userDataDir);
 fs.mkdirSync(userDataDir, { recursive: true });
 const startupLogPath = path.join(userDataDir, "backend-error.log");
@@ -330,6 +343,7 @@ const createWindow = async () => {
     }
 
     await mainWindow.loadURL(url);
+    let clipSecurity;
     if (securityVerificationEnabled) {
       const apiUrl = new URL("/api/domains", url);
       const rendererStatus = await mainWindow.webContents.executeJavaScript(
@@ -376,6 +390,46 @@ const createWindow = async () => {
           `Security verification failed: renderer=${rendererStatus}, direct=${unauthenticatedStatus}, foreignHost=${foreignHostStatus}, foreignOrigin=${foreignOriginStatus}, unsafeNavigationBlocked=${unsafeNavigationBlocked}`
         );
       }
+      const clipApiUrl = new URL("/api/knowledge-points/clip-preview", url);
+      const clipDirect = await requestStatus(clipApiUrl);
+      const clipHost = await requestStatus(clipApiUrl, { Host: `example.invalid:${serverPort}` });
+      const clipOrigin = await requestStatus(clipApiUrl, { Origin: "http://127.0.0.1:1", "X-EnglishNode-Local-Token": localApiToken });
+      if (clipDirect !== 401 || clipHost !== 403 || clipOrigin !== 403) throw new Error("Packaged clipping authentication verification failed.");
+      const verifyClipRoutes = async () => {
+        const assert = (value, message) => { if (!value) throw new Error(message); };
+        const call = async (path, method = "GET", body, expected = 200) => {
+          const response = await fetch(path, { method, ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }) });
+          const data = await response.json();
+          assert(response.status === expected, `Clipping route ${method} ${path} returned ${response.status}; expected ${expected}`);
+          return data;
+        };
+        const preview = async text => (await call("/api/knowledge-points/clip-preview", "POST", { mode: "pasted", title: "Packaged clip source", text })).preview;
+        const source = capture => ({ kind: "clip", snapshotKey: capture.snapshotKey, receiptId: capture.receiptId, fragmentIds: capture.fragments.map(fragment => fragment.id) });
+        const first = await preview("Packaged first paragraph.\n\nPackaged second paragraph.");
+        assert(first.mode === "pasted" && first.obtained === false && first.fragments.length === 2, "Packaged preview identity or fragments changed");
+        const before = await call("/api/knowledge-points?limit=1");
+        assert(before.page.total === 0, "Security verification database must start empty; preview must not create records");
+        const command = { requestId: crypto.randomUUID(), title: "Packaged cross-route clipping", body: "Explicitly saved clipped text", kind: "note", sourceType: "user", aliases: ["package alias"], recordDate: { date: "2026-11-09", timeZone: "UTC" }, sources: [source(first)] };
+        const created = await call("/api/knowledge-points", "POST", command), point = created.knowledgePoint;
+        assert(created.reused === false && created.savedRevisionId === point.currentRevisionId && point.sources[0].snapshotKey === first.snapshotKey && point.sources[0].obtained === false && !Object.hasOwn(point.sources[0], "receiptId"), "Packaged create did not resolve the original preview receipt");
+        const originalRawSources = created.revisions[0].sourcesJson;
+        const second = await preview("Packaged replacement source, selected for a new revision.");
+        const revised = await call(`/api/knowledge-points/${point.id}`, "PATCH", { title: point.title, body: "Explicitly revised clipped text", kind: "note", sourceType: "user", expectedRevisionId: point.currentRevisionId, sources: [{ kind: "retained", sourceIndex: 0 }, source(second)] });
+        const history = await call(`/api/knowledge-points/${point.id}`), old = history.revisions.find(revision => revision.id === created.savedRevisionId);
+        assert(history.revisions.length === 2 && old.sourcesJson === originalRawSources && old.body === command.body && revised.knowledgePoint.sources.length === 2 && revised.knowledgePoint.sources[1].snapshotKey === second.snapshotKey && revised.knowledgePoint.aliases[0] === "package alias" && revised.knowledgePoint.recordDate.date === "2026-11-09", "Packaged immutable clip history or inherited fields changed");
+        const forged = { ...source(first), snapshotKey: first.snapshotKey === "0".repeat(64) ? "1".repeat(64) : "0".repeat(64) };
+        await call("/api/knowledge-points", "POST", { ...command, requestId: crypto.randomUUID(), sources: [forged] }, 400);
+        // More than the bounded store capacity evicts the old pending capture, not its saved history.
+        for (let index = 0; index < 64; index++) await preview(`Isolated eviction capture ${index}.`);
+        await call("/api/knowledge-points", "POST", { ...command, requestId: crypto.randomUUID() }, 410);
+        const replay = await call("/api/knowledge-points", "POST", command);
+        assert(replay.reused === true && replay.savedRevisionId === created.savedRevisionId && replay.knowledgePoint.currentRevisionId === revised.knowledgePoint.currentRevisionId, "Packaged creation replay did not retain original saved-revision identity after receipt eviction");
+        const after = await call("/api/knowledge-points?limit=1");
+        const final = await call(`/api/knowledge-points/${point.id}`);
+        assert(after.page.total === 1 && final.revisions.length === 2 && final.revisions.find(revision => revision.id === created.savedRevisionId).sourcesJson === originalRawSources, "Packaged preview, rejection or replay changed saved facts");
+        return { crossRouteCapture: true, immutableHistory: true, tamperRejected: true, evictedReceiptRejected: true, creationReplay: true };
+      };
+      clipSecurity = { ...await mainWindow.webContents.executeJavaScript(`(${verifyClipRoutes.toString()})()`), authenticationBoundary: true };
     }
     if (runtimeVerificationEnabled) {
       writeRuntimeVerificationResult({
@@ -390,7 +444,8 @@ const createWindow = async () => {
               directRequestRejected: true,
               foreignHostRejected: true,
               foreignOriginRejected: true,
-              unsafeNavigationBlocked: true
+              unsafeNavigationBlocked: true,
+              clipping: clipSecurity
             }
           : undefined
       });
