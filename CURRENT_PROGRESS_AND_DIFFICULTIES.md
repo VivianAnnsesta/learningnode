@@ -2,6 +2,22 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+### 第八批完成记录
+
+第八批可携带导出已完成既定门禁并合并GitHub main：[PR #8](https://github.com/VivianAnnsesta/learningnode/pull/8)，合并提交 `a860455c83d9a91a7c872a3fb8cb82a24466de25`，已验证源 `24c3169b66e1e55bba2fbe3d4cd91ad1b3c9f09c`。列表导出整个已应用检索结果，详情导出已保存内容，明确选择历史；同一只读快照保留原始正文/来源/别名/日期、当前指针、旧记录fallback和显式关系。相对日期沿用已显示窗口，失效范围不扩大，固定引用不跟随当前正文；两入口校验完整ZIP后请求下载，编辑草稿与原保存边界保持。
+
+该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42660848470)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42660833586)均真实全成功：133文件1449测试、51页面通过/9原配置跳过，新20项SQLite/HTTP及7条新导出页面全部通过，含335/305完整范围、原raw及坏元数据、current非max/null、来源/包外关系、并发保存一致快照、真实64MiB拒绝与零业务写入。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42660848716)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42660833374)各30文件656测试、40页面全过；原固定引用用例最后facts已完整执行。六份全原LF日志/SHA索引 `24c3-{full,target}-evidence.json` 在 `web/test-results/knowledge-export-2026-11-09/`，root独立核验六日志hash和fresh四run/job终态。11项moderate审计结果仍保留，高危门通过，不记为零漏洞。
+
+两套Electron42.11.16打包、空白seed运行、备份后旧库升级（各2份备份）及完整安全门禁均成功；首次新增packaged真实UI下载completed/cancelled、认证、窗口和保存内容保持全部执行，独立平台ZIP reader各验证4文件及2份精确原文切片。保留既有剪藏跨route、URL/Host/Origin/token及迁移门。31空白seed SHA256 `165ae84d3fa0bc8edf3b03cf1a998add3425ce1dc885b88e09d346a564ddb714` 未变，27业务表空/31canonical迁移checksum/FK0/integrity与四条备份保真边界通过；没有schema、迁移或依赖变化。
+
+累计28路径（19新增/9修改/0删除），合并树 `3e5243ac740bdd993f4e8a455db7f8ea7fdf55b1` 的640blob精确等于已验证24c3源；两头增量仅测试/状态，612范围外blob、361保护文件和既有Word保持。原index/历史、真实用户库/设置及已安装桌面包未改动。全树/源码hash、原失败工件与root独立ZIP核验在上述证据目录及 `web/test-results/obsidian-knowledge-export-publication-2026-11-09/`；首轮断言错误、四条失败与未执行边界保留，无手动rerun/cancel或门禁放宽。本次收尾只同步CURRENT与PLAN，代码继续等同已验证源。
+
+对照ADR0027–0034的本轮八批Obsidian借鉴范围现已完成并合并：引用/反向发现与局部联系、段落固定预览、别名/提及、保存检索视图、模板、日期月历、剪藏及可携带导出。只读范围审计与root实时PR #1–#8合并核验支持该范围收尾，不扩称实现全部Obsidian功能。既有ADR0026教学质量问题、真实学习效果与分发发布限制继续独立待处理；本轮工程通过不替代它们，也不声称本机已安装软件已更新。
+
+### 第八批过程记录
+
+以下保留对应开发及45ac首轮当时状态；最新结果以上方已验证24c3源和合并提交为准。
+
 第八批可携带导出已发布[草稿PR #8](https://github.com/VivianAnnsesta/learningnode/pull/8)，首轮源 `45ac5d62a0df2b73854dd6f9a21e1abcbf438e3b`。两套[完整PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42658287875)/[完整push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42658128938)均133文件1449测试全过，含20新SQLite/HTTP；页面各50通过/9原配置跳过/1失败。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42658288138)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42658129906)均30文件656测试全过、39页面通过/1失败，新7条中6通过及全部33旧专项通过。四轮均同一新固定引用用例第108行：测试把已JSON编码的sourcesJson再随manifest序列化，却以单层转义子串匹配CRLF。该例末尾facts断言尚未执行；两套desktop均skipped，新packaged保存/取消门尚未验证，不能套用第七批桌面结果。
 
 原四份完整LF日志、SHA与工件身份在 `web/test-results/knowledge-export-2026-11-09/45ac-{full,target}-evidence.json`。专项官方工件13691909974（28832103字节、SHA256 `a8f7e4044ab57672a2182e92fef8822bc92467afdd21ef2dc176a4b19621052b`）内两份真实下载ZIP已由Python和root独立.NET reader核验CRC、全部文件SHA和3/2份正文切片；原sourcesJson两包与夹具逐字相同，解析整个来源数组一致，所存CRLF/emoji和可读Markdown引用原文均保留，trace两次export均200。证据 `45ac-push-target-fixed-reference-failure/` 和 `root-official-failure-zip-proof.json`。现只把该测试改为完整raw字符串相等、解析来源数组全等及Markdown原文/仅当前修订身份断言，保留原facts与5秒/60秒门；无生产修改，未增加重试/跳过或执行手动rerun。修后需新HEAD四轮真实验证，不记已通过。
