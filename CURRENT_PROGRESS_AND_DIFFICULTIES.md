@@ -2,7 +2,17 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
-第三批依据[ADR 0029](docs/adr/0029-revisioned-record-aliases-and-mentions.md)实施个人记录别名与记录级未引用提及：别名随不可覆盖修订维护，搜索统一字面Unicode匹配，候选只读其他当前正文并按来源记录计数。新字段、前向迁移、服务/界面及回归已接通，尚未完成本批完整数据库、页面和桌面验收；不能用第二批成功代替第三批证据。真实用户库和旧迁移不动；版本化seed已取回更新为CI正式生成的28版，原27字节另行保留，不把手工SQL副本或本机未通过的生成过程写成正式seed成功。
+第三批别名与未引用提及已通过本轮既定门禁并合并 GitHub main：[PR #3](https://github.com/VivianAnnsesta/learningnode/pull/3)，合并提交 `efa7911b3204f42621f72c92f5a8ced1680d362e`，已验证源 HEAD `f213a799c2c1ab93ee4cd1942a736ad781491e82`。别名随不可覆盖修订保存，省略保留、显式清空和历史各自保留；列表、Ctrl+K和引用选择器共用字面Unicode检索并显示别名命中。未引用提及只扫其他当前正文，准确计数分页并展示原文段落，打开来源后由用户选取引用并明确保存，不自动建立语义关系或学习事实。
+
+本批[完整 PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42590218707)与[完整 push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42590208820)均真实成功：110文件/884测试（含11项别名/提及SQLite/HTTP及2项新迁移回归），完整页面20通过/9按原配置跳过；Prisma、归档旧schema夹具、迁移保真及FK0；Electron42.11.16打包、空白seed运行、旧库升级和安全交互均通过。[专项 PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42590218436)与[专项 push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42590208587)均94/94及9/9页面通过，覆盖三个别名入口、清空/历史、候选转引用、读取重试及409草稿恢复。完整日志与哈希索引 `f213-full-ci-evidence.json` 在 `web/test-results/record-names-2026-11-09/`，原夹具失败保留且未重跑。
+
+已取回正式CI生成的28版版本化空白seed并核验ZIP/文件/报告与远端迁移blob；25业务表全空、28个checksum匹配、默认[]、FK0和integrity ok。真实27→28生命周期验证先备份、4旧修订/多段来源/当前指针及其他字段原样、重复启动不改数据；不可覆盖trigger和FK保持启用并有拒绝回归。真实用户数据库/AI设置、原index/历史和旧迁移没有修改。本机已安装桌面包未替换；这是隔离SQLite、页面及Windows包运行证据，真实AI教学、长期学习效果及既有分发限制仍分别处理。当前审计0 critical/0 high、11项既有moderate，未放宽阈值。
+
+持续优化目标保持进行中，接续处理来源/日期筛选、命名保存检索视图和只读显示字段；模板、日期回看、剪藏及导出范围仍保留，未实现部分不算交付。
+
+### 第三批过程记录
+
+以下保留对应提交当时的待验、草稿、seed准备及原失败状态；最新完成事实以上方已验证源HEAD为准。
 
 第三批已及时发布[草稿 PR #3](https://github.com/VivianAnnsesta/learningnode/pull/3)，源提交 `cd16960cdac9366c57c841fc546997600133739b`，main未改。首轮[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42587602789)真实89/93，[push完整](https://github.com/VivianAnnsesta/learningnode/actions/runs/42587602786)真实879/883；4个失败均为新增夹具直接UPDATE既有KnowledgePointRevision，被原 `KnowledgePointRevision_immutable` trigger拒绝（Prisma呈现P2003），不是别名写入命令的部分保存。正在把所需raw别名/来源于首次INSERT时准备，并保留原业务断言及不可覆盖保护，补充直接修改被拒绝且原值不变的证据；不删trigger、不关FK、不重写旧迁移。页面/桌面未运行，不记通过。
 
@@ -19,6 +29,8 @@
 本机数据支已完成generate/validate、全项目静态、4个脚本语法及两workflow YAML检查；原生2项迁移回归在首次请求被query-engine DLL的Application Control阻止，0业务expect执行。正式seed生成器的隔离LF投影尝试在db execute子进程报 `spawn UNKNOWN`，未到生成验证，不把该错误直接归因于DLL。Python只在ignored副本检查新DDL、默认空数组/NULL拒绝、4个旧修订/多段来源/指针及其他业务字段保留、备份与FK0，旧27 ledger不变；明确不是Prisma或正式seed成功。完整证据在 `web/test-results/aliases-migration-2026-11-09/`。引用选择器与新提及接口对无当前修订的历史记录统一显示不可用，不再引导无法兑现的直接保存。
 
 第二批收尾文档源 `98c3826824d624faeb1bfc8a61bf45673bb03f3b` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42582216912)已全部真实成功：847测试、17页面通过/9原配置跳过及完整桌面门禁，代码树相对已验证985源仅2个Markdown不同。第三批共享名称规则初版19项中18过，唯一失败为夹具错置U+E000与全宽A排序；Python SQLite3.49.1实际排序确认UTF8比较器正确，修夹具后19/19。原诊断及JSON在 `web/test-results/record-names-2026-11-09/`；这不是目标Prisma内嵌SQLite的证据，集成套件还须核对目标排序与新迁移。
+
+### 第二批完成记录
 
 第二批段落级固定引用已通过本轮既定门禁并合并 GitHub main：[PR #2](https://github.com/VivianAnnsesta/learningnode/pull/2)，合并提交 `4afe2339edf432aa641261805b03fb1133d14cdc`。已验证源 HEAD 为 `98509f11e1d22179496e9ef9af7286049ea501f8`。全文与同修订多个完整段落可同时引用，重复文字按原文位置区分；选择先进入可撤销草稿，明确保存后能从当前/历史/反向引用回看固定原文，源记录后来修订不会移动旧摘录。服务端校验真实修订、完整段落、Unicode与哈希，沿用保留来源、并发冲突和返回原视图边界。
 
