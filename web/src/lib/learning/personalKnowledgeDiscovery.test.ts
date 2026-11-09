@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getPersonalKnowledgeContext, getPersonalKnowledgeNeighborhood } from "./personalKnowledgeDiscovery";
 import { createPersonalKnowledge, listPersonalKnowledge, revisePersonalKnowledge } from "./personalKnowledgeService";
@@ -50,6 +50,17 @@ async function point(id: string, options: { title?: string; body?: string; sourc
 function reference(id: string, revisionId = `${id}-v1`) { return { kind: "record", knowledgePointId: id, revisionId, title: `${id} 当时标题`, body: `${id} 当时原文`, sourceType: "user" }; }
 async function edge(id: string, from: string, to: string, status = "confirmed") {
   await db.knowledgeGraphEdge.create({ data: { id, fromKnowledgePointId: from, toKnowledgePointId: to, relationType: "related", detail: `联系 ${id}`, status } });
+}
+async function graphFixture(prefix: string, count: number, links: { id: string; from: number; to: number }[]) {
+  const ids = Array.from({ length: count }, (_, index) => `${prefix}-${index}`);
+  // Keep the same persisted records and revisions while avoiding hundreds of
+  // fsync-heavy individual commits during the full Windows SQLite test suite.
+  await db.$transaction(async tx => {
+    await tx.knowledgePoint.createMany({ data: ids.map(id => ({ id, title: id, recordKind: "note" })) });
+    await tx.knowledgePointRevision.createMany({ data: ids.map(id => ({ id: `${id}-v1`, knowledgePointId: id, sequence: 1, title: id, body: `${id} 正文`, sourceType: "user" })) });
+    await tx.$executeRaw(Prisma.sql`UPDATE KnowledgePoint SET currentRevisionId = id || '-v1' WHERE id IN (${Prisma.join(ids)})`);
+    await tx.knowledgeGraphEdge.createMany({ data: links.map(link => ({ id: link.id, fromKnowledgePointId: ids[link.from], toKnowledgePointId: ids[link.to], relationType: "related", detail: `联系 ${link.id}`, status: "confirmed" })) });
+  });
 }
 
 describe("个人记录发现：真实隔离 SQLite，不调用 AI 或改写学习事实", { timeout: 30000 }, () => {
@@ -118,16 +129,16 @@ describe("个人记录发现：真实隔离 SQLite，不调用 AI 或改写学�
   });
 
   it("节点上限和边上限明确截断，密集图不会虚报遗漏节点", async () => {
-    for (let index = 0; index < 85; index++) await point(`hub-${index}`);
-    for (let index = 1; index < 85; index++) await edge(`hub-edge-${String(index).padStart(3, "0")}`, "hub-0", `hub-${index}`);
+    await graphFixture("hub", 85, Array.from({ length: 84 }, (_, index) => ({ id: `hub-edge-${String(index + 1).padStart(3, "0")}`, from: 0, to: index + 1 })));
     const capped = await getPersonalKnowledgeNeighborhood("hub-0", 2);
     expect(capped.nodes).toHaveLength(80);
     expect(capped.edges.length).toBeLessThanOrEqual(120);
     expect(capped.truncated.nodes).toBe(true);
     const ids = new Set(capped.nodes.map(node => node.id));
     expect(capped.edges.every(link => ids.has(link.fromKnowledgePointId) && ids.has(link.toKnowledgePointId))).toBe(true);
-    for (let index = 0; index < 17; index++) await point(`dense-${index}`);
-    for (let from = 0; from < 17; from++) for (let to = from + 1; to < 17; to++) await edge(`dense-edge-${from}-${to}`, `dense-${from}`, `dense-${to}`);
+    const denseLinks: { id: string; from: number; to: number }[] = [];
+    for (let from = 0; from < 17; from++) for (let to = from + 1; to < 17; to++) denseLinks.push({ id: `dense-edge-${from}-${to}`, from, to });
+    await graphFixture("dense", 17, denseLinks);
     const dense = await getPersonalKnowledgeNeighborhood("dense-0", 2);
     expect(dense.nodes).toHaveLength(17);
     expect(dense.edges).toHaveLength(120);

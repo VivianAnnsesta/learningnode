@@ -16,6 +16,10 @@
 
 安全维护已写入 package/lock：Next.js 与 eslint-config-next 15.5.28、Electron 42.11.16、Vitest 4.1.12、sharp 0.35.5 和兼容传递补丁。`npm run audit:release`、npm 11.17.0 的 `npm ci --dry-run --ignore-scripts` 均通过，最新完整审计 0 critical / 0 high / 11 moderate。剩余 moderate 为 [minimatch globparts amplification](https://github.com/advisories/GHSA-g3hv-75wg-m249) 的 9/10 传递依赖链，限于现有开发/构建 glob 使用，暂不以不兼容的 minimatch 11 强制覆盖；后续跟进依赖拥有者的兼容修复，不能据此宣称零漏洞。before/after 审计与 lock 检查在同一证据目录。Electron 42 的显式 binary 安装已接入开发命令；本机 node_modules 尚未切到新依赖，真实新版本行为继续待 CI 及桌面门禁。
 
+提交 `279a5362341b59f650945a6abee38b3913feaf00` 的[专项 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42567513379)已真实通过：13/13（10项隔离 SQLite/HTTP + 3项请求边界）及3/3真实页面链，包含引用选择/明确保存/旧版本回看/反向引用、两层图谱/候选隔离、类型视图与快捷查找。证据 artifact `knowledge-discovery-evidence` 的 SHA-256 为 `49ed0d120de0e96d38e907581e5c84412f0d0a82822348ed5ca407498712b462`；不再以 mock UI 替代这些后端/页面证据。
+
+同提交[全量 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42567513361)为800/803：密集图谱逐条造数超时、其后清理 P1008，以及既有真实 PDF 提取5秒超时，后续迁移/桌面未运行。已保留原失败日志，将测试图谱数据改为批量事务、全量 Windows worker 限为2，未改节点/边规模、断言、测试超时或业务门禁；效果待下一实际 CI，不能将专项成功写成全量通过。
+
 更新日期：2026-11-08
 
 本轮路线输入与显式修复的代码改动已完成，最新隔离串行全量 **766/766** 通过，0失败、0未运行；全项目 typecheck、lint、encoding 通过。[全量JSON](web/test-results/planning-evidence-final-full-2026-10-28.json)、[输出](web/test-results/planning-evidence-final-full-2026-10-28.log)、[类型](web/test-results/planning-evidence-final-typecheck-2026-10-28.log)、[规范](web/test-results/planning-evidence-final-lint-2026-10-28.log)、[编码](web/test-results/planning-evidence-final-encoding-2026-10-28.log)保留。此前中间态755/755仍有效但不覆盖后来新增的旁路修复；编码命令首次误指向不存在的check-encoding.js，原[失败输出](web/test-results/planning-evidence-encoding-2026-10-28.log)保留，改用package脚本实际指向的check-mojibake.js后通过。未修改schema、真实用户数据库或Provider默认推理模式，未重新打包。

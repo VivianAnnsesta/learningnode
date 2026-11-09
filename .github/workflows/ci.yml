@@ -30,7 +30,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run check:encoding
-      - run: npm run test
+      - run: npm run test -- --maxWorkers=2
       - run: npx prisma validate
         env:
           DATABASE_URL: file:./ci-schema-validation.db

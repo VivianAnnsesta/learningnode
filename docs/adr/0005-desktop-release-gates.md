@@ -24,6 +24,8 @@ CI is a release gate, not advisory reporting. It must fail on lint, type, unit, 
 
 CI installs the package-manager version declared by the application before `npm ci`, so dependency overrides and the committed lock are resolved by the same pinned npm toolchain. A package-manager mismatch is repaired explicitly; it must not be hidden with `--force`, skipped installation checks, or a lower audit threshold.
 
+The full Windows unit run bounds worker concurrency to two to avoid saturating the shared runner with native SQLite engines and PDF worker startup. All cases, assertions and test deadlines remain enabled; fixture preparation uses bounded batch transactions rather than hundreds of independent commits.
+
 Security maintenance retains the existing Electron/Next.js architecture. When the installed Electron major has no supported patch for a blocking advisory, move to the minimum supported fixed runtime after checking its official migration notes, and re-run the complete desktop runtime, upgrade and security gates. A runtime version change alone is not evidence of desktop compatibility.
 
 Electron 42 no longer downloads its executable during package postinstall. The supported development command explicitly runs the installed `install-electron` command before loading Electron's path; installation failure blocks launch. Packaging continues to use electron-builder's pinned target-runtime download and validates the produced executable, rather than assuming the development executable has already been downloaded.
