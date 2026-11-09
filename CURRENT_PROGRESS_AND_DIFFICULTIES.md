@@ -2,6 +2,12 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+首批已通过全部本轮门禁并合并 GitHub main：[PR #1](https://github.com/VivianAnnsesta/learningnode/pull/1)，合并提交 `106cd708c3ad4841080a607772cb85f79cdce150`。已验证源代码 HEAD 为 `8ebe33b41963ba219f56e9fba43bb16d30f4bb0a`；PR 与 push 两套完整CI均成功。功能包含固定修订引用与快照、当前反向引用分页、已确认局部图谱、类型/领域/主题视图、Ctrl+K查找，以及普通返回/引用/图谱/快捷查找沿用源筛选。正式地图、语义关系确认及学习履历的业务边界保持原规则。
+
+[完整 Windows CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42571477526)真实通过：105文件、825/825测试；完整页面15通过/9按原配置跳过；Prisma校验、归档旧schema夹具生成、迁移保真；Electron42.11.16打包、空白seed运行、旧库升级运行和安全交互全部通过。[专项 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42571477458)为35/35和4/4页面流程通过。成功/原失败日志在 `web/test-results/obsidian-discovery-2026-11-08/`，发布树/敏感扫描/保真核验在相邻 `obsidian-publication-2026-11-08/`；原工作区index与旧历史未改。
+
+边界：这是真实隔离SQLite、页面与GitHub Windows桌面运行证据，不能写成真实AI教学、长期学习效果或分发发布合格。本机原有node_modules/已安装桌面包未替换，真实用户数据库未变。依赖最新审计0 critical、0 high、11项已记录的moderate；密钥轮换等既有分发限制仍按原门禁处理。持续目标保持进行中，下一批进入段落级固定引用与多段预览；别名/未链接提及、更多属性视图、模板、日期回看、剪藏和导出仍未实现。
+
 用户已授权持续实施并及时发布 GitHub。依据 ADR 0027 已接通个人记录的固定修订引用草稿/预览、当前修订反向引用分页、1–2 层已确认局部联系 SVG 与说明、可恢复类型/排序视图，以及全局 Ctrl+K 快捷查找。新增引用仍需明确保存，不自动确认语义关系；来源修订保留既有服务器快照，新增引用仅传身份，避免重新读取旧曝光或回传大正文。列表写入后按最新筛选刷新，保存时保护正在提交的输入。
 
 本机全项目 typecheck、定向 ESLint 及编码检查已通过；`npm run build` 退出码 0、完成编译/路由产出，但收集页面数据期间反复记录 Prisma 引擎被 Windows Application Control 阻止加载。新增隔离 SQLite 测试首轮在初始化阶段因同一引擎错误停止，实际业务断言没有运行，不能记作通过。原始日志在 `web/test-results/obsidian-discovery-2026-11-08/`。新增独立 GitHub Actions 验证数据库与真实页面，保留原全量/桌面门禁；本轮 SQLite、页面操作及截图尚待 CI 实际结果，未重新打包，旧桌面包不包含本轮改动。
