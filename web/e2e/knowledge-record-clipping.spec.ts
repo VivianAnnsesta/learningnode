@@ -117,7 +117,7 @@ test("创建结果不明时冻结原命令，收据淘汰后核对仍找回原�
     if (first) { first = false; captured.input = route.request().postData()!; const upstream = await route.fetch(); expect(upstream.status()).toBe(200); captured.first = await upstream.json(); return route.fulfill({ status: 200, contentType: "application/json", body: "{" }); }
     captured.retry = route.request().postData()!; return route.continue();
   });
-  await page.getByRole("button", { name: "确认保存", exact: true }).click(); await expect(page.getByRole("alert")).toContainText("上次剪藏保存结果不明");
+  await page.getByRole("button", { name: "确认保存", exact: true }).click(); await expect(page.getByRole("alert").filter({ hasText: "上次剪藏保存结果不明" })).toContainText("上次剪藏保存结果不明");
   await expect(page.getByLabel("新记录标题")).toBeDisabled(); await expect(page.getByLabel("新记录内容", { exact: true })).toBeDisabled(); await expect(page.getByRole("button", { name: "采用新预览替换待保存来源", exact: true })).toHaveCount(0);
   if (!captured.first) throw new Error("The original real save did not return before the response was deliberately corrupted.");
   const afterFirst = await facts(); expect(afterFirst).toEqual({ ...before, records: before.records + 1, revisions: before.revisions + 1, audit: before.audit + 1 });

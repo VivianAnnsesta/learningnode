@@ -2,7 +2,19 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
-第七批依据[ADR0033](docs/adr/0033-explicit-record-clipping-and-source-receipts.md)推进公开HTML/本人提供文字的剪藏预览、选片、正文与来源一起插入/安全撤销、明确保存和固定历史。目标/当前差异：词汇/公共API与来源凭据合同先落文档，固定预览/process共用凭据、唯一writer及两入口已接通；20项SQLite/HTTP、7条新页面及真实打包跨route验收尚未完成，不以第六批结果覆盖。每次预览固定所见与取得时间，过期明确重读；创建沿用原hash/prior，修订沿用原CAS，不引入通用修订ledger或假学习会话。原index、31seed、真实用户库/设置及历史SQL不动。
+第七批依据[ADR0033](docs/adr/0033-explicit-record-clipping-and-source-receipts.md)推进公开HTML/本人提供文字的剪藏预览、选片、正文与来源一起插入/安全撤销、明确保存和固定历史。固定预览/process共用凭据、唯一writer及两入口已接通；首轮20项SQLite/HTTP已实际通过，但页面定位/导航同步失败仍须新头验证，打包跨route尚未执行，不以第六批结果覆盖。每次预览固定所见与取得时间，过期明确重读；创建沿用原hash/prior，修订沿用原CAS，不引入通用修订ledger或假学习会话。原index、31seed、真实用户库/设置及历史SQL不动。
+
+已发布[草稿PR #7](https://github.com/VivianAnnsesta/learningnode/pull/7)，首轮源HEAD `8f6b321205d0ef39780a2ac11a4b14446835812c`。[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42643273805)与[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42643183158)均24文件/532测试全过，含20项新SQLite/HTTP；两套页面各32通过/1失败，新的7条剪藏链中6条通过，含真正公开HTTPS读取/保存/历史、410重读、CRLF/409及撤销交接。剩余unknown结果用例停在第120行：全局alert同时命中应用错误与空的Next路由播报，尚未执行后续淘汰/原payload重放断言，不能记其已通过。完整原日志/SHA及官方工件索引 `8f6b-target-evidence.json` 在 `web/test-results/record-clips-2026-11-09/`。
+
+首轮[完整PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42643274038)与[完整push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42643183144)均127文件/1325测试全过，含20SQLite、10store、73传输/13提取。PR页面42通过/9原配置跳过/2失败，push43通过/9跳过/1失败；桌面两边均未执行，新增packaged剪藏flags仍未验收。共同失败仍是上述alert定位，PR额外为旧SavedView用例最后一次返回网络后5秒找不到领域筛选；push该旧用例实际通过，不覆盖PR失败。两份完整日志/SHA、各7条剪藏实际结果和官方trace在 `8f6b-full-evidence.json`。
+
+官方专项工件13685958863按run/head/22338483字节及digest `8f7eb23ad62ca5b6981700ce2a400c6d697bcd25c1cbae757cf4e4b4094e2364` 核验；trace确证首个真实保存200且原修订sequence1，测试随后将浏览器响应改为单字节“{”。应用确实显示JSON解析结果不明并锁定字段/保存/重读，核对按钮可用；空Next announcer造成locator strict。现仅给原alert locator增加目标错误文本filter，原toContain、5秒断言、60秒整例和之后全部原payload/metadata/事实断言保留，生产不改。
+
+官方PR工件13686658711（39218606字节、digest已核）另确证旧views最后返回href保留正确q/领域b/排序/summary字段；原5秒断言期间目标RSC 200但body仍pending，正确列表请求直到失败后约299ms才发出，未取得成功JSON，不能说条件丢失或读取已完成，也不推定底层慢因。现点击前注册精确返回URL及新列表request，等其200和完整JSON核scope/实际记录身份，再原5秒筛选值和fields断言；保持60秒总门，不等待页面finished流。两页面修改独立TypeScript/ESLint通过，原失败/trace保留在 `8f6b-push-target-unknown-failure/`、`pr-full-42643274038-views-return/`；修后仍待新头真实验收。
+
+### 第七批开发记录
+
+以下保留开发时本机/模拟证据；最新真实运行结果以上方对应源HEAD记录为准。
 
 本批全项目typecheck、lint和encoding通过，11个纯文件394/394通过，覆盖41项剪藏合同、10项凭据服务、86项安全/提取（含5个真实受控TLS case）、21项来源/插入及旧模板/视图/日期/月历/导航；报告 `web/test-results/record-clips-2026-11-09/pure-final.json`。服务/store单元中的网页请求mock只证明缓存边界；另由默认原生传输真实读取 `https://example.com/` 成功，156字、无截断、833ms，CA/hostname、公开DNS pin、peer检查与无代理保持，初次2023ms成功也保留。代码hash/Node24.19.0和sanitized结果在同目录 `security-branch-result.json`、`live-public-html-result.json`；它们不是已完成跨Next或打包验收。
 
