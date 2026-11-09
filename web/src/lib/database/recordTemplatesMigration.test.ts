@@ -26,7 +26,9 @@ describe("personal record template configuration migration", () => {
     fs.copyFileSync(path.resolve("prisma", "seed.db"), databasePath);
     try {
       const result = await validateEmptySeedDatabase({ databasePath, migrationsDirectory: path.resolve("prisma", "migrations"), PrismaClient });
-      expect(result.migrationCount).toBe(30);
+      const currentMigrationCount = fs.readdirSync(path.resolve("prisma", "migrations"), { withFileTypes: true })
+        .filter(entry => entry.isDirectory() && fs.existsSync(path.resolve("prisma", "migrations", entry.name, "migration.sql"))).length;
+      expect(result.migrationCount).toBe(currentMigrationCount);
       expect(result.checksumsMatch).toBe(true);
       expect(Object.keys(result.businessCounts)).toHaveLength(27);
       expect(result.businessCounts.KnowledgeRecordTemplate).toBe(0);

@@ -17,22 +17,26 @@ import { isRecordReferenceSnapshot, recordReferenceKey, verifyParagraphSelector 
 import { compareRecordIds, compareRecordTitles, matchRecordSearch, readRecordAliases, recordAliases } from "./recordNames";
 import { createKnowledgeDateMatcher, parseKnowledgeFilters, recordSourceCategory, type KnowledgeViewFilters } from "./knowledgeViewContracts";
 import { knowledgeViewScopeIssue } from "./savedKnowledgeViewService";
+import { parseAssignedRecordDate, readAssignedRecordDate } from "./recordDateContracts";
 const kinds = ["note", "question", "example", "experience", "excerpt", "understanding"];
 const symmetric = new Set(["related", "analogy", "contrast"]);
 const contentInclude = { currentRevision: true, nodeLinks: { include: { node: { select: { id: true, domainId: true, title: true } } } }, memberships: { include: { groupNode: { select: { id: true, title: true, domainId: true } } } }, graphNodes: { select: { domainId: true } } } satisfies Prisma.KnowledgePointInclude;
 function present(point: Prisma.KnowledgePointGetPayload<{
     include: typeof contentInclude;
-}>) { return { id: point.id, domainId: point.domainId, title: point.currentRevision ? point.currentRevision.title : point.title, body: point.currentRevision ? point.currentRevision.body : point.userUnderstanding || point.coreEssence || "", aliases: readRecordAliases(point.currentRevision?.aliasesJson), kind: point.recordKind, currentRevisionId: point.currentRevisionId, sourceType: point.currentRevision ? point.currentRevision.sourceType : "legacy_unknown", sourceCategory: recordSourceCategory(point.currentRevision?.sourceType), sources: parseSaved(point.currentRevision?.sourcesJson, []), createdAt: point.createdAt, updatedAt: point.updatedAt, nodes: point.nodeLinks.map(x => x.node), collections: point.memberships.map(x => x.groupNode), domainIds: [...new Set([point.domainId, ...point.nodeLinks.map(x => x.node.domainId), ...point.graphNodes.map(x => x.domainId), ...point.memberships.map(x => x.groupNode.domainId)].filter((x): x is string => !!x))] }; }
+}>) { return { id: point.id, domainId: point.domainId, title: point.currentRevision ? point.currentRevision.title : point.title, body: point.currentRevision ? point.currentRevision.body : point.userUnderstanding || point.coreEssence || "", aliases: readRecordAliases(point.currentRevision?.aliasesJson), ...readAssignedRecordDate(point.currentRevision?.recordDate ?? null, point.currentRevision?.recordDateTimeZone ?? null), kind: point.recordKind, currentRevisionId: point.currentRevisionId, sourceType: point.currentRevision ? point.currentRevision.sourceType : "legacy_unknown", sourceCategory: recordSourceCategory(point.currentRevision?.sourceType), sources: parseSaved(point.currentRevision?.sourcesJson, []), createdAt: point.createdAt, updatedAt: point.updatedAt, nodes: point.nodeLinks.map(x => x.node), collections: point.memberships.map(x => x.groupNode), domainIds: [...new Set([point.domainId, ...point.nodeLinks.map(x => x.node.domainId), ...point.graphNodes.map(x => x.domainId), ...point.memberships.map(x => x.groupNode.domainId)].filter((x): x is string => !!x))] }; }
+export function personalKnowledgeBaseWhere(filters: KnowledgeViewFilters): Prisma.KnowledgePointWhereInput {
+    return {
+        ...(filters.domainId ? { OR: [{ domainId: filters.domainId }, { nodeLinks: { some: { node: { domainId: filters.domainId } } } }, { graphNodes: { some: { domainId: filters.domainId } } }, { memberships: { some: { groupNode: { domainId: filters.domainId } } } }] } : {}),
+        ...(filters.collectionId ? { memberships: { some: { groupNodeId: filters.collectionId } } } : {}), ...(filters.kind ? { recordKind: filters.kind } : {})
+    };
+}
 export async function listPersonalKnowledge(q = "", domainId?: string, options: { offset?: unknown; limit?: unknown; collectionId?: string; kind?: string; sort?: string; sourceType?: string; date?: unknown } = {}) {
     const page = listPage(options.offset, options.limit, 300);
     let filters: KnowledgeViewFilters;
     try { filters = parseKnowledgeFilters({ q, domainId, collectionId: options.collectionId, kind: options.kind, sort: options.sort, sourceType: options.sourceType, date: options.date }); }
     catch (error) { throw new NodeTeachingError(error instanceof Error ? error.message : "检索条件无效。"); }
     const date = createKnowledgeDateMatcher(filters.date), dateWindow = date.window;
-    const where: Prisma.KnowledgePointWhereInput = {
-        ...(filters.domainId ? { OR: [{ domainId: filters.domainId }, { nodeLinks: { some: { node: { domainId: filters.domainId } } } }, { graphNodes: { some: { domainId: filters.domainId } } }, { memberships: { some: { groupNode: { domainId: filters.domainId } } } }] } : {}),
-        ...(filters.collectionId ? { memberships: { some: { groupNodeId: filters.collectionId } } } : {}), ...(filters.kind ? { recordKind: filters.kind } : {})
-    };
+    const where = personalKnowledgeBaseWhere(filters);
     return prisma.$transaction(async tx => {
         const unavailableReason = await knowledgeViewScopeIssue(filters, tx);
         if (unavailableReason) return { knowledgePoints: [], filters, dateWindow, unavailableReason, page: { ...page, total: 0, nextOffset: null } };
@@ -42,10 +46,10 @@ export async function listPersonalKnowledge(q = "", domainId?: string, options: 
             for (;;) {
                 const rows = await tx.knowledgePoint.findMany({ where: { AND: [where, ...(cursor ? [{ id: { gt: cursor } }] : [])] }, orderBy: { id: "asc" }, take: 128, select: {
                     id: true, title: true, createdAt: true, updatedAt: true, ...(filters.q ? { userUnderstanding: true, coreEssence: true } : {}),
-                    currentRevision: { select: { title: true, sourceType: true, ...(filters.q ? { body: true, aliasesJson: true } : {}) } }
+                    currentRevision: { select: { title: true, sourceType: true, recordDate: true, recordDateTimeZone: true, ...(filters.q ? { body: true, aliasesJson: true } : {}) } }
                 } });
                 for (const row of rows) {
-                    if (filters.sourceType && recordSourceCategory(row.currentRevision?.sourceType) !== filters.sourceType || !date.matches(row)) continue;
+                    if (filters.sourceType && recordSourceCategory(row.currentRevision?.sourceType) !== filters.sourceType || !date.matches({ ...row, recordDate: row.currentRevision?.recordDate ?? null, recordDateTimeZone: row.currentRevision?.recordDateTimeZone ?? null })) continue;
                     const content = { title: row.currentRevision ? row.currentRevision.title : row.title, body: row.currentRevision ? row.currentRevision.body || "" : row.userUnderstanding || row.coreEssence || "", aliases: readRecordAliases(row.currentRevision?.aliasesJson) };
                     if (!filters.q || matchRecordSearch(content, filters.q).matches) matches.push({ id: row.id, title: content.title, updatedAt: row.updatedAt });
                 }
@@ -67,7 +71,7 @@ export async function listPersonalKnowledge(q = "", domainId?: string, options: 
     }, { timeout: 30000 });
 }
 export async function getPersonalKnowledge(id: string) { const p = await prisma.knowledgePoint.findUnique({ where: { id }, include: contentInclude }); if (!p)
-    throw new NodeTeachingError("个人记录不存在。", 404); const revisions = await prisma.knowledgePointRevision.findMany({ where: { knowledgePointId: id }, orderBy: { sequence: "desc" } }); const relations = await prisma.knowledgeGraphEdge.findMany({ where: { OR: [{ fromKnowledgePointId: id }, { toKnowledgePointId: id }] }, include: { fromKnowledgePoint: { include: { currentRevision: true } }, toKnowledgePoint: { include: { currentRevision: true } } } }); return { knowledgePoint: present(p), revisions: revisions.map(r => ({ ...r, sourceCategory: recordSourceCategory(r.sourceType), aliases: readRecordAliases(r.aliasesJson), sources: parseSaved(r.sourcesJson, []) })), relations: relations.map(relationView) }; }
+    throw new NodeTeachingError("个人记录不存在。", 404); const revisions = await prisma.knowledgePointRevision.findMany({ where: { knowledgePointId: id }, orderBy: { sequence: "desc" } }); const relations = await prisma.knowledgeGraphEdge.findMany({ where: { OR: [{ fromKnowledgePointId: id }, { toKnowledgePointId: id }] }, include: { fromKnowledgePoint: { include: { currentRevision: true } }, toKnowledgePoint: { include: { currentRevision: true } } } }); return { knowledgePoint: present(p), revisions: revisions.map(r => ({ ...r, ...readAssignedRecordDate(r.recordDate, r.recordDateTimeZone), sourceCategory: recordSourceCategory(r.sourceType), aliases: readRecordAliases(r.aliasesJson), sources: parseSaved(r.sourcesJson, []) })), relations: relations.map(relationView) }; }
 async function sourceSnapshots(v: unknown) {
     if (v === undefined)
         return [];
@@ -160,9 +164,15 @@ async function addReferences(tx: Prisma.TransactionClient, id: string, d: Record
             await tx.knowledgeGraphNode.create({ data: { domainId, knowledgePointId: id, title: "", status: "confirmed" } });
     }
 }
+function recordDateInput(data: Record<string, unknown>) {
+    if (!Object.prototype.hasOwnProperty.call(data, "recordDate")) return null;
+    try { return parseAssignedRecordDate(data.recordDate); }
+    catch (error) { throw new NodeTeachingError(error instanceof Error ? error.message : "本人记录日期无效。"); }
+}
 export async function createPersonalKnowledge(value: unknown) {
     const {d,title,body,aliases,kind,sourceType}=recordInput(value),requestId=teachingText(d.requestId,"保存请求标识",160);
-    const auditId=`record-save:${digest(requestId)}`,inputHash=digest({title,body,kind,sourceType,domainId:d.domainId||null,nodeIds:d.nodeIds||[],domainIds:d.domainIds||[],sessionId:d.sessionId||null,sources:d.sources||[],...(aliases.length?{aliases}:{})});
+    const recordDate = recordDateInput(d);
+    const auditId=`record-save:${digest(requestId)}`,inputHash=digest({title,body,kind,sourceType,domainId:d.domainId||null,nodeIds:d.nodeIds||[],domainIds:d.domainIds||[],sessionId:d.sessionId||null,sources:d.sources||[],...(aliases.length?{aliases}:{}),...(recordDate?{recordDate}:{})});
     const prior=await prisma.learningProgress.findUnique({where:{id:auditId}});
     if(prior){const p=parseSaved<{inputHash:string;knowledgePointId:string}>(prior.payloadJson,{} as {inputHash:string;knowledgePointId:string});if(p.inputHash!==inputHash)throw new NodeTeachingError("此保存标识已用于另一份内容。",409);return getPersonalKnowledge(p.knowledgePointId);}
     const sources=await sourceSnapshots(d.sources);
@@ -172,7 +182,7 @@ export async function createPersonalKnowledge(value: unknown) {
         const session=d.sessionId?await tx.nodeTeachingSession.findUnique({where:{id:String(d.sessionId)}}):null;
         if(d.sessionId&&!session)throw new NodeTeachingError("关联学习会话不存在。");
         const point=await tx.knowledgePoint.create({data:{domainId:typeof d.domainId==="string"?d.domainId:null,recordKind:kind,masteryStatus:"seen"}});
-        const revision=await tx.knowledgePointRevision.create({data:{knowledgePointId:point.id,sequence:1,title,body,aliasesJson:JSON.stringify(aliases),sourceType,sourcesJson:JSON.stringify(sources)}});
+        const revision=await tx.knowledgePointRevision.create({data:{knowledgePointId:point.id,sequence:1,title,body,aliasesJson:JSON.stringify(aliases),sourceType,sourcesJson:JSON.stringify(sources),recordDate:recordDate?.date??null,recordDateTimeZone:recordDate?.timeZone??null}});
         await tx.knowledgePoint.update({where:{id:point.id},data:{currentRevisionId:revision.id}});await addReferences(tx,point.id,d);
         await tx.learningProgress.create({data:{id:auditId,domainId:session?.domainId||point.domainId,nodeId:session?.nodeId||null,status:"record_saved",payloadJson:JSON.stringify({requestId,inputHash,sessionId:session?.id||null,knowledgePointId:point.id,revisionId:revision.id})}});
         return point.id;
@@ -215,7 +225,7 @@ async function revisionSourceSnapshots(id: string, d: Record<string, unknown>) {
     return result;
 }
 export async function revisePersonalKnowledge(id: string, value: unknown) {
-    const { d, title, body, aliases, kind, sourceType } = recordInput(value), sources = await revisionSourceSnapshots(id, d);
+    const { d, title, body, aliases, kind, sourceType } = recordInput(value), recordDate = recordDateInput(d), sources = await revisionSourceSnapshots(id, d);
     await prisma.$transaction(async tx => {
         const point = await tx.knowledgePoint.findUnique({ where: { id } });
         if (!point) throw new NodeTeachingError("个人记录不存在。", 404);
@@ -226,6 +236,8 @@ export async function revisePersonalKnowledge(id: string, value: unknown) {
         const latest = await tx.knowledgePointRevision.findFirst({ where: { knowledgePointId: id }, orderBy: { sequence: "desc" } });
         const revision = await tx.knowledgePointRevision.create({ data: {
             knowledgePointId: id, sequence: (latest?.sequence || 0) + 1, title, body, sourceType,
+            recordDate: Object.prototype.hasOwnProperty.call(d, "recordDate") ? recordDate?.date ?? null : current.recordDate,
+            recordDateTimeZone: Object.prototype.hasOwnProperty.call(d, "recordDate") ? recordDate?.timeZone ?? null : current.recordDateTimeZone,
             aliasesJson: d.aliases === undefined ? current.aliasesJson : JSON.stringify(aliases),
             sourcesJson: d.sources === undefined ? current.sourcesJson : JSON.stringify(sources)
         } });

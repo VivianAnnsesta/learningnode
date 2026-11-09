@@ -1,5 +1,6 @@
 import { isRecordReferenceSnapshot, paragraphSelectorInput, referenceParagraphs, type RecordReferenceSnapshot } from "../../lib/learning/recordReferences";
 import { recordAliases } from "../../lib/learning/recordNames";
+import type { AssignedRecordDate } from "../../lib/learning/recordDateContracts";
 
 export type RecordSnapshot = RecordReferenceSnapshot;
 export { recordReferenceKey, recordReferenceQuote } from "../../lib/learning/recordReferences";
@@ -13,6 +14,8 @@ export type RecordChoice = {
   sourceType: string;
   aliases?: string[];
   matchedAliases?: string[];
+  recordDate?: AssignedRecordDate | null;
+  recordDateUnavailableReason?: string;
 };
 
 /** Form input is one display name per line; matching and normalization belong to the API. */

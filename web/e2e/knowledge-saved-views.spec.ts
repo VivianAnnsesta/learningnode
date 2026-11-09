@@ -45,7 +45,7 @@ test("来源和本地日期筛选可保存重开，字段与动态最近日期�
   await page.getByLabel("日期范围").selectOption("range");
   await page.getByLabel("起始日期").fill("2026-11-01");
   await page.getByLabel("结束日期").fill("2026-11-01");
-  await page.getByLabel("日期时区").fill("America/Los_Angeles");
+  await page.getByLabel("日期时区", { exact: true }).fill("America/Los_Angeles");
   await page.getByLabel("视图名称").fill(name);
   await expect(page.getByRole("button", { name: "保存为新视图", exact: true })).toBeDisabled();
   await expect(list.getByRole("link", { name: b.title, exact: true })).toBeVisible();
@@ -70,14 +70,14 @@ test("来源和本地日期筛选可保存重开，字段与动态最近日期�
   expect(await facts()).toEqual(before);
   await page.screenshot({ path: info.outputPath("source-calendar-and-fields.png"), fullPage: true });
   await page.reload();
-  await expect(page.getByLabel("日期时区")).toHaveValue("America/Los_Angeles");
+  await expect(page.getByLabel("日期时区", { exact: true })).toHaveValue("America/Los_Angeles");
   await expect(page.getByLabel("显示摘要", { exact: true })).not.toBeChecked();
   await expect(list.getByRole("link", { name: a.title, exact: true })).toBeVisible();
   await page.getByRole("button", { name: `打开视图“${name}”`, exact: true }).click();
   await expect(page.getByLabel("视图名称")).toHaveValue(name);
   await page.getByLabel("日期范围").selectOption("last_days");
   await page.getByLabel("最近天数").fill("1");
-  await page.getByLabel("日期时区").fill("UTC");
+  await page.getByLabel("日期时区", { exact: true }).fill("UTC");
   await page.getByRole("button", { name: "应用日期筛选", exact: true }).click();
   await page.getByRole("button", { name: "更新当前视图", exact: true }).click();
   await expect(page.getByText("检索视图已保存，记录内容没有改变。", { exact: true })).toBeVisible();

@@ -70,6 +70,25 @@ describe("personal-network return navigation", () => {
     expect(knowledgeViewConfigFromQuery(new URL(alias, "http://localhost").searchParams).filters.domainId).toBe("math");
   });
 
+  it("restores the calendar reading month and literal assigned-date filter through all record jumps", () => {
+    const config = parseKnowledgeViewConfig({ filters: { q: "补写", domainId: "math", date: { field: "recorded", mode: "range", from: "2026-10-01", to: "2026-10-01", timeZone: "Asia/Shanghai" } }, displayFields: ["summary", "recordDate"] });
+    const view = knowledgeViewForConfig(config, { calendarMonth: "2026-11" });
+    expect(new URL(view, "http://localhost").searchParams.get("calendarMonth")).toBe("2026-11");
+    const first = knowledgeRecordHref("first", view);
+    const source = knowledgeSourceView("/learning/knowledge/first", new URL(first, "http://localhost").search);
+    const second = knowledgeRecordHref("second", source);
+    expect(knowledgeReturnView(new URL(second, "http://localhost").search)).toBe(view);
+    const parsed = knowledgeViewConfigFromQuery(new URL(view, "http://localhost").searchParams);
+    expect(parsed).toEqual(config);
+    expect(parsed).not.toHaveProperty("calendarMonth");
+    expect(knowledgeSourceView("/learning/domains/math/knowledge-graph", "?calendarMonth=2026-11&dateField=recorded"))
+      .toBe("/learning/knowledge?domainId=math&dateField=recorded&calendarMonth=2026-11");
+  });
+
+  it.each(["", "0000-01", "2026-13", "2026-1", "2026-11-01", "2026-11&calendarMonth=2026-12"])("rejects invalid or repeated calendar reading state: %s", month => {
+    expect(normalizeKnowledgeView(`${PERSONAL_KNOWLEDGE_PATH}?q=retained&calendarMonth=${month}`)).toBeNull();
+  });
+
   it.each([
     "sourceType=scientifically_verified", "dateMode=range&dateFrom=2026-02-30", "dateMode=all&dateDays=7", "dateMode=last_days&dateDays=0",
     "dateMode=last_days&dateDays=7&dateFrom=2026-11-01", "timeZone=%2B08%3A00", "fields=summary,summary", "fields=execute", "sourceType=user&sourceType=excerpt"

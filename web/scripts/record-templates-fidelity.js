@@ -3,7 +3,7 @@ const os = require("os");
 const path = require("path");
 const { databaseUrl, runUserDatabaseLifecycle } = require("./database-lifecycle");
 const { recordTemplatesMigration, fingerprint, snapshot, ledgerSnapshot, same, comparableRows,
-  removeRecordTemplatesFromFixture, populateHistoricalKnowledge, populateHistoricalSavedViews
+  removeRecordTemplatesFromFixture, populateHistoricalKnowledge, populateHistoricalSavedViews, createRecordTemplatesMigrationBoundary
 } = require("./personal-knowledge-migration-fixture");
 
 const verifyRecordTemplatesUpgrade = async ({ webRoot, PrismaClient }) => {
@@ -13,9 +13,10 @@ const verifyRecordTemplatesUpgrade = async ({ webRoot, PrismaClient }) => {
   const seedDatabasePath = path.join(webRoot, "prisma", "seed.db");
   fs.copyFileSync(seedDatabasePath, databasePath, fs.constants.COPYFILE_EXCL);
   const createClient = () => new PrismaClient({ datasources: { db: { url: databaseUrl(databasePath) } } });
+  const schemaPath = createRecordTemplatesMigrationBoundary({ webRoot, temporaryRoot });
   const lifecycle = now => runUserDatabaseLifecycle({
     userDatabasePath: databasePath, seedDatabasePath,
-    schemaPath: path.join(webRoot, "prisma", "schema.prisma"),
+    schemaPath,
     prismaCliPath: path.join(webRoot, "node_modules", "prisma", "build", "index.js"),
     PrismaClient, now: () => new Date(now)
   });

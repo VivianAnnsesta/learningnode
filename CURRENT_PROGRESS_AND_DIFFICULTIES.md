@@ -2,6 +2,32 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第六批已发布[草稿PR #6](https://github.com/VivianAnnsesta/learningnode/pull/6)，首轮源HEAD `e957fa0594509432fcf9962c5fe80e0b585af5e3`。两套专项真实均19文件/373测试通过，含18项日期SQLite/HTTP及2项新迁移；[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42627832644)页面26/26全过，[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42627657155)25过/1失败，新增7条月历页面两边均通过。原别名提及用例在UI空候选断言通过后，直接GET mentions遭遇 `read ECONNRESET`，没有收到该次业务JSON；正在核对官方trace，不推断底层原因或以另一套成功覆盖失败。原专项完整日志及SHA索引 `e957-target-evidence.json` 位于 `web/test-results/record-dates-2026-11-09/`。
+
+同首轮[完整PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42627832385)真实122文件/1166测试全过；页面36过/9原配置跳过/1失败，desktop未运行。新月历case4在第二次打开同记录时，测试helper已收到GET 200，读取JSON却报 `Network.getResponseBody: No resource with given identifier found`；失败时尚未执行后半段未编辑日期的409断言，随后核对官方trace中的请求/导航归属。[完整push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42627657120)真实122文件/1166测试、37页面通过/9原配置跳过，全部quality及Electron42.11.16打包、空白运行、备份后旧库升级和安全交互成功；31seed与四条迁移边界/FK0通过。两套原日志/SHA及trace结论在 `e957-full-evidence.json`，位于 `web/test-results/record-dates-2026-11-09/`。首次失败仍保留，当前不合并。
+
+官方PR工件13680047356 trace已确证：保存后的旧GET先于第二次导航发出，helper在新文档GET开始前命中其200；导航后读取旧body失败。新文档自己的GET 200且完整JSON的id、03-03UTC日期与修订身份均同已成功PATCH，不是后半段业务失败。现仅在该case成功保存后增加唯一“当前已保存本人记录日期：2026-03-03 · UTC”可见断言，等原load处理完成再重新打开；原helper/status/JSON、全部409/省略日期/事实断言及原5秒/60秒门保留，无全局重试。该一行修改独立TypeScript/ESLint通过，尚待新头真实验收。原ZIP/digest、日志和时序摘要保存在 `web/test-results/record-dates-2026-11-09/pr-full-42627832385-calendar409/`，不重跑或抹除首次失败。
+
+push专项官方工件13679712041/digest `dad6c254b5c100744d9cb5751b973fb8ef7d4bff39764d55982a933069b20b91` 的trace另确认：返回目标页的分页mentions已200/total0、context已200/backlinks1且来源ID正确；额外独立API客户端的无query GET约19ms即reset，未收到HTTP，server随后仍正常。闲置连接超时仅是符合时序的候选，无socket/FIN/RST证据，不断言根因。该用例现提前注册本次返回目标的精确分页mentions/context响应，并核HTTP200及完整JSON，再保留原total0/backlinks1/sourceID和DOM断言，避免额外闲置客户端请求；不重试、不改生产或时限。两页面文件独立TypeScript/ESLint通过，原trace/context与诊断在 `web/test-results/record-dates-2026-11-09/e957-mentions-failure/`；修后仍待新头真实验收。
+
+正式31空白seed已从push专项官方工件13680250355取回：绑定run42627657155/head e957fa，ZIP SHA256 `d4c9cdfe95e4f9ad610c4929bd284a6d23c4f00ceacad19aba1e52c944729b40`等于官方digest；seed SHA256 `165ae84d3fa0bc8edf3b03cf1a998add3425ce1dc885b88e09d346a564ddb714`、503808字节与官方报告一致。27业务表全空，31项迁移逐远端LF Git blob/checksum匹配，两日期TEXT列nullable/default NULL、原不可覆盖trigger/aliases默认[]、两配置表原七字段/default版本1/无FK、FK0/integrity ok。root另从ZIP原字节反序列化到内存SQLite独立逐项核验；保留旧30seed后已copy官方31 exact至source，尚未发布增量。证据在 `web/test-results/record-dates-migration-2026-11-09/official-seed-42627657155/`；真实用户库、旧SQL/ledger及原index不动，seed成功不等于整批完成。
+
+### 第六批过程记录
+
+以下保留对应源HEAD当时的开发、待验及原失败状态；最新结果以上方实际证据为准。
+
+第六批依据[ADR0032](docs/adr/0032-revision-owned-record-dates-and-calendar.md)推进本人指定记录日期、只读月历与补写：日期归个人修订，创建/更新时间与归档日期分开，打开月份/选日不造空记录，明确保存仍走原writer。目标/当前差异：两nullable字段/31前向迁移、唯一writer/DTO/list、同口径月计数和两入口代码已接通；官方31seed与本批真实SQLite/迁移/页面/桌面仍待验证。未以已有timestamp筛选代替本人日期，旧SavedView完整形状及创建hash兼容；原用户库/index不动。
+
+本批全项目typecheck/lint/encoding、Prisma schema validate及数据脚本/YAML静态检查通过；7个纯文件250/250通过，含新57日期/25月历合同及旧视图/模板/导航/插入/PDF回归。原114项兼容首跑1项失败为时间戳错误文案变化，已恢复原“记录日期”断言语义；新196项首跑2项为each夹具参数错误解包，已修成真实两参数检查，未改业务标准。原JSON与修后报告在 `web/test-results/record-dates-2026-11-09/`。新增7条页面与旧views精确label修改独立TypeScript/ESLint通过；审读后保留原标题/正文保存清空行为，重新填写同输入再验证创建幂等，并显式固定模板UTC以免宿主时区跨日，不增加原时限。
+
+18项SQLite/HTTP及2项新迁移回归已编写，本机原生0次，按已知AppControl不循环重试或绕过；这些仍待CI。SQL-only副本已验证两nullable列/旧4日期null、原字段/4配置/30ledger/精确备份不变，三次INSERT新修订日期add/change/clear、current指针及原trigger仍拒绝UPDATE，重开/FK0/integrity和空31安全逆投影。未知future/半列/漏ledger/非空修订拒绝且0写；它不是Prisma生命周期、正式seed或完整repeat验收。数据证据在 `web/test-results/record-dates-migration-2026-11-09/`，source30seed仍为官方 `59eaeccd…86f4`，待CI31工件核验后更新。
+
+六组合成API浏览器交互和截图61/62/63通过，零pageerror；root独立目视月历与补写草稿截图。追加两项相关检查验证月历180ms防抖三次快速输入只发最终一次、错误后手动重试仍立即恢复，未重跑全部六组；证据在 `web/test-results/record-dates-2026-11-09/ui-preview/`。它们覆盖单日count/list、待应用日期、草稿领域、日期省略/清空/409、旧坏raw、月份/快捷查找返回和模板now独立，仍是mock而不是真实SQLite/E2E。React清单审读请求绑定queryKey/Abort/generation、独立错误/状态与原记录保存边界，无新增HTML执行或未确认写入；全部临时预览服务已关闭。
+
+### 第五批完成记录
+
+第五批收尾文档源 `ecd0d51f48756aa09e827d838a6c4cf939a49924` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42619173310)已真实全成功：1057测试、30页面通过/9原配置跳过、30空白seed、三条历史/新增迁移边界及完整桌面门禁；其相对已验证c057源仅两文档不同。完整日志/哈希索引 `ecd-main-evidence.json` 位于 `web/test-results/record-templates-2026-11-09/`，不覆盖本批第六批待验。
+
 第五批个人记录模板已完成本批既定门禁并合并GitHub main：[PR #5](https://github.com/VivianAnnsesta/learningnode/pull/5)，合并提交 `30fd3c20d89b54a5f0b705da5d9d2e4162922a24`，已验证源HEAD `c05775d7676db4badf0b598c541148bb450bab4e`。自定义模板可创建、编辑/改名、删除和重开，内置示例可复制；两正文入口预览标题/日期/时间变量后明确插入，冻结所见时刻并保留选区、CRLF/孤立CR和emoji。安全撤销不覆盖后续编辑，原标题/类型/别名/来源/领域保持原值；只有原确认保存才创建记录或追加不可覆盖修订。
 
 该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616634062)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616626127)均真实全成功：118文件/1057测试，含17项模板SQLite/HTTP、2项新迁移及3项PDF生命周期；完整页面30通过/9按原配置跳过，新6条模板链全过。Typecheck、lint、encoding、Prisma、历史夹具和27→28/28→29/29→30迁移保真全过；两边Electron42.11.16打包、空白seed运行、备份后旧库升级和安全交互均成功。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616633945)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616626173)各15文件/264测试及19页面全过。四份完整日志及哈希在 `c057-full-evidence.json`，专项在 `c057-target-evidence.json`，均位于 `web/test-results/record-templates-2026-11-09/`。

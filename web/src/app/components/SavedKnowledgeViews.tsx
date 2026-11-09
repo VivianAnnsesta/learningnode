@@ -15,7 +15,7 @@ function ViewSummary({ config, domains, collections }: { config: KnowledgeViewCo
   return <div className="space-y-1 text-sm">
     <p>关键词：{filters.q || "不限"} · 类型：{recordKindLabels[filters.kind] || "全部"} · 来源：{recordSourceLabels[filters.sourceType] || "全部"}</p>
     <p>领域：{filters.domainId ? domains.find(domain => domain.id === filters.domainId)?.name || "原领域条件（未读取或已失效）" : "全部"} · 主题：{filters.collectionId ? collections.find(collection => collection.id === filters.collectionId)?.title || "原主题条件（未读取或已失效）" : "全部"}</p>
-    <p>{date.field === "created" ? "记录创建日期" : "记录更新日期"}：{date.mode === "all" ? "不限日期" : date.mode === "last_days" ? `最近${date.days}天，含今天` : `${date.from || "不限起日"} 至 ${date.to || "不限止日"}`} · 时区：{date.timeZone}</p>
+    <p>{date.field === "created" ? "记录创建日期" : date.field === "recorded" ? "本人指定记录日期" : "记录更新日期"}：{date.mode === "all" ? "不限日期" : date.mode === "last_days" ? `最近${date.days}天，含今天` : `${date.from || "不限起日"} 至 ${date.to || "不限止日"}`} · 时区：{date.timeZone}</p>
     <p>显示：标题{config.displayFields.length ? `、${config.displayFields.map(field => knowledgeFieldLabels[field]).join("、")}` : "（只显示标题）"}</p>
   </div>;
 }

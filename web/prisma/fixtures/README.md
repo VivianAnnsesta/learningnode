@@ -34,3 +34,15 @@ The aliases upgrade helper validates that hash and creates a temporary schema/mi
 - SHA-256: `097637e12a4cfb613b54ebf80d9d1678eaf7fe43fbef00c3451feb940122b6f9`
 
 The saved-view regression validates this archive and deploys exactly the first 29 migrations. Its temporary seed copy removes only the known empty template table/migration entry before projecting away saved views to construct the populated 28 boundary. The aliases regression similarly removes these known future empty configuration tables before constructing 27. Unknown future migrations, mismatched table/ledger state, nonempty configuration tables, or a missing/changed archive fail closed. The separate 29-to-30 template regression keeps nonempty saved-view configurations and their versions together with all old knowledge and ledger fields, then verifies custom template persistence without creating records or learning facts. All projection operations occur only in isolated synthetic fixture copies.
+
+## Personal-template boundary
+
+`record-templates-30.schema.prisma` archives the schema after personal templates and before revision-owned record dates:
+
+- Original repository commit: `ecd0d51f48756aa09e827d838a6c4cf939a49924`
+- Original path: `web/prisma/schema.prisma`
+- Original Git blob: `5050fab970a346b6dcd66048b228647e4248e177`
+- Original blob size: 20,092 bytes (UTF-8, LF)
+- SHA-256: `cca4a1b8ded7f5037c814f30872c9d0a674c308d4faca5f07bd16e10e9665cd2`
+
+The template regression validates this archive and deploys only the first 30 migrations. Before any older projection, a temporary empty seed copy may remove the known nullable record-date columns and their exact migration ledger entry. Both columns, their null defaults and the ledger must agree, and the revision table must be empty. Unknown future migrations, partial schema, nonempty revisions or altered archives fail closed. No projection disables or removes the existing immutability trigger. The separate populated 30-to-31 regression preserves both configuration kinds, raw knowledge and ledger data, verifies all old dates remain null, and exercises date additions/changes/clearing only through new revisions and current-pointer updates with the trigger enabled.
