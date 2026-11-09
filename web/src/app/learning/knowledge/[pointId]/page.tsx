@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ActionButton, AppShell, PageHeader, SectionPanel } from "../../../components/ui";
 import { RecordContextPanel } from "../../../components/RecordContextPanel";
 import { RecordNeighborhood } from "../../../components/RecordNeighborhood";
 import { RecordReferencePicker } from "../../../components/RecordReferencePicker";
 import { isRecordSnapshot, readRecordJson, recordKindLabels, recordSourceInputs, recordSourceLabels, relationKindLabels, sameRecordSource, type RecordChoice, type RecordSnapshot } from "../../../components/recordDiscoveryTypes";
+import { knowledgeRecordHref, knowledgeReturnView } from "../../../components/knowledgeNavigation";
 
 type Point = {
   id: string; title: string; body: string; kind: string; currentRevisionId: string;
@@ -22,7 +23,12 @@ type Group = { id: string; title: string };
 type Domain = { id: string; name: string };
 
 export default function KnowledgePage() {
+  return <Suspense fallback={<p role="status">正在读取个人记录…</p>}><KnowledgePageContent /></Suspense>;
+}
+
+function KnowledgePageContent() {
   const params = useParams(), router = useRouter(), id = String(params.pointId);
+  const searchParams = useSearchParams(), sourceView = knowledgeReturnView(searchParams.toString());
   const [point, setPoint] = useState<Point | null>(null);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [relations, setRelations] = useState<Relation[]>([]);
@@ -120,7 +126,7 @@ export default function KnowledgePage() {
   const unavailable = busy || !point;
 
   return <AppShell>
-    <PageHeader title={point?.title || "个人记录"} description="修订保留旧版本和来源，同一记录可引用到多个领域与主题。" actions={<Link className="underline" href="/learning/knowledge">返回个人网络</Link>} />
+    <PageHeader title={point?.title || "个人记录"} description="修订保留旧版本和来源，同一记录可引用到多个领域与主题。" actions={<Link className="underline" href={sourceView}>返回个人网络</Link>} />
     {error && <div role="alert"><p className="text-rose-700">{error}</p><ActionButton variant="secondary" disabled={loading || busy} onClick={() => { setError(""); void load(!point).catch(cause => setError(cause instanceof Error ? cause.message : "无法读取个人记录。")); }}>重试读取记录</ActionButton></div>}
     {message && <p role="status">{message}</p>}
     {loading && <p role="status">正在读取个人记录…</p>}
@@ -159,8 +165,8 @@ export default function KnowledgePage() {
           }}>已合并，使用最新修订作为保存基础</ActionButton>
         </div>}
       </SectionPanel>
-      <RecordContextPanel key={`context-${id}`} pointId={id} refresh={refresh} />
-      <RecordNeighborhood key={`neighborhood-${id}`} pointId={id} refresh={refresh} />
+      <RecordContextPanel key={`context-${id}`} pointId={id} refresh={refresh} returnTo={sourceView} />
+      <RecordNeighborhood key={`neighborhood-${id}`} pointId={id} refresh={refresh} returnTo={sourceView} />
       <SectionPanel>
         <h2 className="text-xl">引用与主题</h2>
         <p>已引用领域：{point.domainIds.length ? point.domainIds.map(domainId => <Link className="mr-3 underline" href={`/learning/domains/${encodeURIComponent(domainId)}`} key={domainId}>{domains.find(item => item.id === domainId)?.name || domainId}</Link>) : "独立记录"}</p>
@@ -188,11 +194,11 @@ export default function KnowledgePage() {
       <SectionPanel>
         <h2 className="text-xl">从这条记录继续探索</h2>
         <input aria-label="记录探索问题" className="workshop-input w-full" disabled={unavailable} value={question} onChange={event => setQuestion(event.target.value)} placeholder="想进一步弄清什么？" />
-        <ActionButton disabled={unavailable} onClick={async () => { const result = await mutate("/api/learning-sessions", { requestId: crypto.randomUUID(), knowledgePointId: id, question: question || undefined, returnTo: { href: `/learning/knowledge/${id}` } }); if (result && currentId.current === id) router.push(`/learning/sessions/${result.session.id}`); }}>开始探索并保留记录来源</ActionButton>
+        <ActionButton disabled={unavailable} onClick={async () => { const result = await mutate("/api/learning-sessions", { requestId: crypto.randomUUID(), knowledgePointId: id, question: question || undefined, returnTo: { href: knowledgeRecordHref(id,sourceView) } }); if (result && currentId.current === id) router.push(`/learning/sessions/${result.session.id}`); }}>开始探索并保留记录来源</ActionButton>
       </SectionPanel>
       <SectionPanel>
         <h2 className="text-xl">修订与原始来源</h2>
-        {revisions.map(revision => <details key={revision.id}><summary>修订 {revision.sequence} · {revision.title} · {revision.sourceType}</summary><p className="whitespace-pre-wrap">{revision.body}</p><p>{new Date(revision.createdAt).toLocaleString()}</p>{revision.sources.filter(isRecordSnapshot).map(source => <div key={`${source.knowledgePointId}:${source.revisionId}`} className="my-3 rounded-lg border p-3"><p>引用：{source.title}</p><p className="whitespace-pre-wrap">{source.body}</p><Link className="underline" href={`/learning/knowledge/${encodeURIComponent(source.knowledgePointId)}`}>打开记录当前版本</Link></div>)}<details><summary>查看完整来源快照</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(revision.sources, null, 2)}</pre></details></details>)}
+        {revisions.map(revision => <details key={revision.id}><summary>修订 {revision.sequence} · {revision.title} · {revision.sourceType}</summary><p className="whitespace-pre-wrap">{revision.body}</p><p>{new Date(revision.createdAt).toLocaleString()}</p>{revision.sources.filter(isRecordSnapshot).map(source => <div key={`${source.knowledgePointId}:${source.revisionId}`} className="my-3 rounded-lg border p-3"><p>引用：{source.title}</p><p className="whitespace-pre-wrap">{source.body}</p><Link className="underline" href={knowledgeRecordHref(source.knowledgePointId,sourceView)}>打开记录当前版本</Link></div>)}<details><summary>查看完整来源快照</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(revision.sources, null, 2)}</pre></details></details>)}
       </SectionPanel>
     </>}
   </AppShell>;

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { knowledgeRecordHref, knowledgeSourceView, knowledgeViewForFilters, PERSONAL_KNOWLEDGE_PATH } from "./knowledgeNavigation";
 
 type SearchResult = { id: string; title: string; body: string; kind: string };
 
@@ -14,9 +15,11 @@ export function KnowledgeQuickSwitcher() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [sourceView, setSourceView] = useState(PERSONAL_KNOWLEDGE_PATH);
   const close = useCallback(() => { dialog.current?.close(); setOpen(false); }, []);
   const show = useCallback(() => {
     if (dialog.current?.open) return;
+    setSourceView(knowledgeSourceView(window.location.pathname, window.location.search));
     dialog.current?.showModal();
     setOpen(true);
     input.current?.focus();
@@ -66,12 +69,12 @@ export function KnowledgeQuickSwitcher() {
       {error && <p role="alert">{error} <button type="button" className="underline" onClick={() => setRetry(value => value + 1)}>重试查找</button></p>}
       <ul className="max-h-[55vh] overflow-y-auto">
         {items.map(item => <li key={item.id} className="border-t py-3">
-          <Link onClick={close} className="block underline" href={`/learning/knowledge/${encodeURIComponent(item.id)}`}>{item.title}</Link>
+          <Link onClick={close} className="block underline" href={knowledgeRecordHref(item.id, sourceView)}>{item.title}</Link>
           <p className="mt-1 whitespace-pre-wrap text-sm">{item.body.slice(0, 160)}</p>
         </li>)}
       </ul>
       {!loading && !error && !items.length && <p>没有匹配的记录，可尝试其他关键词。</p>}
-      <Link onClick={close} className="mt-4 inline-block underline" href={`/learning/knowledge?q=${encodeURIComponent(query)}`}>在个人网络中查看全部结果</Link>
+      <Link onClick={close} className="mt-4 inline-block underline" href={knowledgeViewForFilters({q:query})}>在个人网络中查看全部结果</Link>
     </dialog>
   </>;
 }

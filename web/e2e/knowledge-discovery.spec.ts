@@ -31,7 +31,7 @@ test("类型视图、搜索地址恢复与全局快捷查找使用同一记录",
   await expect(dialog).toBeVisible();
   await page.getByLabel("快速查找关键词").fill(`${key}-Z`);
   await dialog.getByRole("link", { name: `${key}-Z-疑问`, exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/learning/knowledge/${records[0].id}$`));
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`/learning/knowledge/${records[0].id}`);
   await expect(dialog).not.toBeVisible();
   expect(await db.aiCallLog.count()).toBe(before.ai);
   expect(await db.knowledgePointRevision.count()).toBe(before.revisions);
@@ -105,7 +105,56 @@ test("引用选择、固定修订回看、反向引用与两层图谱形成真�
   await expect(graph.getByRole("link", { name: `打开记录：${excluded.title}`, exact: true })).toHaveCount(0);
   await page.screenshot({ path: info.outputPath("record-reading.png"), fullPage: true });
   await graph.getByRole("link", { name: `打开记录：${second.title}`, exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/learning/knowledge/${second.id}$`));
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`/learning/knowledge/${second.id}`);
   context = await (await request.get(`/api/knowledge-points/${original.id}/context`)).json();
   expect(context.backlinks.items[0].sources[0].revisionId).toBe(original.currentRevisionId);
+});
+
+test("引用、图谱和快捷查找返回原筛选视图，恶意返回地址不能外跳", async ({ page, request }) => {
+  const key = crypto.randomUUID();
+  const domain = await db.domain.create({ data: { name: `视图往返-${key}`, goal: "保留知识阅读位置" } });
+  async function record(label: string, sources: unknown[] = []) {
+    const response = await request.post("/api/knowledge-points", { data: { requestId: crypto.randomUUID(), title: `${label}-${key}`, body: `视图往返原文 ${key}`, kind: "question", domainId: domain.id, sources } });
+    expect(response.ok()).toBe(true);
+    return (await response.json()).knowledgePoint;
+  }
+  const b = await record("B来源");
+  const a = await record("A阅读", [{ kind: "record", knowledgePointId: b.id, revisionId: b.currentRevisionId }]);
+  const c = await record("C联系");
+  expect((await request.post("/api/knowledge-points/relations", { data: { fromKnowledgePointId: b.id, toKnowledgePointId: c.id, type: "related", detail: "把来源与使用情境相互对照" } })).ok()).toBe(true);
+  const before = { records: await db.knowledgePoint.count(), revisions: await db.knowledgePointRevision.count(), ai: await db.aiCallLog.count(), audit: await db.learningProgress.count() };
+  await page.goto(`/learning/knowledge?q=${key}&domainId=${domain.id}&kind=question&sort=title_asc`);
+  await page.getByRole("link", { name: a.title, exact: true }).click();
+  const context = page.getByRole("region", { name: "记录引用与反向引用" });
+  await context.getByRole("link", { name: `查看“${b.title}”当前版本`, exact: true }).click();
+  const graph = page.getByRole("region", { name: "局部知识图谱" });
+  await graph.getByRole("link", { name: `打开记录：${c.title}`, exact: true }).click();
+  await page.getByRole("link", { name: "返回个人网络", exact: true }).click();
+  await expect(page.getByLabel("检索个人记录")).toHaveValue(key);
+  await expect(page.getByLabel("筛选领域")).toHaveValue(domain.id);
+  await expect(page.getByLabel("筛选记录类型")).toHaveValue("question");
+  await expect(page.getByLabel("记录排序")).toHaveValue("title_asc");
+  await page.getByRole("link", { name: a.title, exact: true }).click();
+  await page.keyboard.press("Control+k");
+  const dialog = page.getByRole("dialog", { name: "快速查找个人记录" });
+  await page.getByLabel("快速查找关键词").fill(c.title);
+  await dialog.getByRole("link", { name: c.title, exact: true }).click();
+  await page.getByRole("link", { name: "返回个人网络", exact: true }).click();
+  await expect(page.getByLabel("检索个人记录")).toHaveValue(key);
+  await expect(page.getByLabel("筛选领域")).toHaveValue(domain.id);
+  await expect(page.getByLabel("筛选记录类型")).toHaveValue("question");
+  await page.goto(`/learning/domains/${domain.id}/knowledge-graph`);
+  await expect(page.getByLabel("筛选领域")).toHaveValue(domain.id);
+  await page.getByLabel("筛选领域").selectOption("");
+  await expect.poll(() => new URL(page.url()).searchParams.get("domainId")).toBe("");
+  await page.reload();
+  await expect(page.getByLabel("筛选领域")).toHaveValue("");
+  await page.goto(`/learning/knowledge/${a.id}?returnTo=${encodeURIComponent("https://example.org/redirect")}`);
+  await expect(page.getByRole("link", { name: "返回个人网络", exact: true })).toHaveAttribute("href", "/learning/knowledge");
+  await page.getByRole("link", { name: "返回个人网络", exact: true }).click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe("/learning/knowledge");
+  expect(await db.knowledgePoint.count()).toBe(before.records);
+  expect(await db.knowledgePointRevision.count()).toBe(before.revisions);
+  expect(await db.aiCallLog.count()).toBe(before.ai);
+  expect(await db.learningProgress.count()).toBe(before.audit);
 });

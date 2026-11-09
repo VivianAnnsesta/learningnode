@@ -136,7 +136,16 @@ fs.cpSync(standaloneDir, targetResourcesDir, copyOpts);
 removeForbiddenRuntimeFiles(targetResourcesDir);
 
 console.log("   -> Copying public assets...");
-fs.cpSync(path.join(webRoot, "public"), path.join(targetResourcesDir, "public"), copyOpts);
+const publicSource = path.join(webRoot, "public");
+const publicTarget = path.join(targetResourcesDir, "public");
+const publicInfo = fs.statSync(publicSource, { throwIfNoEntry: false });
+if (publicInfo) {
+  if (!publicInfo.isDirectory()) throw new Error("The optional public assets path must be a directory.");
+  fs.cpSync(publicSource, publicTarget, copyOpts);
+} else {
+  fs.mkdirSync(publicTarget, { recursive: true });
+  console.log("   -> No optional public assets; created an empty runtime public directory.");
+}
 
 console.log("   -> Copying .next/static assets...");
 fs.cpSync(path.join(webRoot, ".next", "static"), path.join(targetResourcesDir, ".next", "static"), copyOpts);

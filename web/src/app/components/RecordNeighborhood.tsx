@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ActionButton, SectionPanel } from "./ui";
 import { readRecordJson, relationKindLabels } from "./recordDiscoveryTypes";
+import { knowledgeRecordHref, PERSONAL_KNOWLEDGE_PATH } from "./knowledgeNavigation";
 
 type Neighborhood = {
   nodes: { id: string; title: string; kind: string; distance: number }[];
@@ -65,7 +66,7 @@ function connectionPath(edge: Neighborhood["edges"][number], nodes: Neighborhood
   return `M ${start.x.toFixed(1)} ${start.y.toFixed(1)} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${end.x.toFixed(1)} ${end.y.toFixed(1)}`;
 }
 
-export function RecordNeighborhood({ pointId, refresh }: { pointId: string; refresh: number }) {
+export function RecordNeighborhood({ pointId, refresh, returnTo = PERSONAL_KNOWLEDGE_PATH }: { pointId: string; refresh: number; returnTo?: string }) {
   const [depth, setDepth] = useState("1");
   const [neighborhood, setNeighborhood] = useState<Neighborhood | null>(null);
   const [loading, setLoading] = useState(false);
@@ -121,7 +122,7 @@ export function RecordNeighborhood({ pointId, refresh }: { pointId: string; refr
             const position = layout.get(node.id);
             if (!position) return null;
             const labelWidth = Math.min(node.title.length, 13) * 13 + 12;
-            return <a key={node.id} href={`/learning/knowledge/${encodeURIComponent(node.id)}`} aria-label={`打开记录：${node.title}`}>
+            return <a key={node.id} href={knowledgeRecordHref(node.id, returnTo)} aria-label={`打开记录：${node.title}`}>
               <title>{node.title}{node.distance === 0 ? "（当前记录）" : `（${node.distance}层联系）`}</title>
               <circle cx={position.x} cy={position.y} r={node.distance === 0 ? 29 : 23} fill={node.distance === 0 ? "#0f766e" : node.distance === 1 ? "#dbeafe" : "#fef3c7"} stroke="#334155" strokeWidth="1.5" />
               <text x={position.x} y={position.y + 4} textAnchor="middle" fontSize="11" fill={node.distance === 0 ? "#ffffff" : "#0f172a"}>{node.distance === 0 ? "当前" : `${node.distance}层`}</text>
@@ -131,9 +132,9 @@ export function RecordNeighborhood({ pointId, refresh }: { pointId: string; refr
           })}
         </svg>
       </div>
-      <div className="flex flex-wrap gap-3" aria-label="局部图谱记录入口">{neighborhood.nodes.filter(node => node.id !== pointId).map(node => <Link className="underline" href={`/learning/knowledge/${encodeURIComponent(node.id)}`} key={node.id}>{node.title} · {node.distance}层</Link>)}</div>
+      <div className="flex flex-wrap gap-3" aria-label="局部图谱记录入口">{neighborhood.nodes.filter(node => node.id !== pointId).map(node => <Link className="underline" href={knowledgeRecordHref(node.id,returnTo)} key={node.id}>{node.title} · {node.distance}层</Link>)}</div>
       <h3 className="font-semibold">联系说明 · {neighborhood.edges.length}</h3>
-      {neighborhood.edges.map(edge => <p key={edge.id} className="border-t pt-2"><Link className="underline" href={`/learning/knowledge/${encodeURIComponent(edge.fromKnowledgePointId)}`}>{titles.get(edge.fromKnowledgePointId)}</Link> {["related", "analogy", "contrast"].includes(edge.type) ? "↔" : "→"} <Link className="underline" href={`/learning/knowledge/${encodeURIComponent(edge.toKnowledgePointId)}`}>{titles.get(edge.toKnowledgePointId)}</Link> · {relationKindLabels[edge.type] || edge.type}<br />{edge.detail}</p>)}
+      {neighborhood.edges.map(edge => <p key={edge.id} className="border-t pt-2"><Link className="underline" href={knowledgeRecordHref(edge.fromKnowledgePointId,returnTo)}>{titles.get(edge.fromKnowledgePointId)}</Link> {["related", "analogy", "contrast"].includes(edge.type) ? "↔" : "→"} <Link className="underline" href={knowledgeRecordHref(edge.toKnowledgePointId,returnTo)}>{titles.get(edge.toKnowledgePointId)}</Link> · {relationKindLabels[edge.type] || edge.type}<br />{edge.detail}</p>)}
     </>}
   </SectionPanel>;
 }

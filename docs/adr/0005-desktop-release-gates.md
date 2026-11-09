@@ -20,6 +20,8 @@ Course-source links are data from an untrusted model. They are accepted and rend
 
 The packager removes `.env`, `.env.*`, and `ai-settings.json` from the standalone and copied Electron resources; package verification fails if any remain. This prevents build-traced configuration from being distributed, while not treating a development database as an acceptable release seed.
 
+Next.js public assets are optional. A clean checkout with no source `public` directory gets an empty packaged public directory; if source assets exist they must be copied successfully. Missing or invalid standalone output, static chunks, schema, seed, migrations or native engines remain hard failures.
+
 CI is a release gate, not advisory reporting. It must fail on lint, type, unit, migration-fidelity, malicious-URL, browser E2E, package, packaged-runtime, or packaged-security failures. Dependency audit covers both runtime and development/build dependencies: critical and high findings block the pipeline, while any accepted moderate finding must be named and tracked in `CURRENT_PROGRESS_AND_DIFFICULTIES.md`.
 
 CI installs the package-manager version declared by the application before `npm ci`, so dependency overrides and the committed lock are resolved by the same pinned npm toolchain. A package-manager mismatch is repaired explicitly; it must not be hidden with `--force`, skipped installation checks, or a lower audit threshold.

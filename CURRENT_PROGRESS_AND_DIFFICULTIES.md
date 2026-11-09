@@ -24,6 +24,12 @@
 
 提交 `03508aa56e647c82ff5dc7f88ddff091524dfab2` 的[全量](https://github.com/VivianAnnsesta/learningnode/actions/runs/42569103756)已真实通过803/803、Prisma校验、归档旧schema夹具生成和迁移保真；[专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42569103690)继续通过。完整E2E为11通过/9跳过/3失败：两项全库只读计数被另一并行测试写入污染；一项旧测试仍匹配更新前的保存提示。已将共享隔离SQLite的浏览器文件默认串行、更新提示断言，保留全库无写入及后续旧原文/修订保真断言。没有改业务规则；下一E2E及桌面阶段仍待实际结果。
 
+接续阅读体验的目标/当前差异：现有视图可刷新恢复，但详情的普通返回按钮仍回到未筛选列表；领域入口选择全部领域后刷新也可能恢复初始领域。依据 ADR 0027 接通受限 `returnTo` 视图传递，覆盖列表→记录→引用/图谱→返回、快捷查找及领域空筛选，不引入新的业务状态或外部导航。此接续能力尚未记为实现/验证通过；段落级选择仍在后续范围。
+
+提交 `ee2bb63782a84c067c0884a2af14609601a5690d` 的[完整 quality](https://github.com/VivianAnnsesta/learningnode/actions/runs/42570112250)已通过803/803、迁移保真和14条页面流程，9项按原配置跳过。桌面阶段已下载/解压 Electron 42 并生成应用，但随后因干净 checkout 没有可选空 `web/public` 目录、打包脚本无条件复制而 ENOENT；runtime/upgrade/security尚未执行。已按 ADR 0005 允许缺省可选 public 并建立空目标目录，存在的资产仍须复制成功，必需资源门禁不变；下一实际打包待验。
+
+返回视图的接续代码已完成：受限 canonical 相对视图由普通返回、引用、图谱和快捷查找沿用；领域显式空筛选能刷新保留，检索词中的反斜杠只作为编码文本。22项纯导航及3项来源请求测试本机通过，typecheck/lint/encoding通过；新增第4条真实页面往返检查尚待新CI，本机仍未换新依赖或重新打包。下一批段落级引用需统一选择器身份、真实原文偏移/哈希核验、多段共存和固定快照，不把这些方案写成已实现功能。
+
 更新日期：2026-11-08
 
 本轮路线输入与显式修复的代码改动已完成，最新隔离串行全量 **766/766** 通过，0失败、0未运行；全项目 typecheck、lint、encoding 通过。[全量JSON](web/test-results/planning-evidence-final-full-2026-10-28.json)、[输出](web/test-results/planning-evidence-final-full-2026-10-28.log)、[类型](web/test-results/planning-evidence-final-typecheck-2026-10-28.log)、[规范](web/test-results/planning-evidence-final-lint-2026-10-28.log)、[编码](web/test-results/planning-evidence-final-encoding-2026-10-28.log)保留。此前中间态755/755仍有效但不覆盖后来新增的旁路修复；编码命令首次误指向不存在的check-encoding.js，原[失败输出](web/test-results/planning-evidence-encoding-2026-10-28.log)保留，改用package脚本实际指向的check-mojibake.js后通过。未修改schema、真实用户数据库或Provider默认推理模式，未重新打包。

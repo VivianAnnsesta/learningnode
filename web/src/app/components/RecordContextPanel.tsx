@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActionButton, SectionPanel } from "./ui";
 import { readRecordJson, type RecordSnapshot } from "./recordDiscoveryTypes";
+import { knowledgeRecordHref, PERSONAL_KNOWLEDGE_PATH } from "./knowledgeNavigation";
 
 type Context = {
   outgoing: RecordSnapshot[];
@@ -13,7 +14,7 @@ type Context = {
   };
 };
 
-export function RecordContextPanel({ pointId, refresh }: { pointId: string; refresh: number }) {
+export function RecordContextPanel({ pointId, refresh, returnTo = PERSONAL_KNOWLEDGE_PATH }: { pointId: string; refresh: number; returnTo?: string }) {
   const [context, setContext] = useState<Context | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -55,12 +56,12 @@ export function RecordContextPanel({ pointId, refresh }: { pointId: string; refr
       {context.outgoing.map(source => <article className="rounded-lg border p-3" key={`${source.knowledgePointId}:${source.revisionId}`}>
         <p className="font-medium">{source.title}</p>
         <details><summary>展开引用时的原文</summary><p className="whitespace-pre-wrap">{source.body}</p><p className="text-xs">固定修订：{source.revisionId}</p></details>
-        <Link className="underline" href={`/learning/knowledge/${encodeURIComponent(source.knowledgePointId)}`}>查看“{source.title}”当前版本</Link>
+        <Link className="underline" href={knowledgeRecordHref(source.knowledgePointId, returnTo)}>查看“{source.title}”当前版本</Link>
       </article>)}
       <h3 className="font-semibold">哪些记录引用了这里 · {context.backlinks.page.total}</h3>
       {context.backlinks.items.length === 0 && <p>还没有其他记录的当前修订引用这里。</p>}
       {context.backlinks.items.map(item => <article className="rounded-lg border p-3" key={item.id}>
-        <Link className="font-medium underline" href={`/learning/knowledge/${encodeURIComponent(item.id)}`}>{item.title}</Link>
+        <Link className="font-medium underline" href={knowledgeRecordHref(item.id, returnTo)}>{item.title}</Link>
         <p className="whitespace-pre-wrap text-sm">{item.body}</p>
         {item.sources.map(source => <details key={`${source.knowledgePointId}:${source.revisionId}`}>
           <summary>对方引用的本记录版本：{source.title}</summary>

@@ -28,7 +28,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run check:encoding
-      - run: npx vitest run src/lib/learning/personalKnowledgeDiscovery.test.ts src/app/components/recordDiscoveryTypes.test.ts --reporter=default --reporter=json --outputFile=test-results/obsidian-discovery.json
+      - run: npx vitest run src/lib/learning/personalKnowledgeDiscovery.test.ts src/app/components/recordDiscoveryTypes.test.ts src/app/components/knowledgeNavigation.test.ts --reporter=default --reporter=json --outputFile=test-results/obsidian-discovery.json
       - run: npx playwright install chromium
       - run: npm run test:e2e -- knowledge-discovery.spec.ts
       - uses: actions/upload-artifact@v6
