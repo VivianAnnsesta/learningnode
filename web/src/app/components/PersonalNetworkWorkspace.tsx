@@ -15,6 +15,7 @@ import { parseAssignedRecordDate, type AssignedRecordDate } from "../../lib/lear
 import { RecordDateEditor, recordDateDescription } from "./RecordDateEditor";
 import { KnowledgeRecordCalendar } from "./KnowledgeRecordCalendar";
 import { RecordClipper } from "./RecordClipper";
+import { KnowledgeExportControls } from "./KnowledgeExportControls";
 
 type RecordItem = { id: string; title: string; body: string; kind: string; sourceType?: string; sourceCategory?: string; aliases?: string[]; matchedAliases?: string[]; createdAt?: string; updatedAt?: string; recordDate?: AssignedRecordDate | null; recordDateUnavailableReason?: string; domainIds: string[]; collections: { id: string; title: string }[] };
 type Collection = { id: string; title: string; memberships: { knowledgePointId: string }[] };
@@ -37,6 +38,7 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
   const [metadataReady, setMetadataReady] = useState(false);
   const [unavailableReason, setUnavailableReason] = useState<string | undefined>();
   const [dateWindow, setDateWindow] = useState<KnowledgeDateWindow | null>(null);
+  const [acceptedFiltersKey, setAcceptedFiltersKey] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [draftSources, setDraftSources] = useState<unknown[]>([]);
@@ -119,6 +121,7 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
       }
       windowKey.current = JSON.stringify(current.dateWindow ?? null);
       setDateWindow(current.dateWindow ?? null);
+      setAcceptedFiltersKey(filtersKey);
       setRecords(previous => pageOffset ? [...previous, ...current.knowledgePoints.filter(record => !previous.some(old => old.id === record.id))] : current.knowledgePoints);
       setNextOffset(current.page.nextOffset); setTotal(current.page.total);
       setUnavailableReason(current.unavailableReason); setCollections(groups.collections); setRelations(links.relations); setDomains(domainList.domains);
@@ -131,7 +134,7 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
   useEffect(() => {
     const counter = generation.current;
     counter.value++; windowKey.current = null;
-    setRecords([]); setNextOffset(null); setTotal(0); setUnavailableReason(undefined); setDateWindow(null);
+    setRecords([]); setNextOffset(null); setTotal(0); setUnavailableReason(undefined); setDateWindow(null); setAcceptedFiltersKey("");
     if (!filtersKey) { setListLoading(false); return; }
     setListLoading(true);
     const timer = setTimeout(() => void load().catch(cause => setError(cause instanceof Error ? cause.message : "无法读取个人网络。")), 180);
@@ -246,6 +249,7 @@ function PersonalNetworkContent({ initialDomain }: { initialDomain: string }) {
 
     <SectionPanel aria-label="个人记录列表">
       <h2>已保存记录 · {records.length} / {total}</h2>
+      <KnowledgeExportControls mode="view" scope={config ? { mode: "view", filters: config.filters, observedDateWindow: dateWindow } : null} scopeKey={JSON.stringify([filtersKey, dateWindow])} disabledReason={!config ? "检索地址无效，请明确修复筛选后导出。" : dateDraftPending ? "日期条件尚未应用，请先应用或恢复日期筛选后导出。" : unavailableReason ? `检索条件不可用：${unavailableReason}。请明确改选后导出。` : !metadataReady || acceptedFiltersKey !== filtersKey || listLoading ? "正在读取已应用检索结果，请稍后导出。" : undefined} />
       {unavailableReason && <p role="status" className="text-amber-800">条件不可用：{unavailableReason}。原筛选仍保留，请明确改选后再运行或保存。</p>}
       {dateWindow && <p className="text-sm">当前日期窗口：{dateWindow.from || "不限起日"} 至 {dateWindow.to || "不限止日"} · {dateWindow.timeZone}</p>}
       {config && records.map(record => <article aria-label={`个人记录：${record.title}`} key={record.id} className="border-t py-3">

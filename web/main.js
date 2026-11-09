@@ -343,7 +343,7 @@ const createWindow = async () => {
     }
 
     await mainWindow.loadURL(url);
-    let clipSecurity;
+    let clipSecurity, exportSecurity;
     if (securityVerificationEnabled) {
       const apiUrl = new URL("/api/domains", url);
       const rendererStatus = await mainWindow.webContents.executeJavaScript(
@@ -430,6 +430,72 @@ const createWindow = async () => {
         return { crossRouteCapture: true, immutableHistory: true, tamperRejected: true, evictedReceiptRejected: true, creationReplay: true };
       };
       clipSecurity = { ...await mainWindow.webContents.executeJavaScript(`(${verifyClipRoutes.toString()})()`), authenticationBoundary: true };
+      const exportApiUrl = new URL("/api/knowledge-points/export", url);
+      if (await requestStatus(exportApiUrl) !== 401 ||
+          await requestStatus(exportApiUrl, { Host: `example.invalid:${serverPort}` }) !== 403 ||
+          await requestStatus(exportApiUrl, { Origin: "http://127.0.0.1:1", "X-EnglishNode-Local-Token": localApiToken }) !== 403) {
+        throw new Error("Packaged export authentication verification failed.");
+      }
+      const verificationRoot = fs.realpathSync(process.env.ENGLISHNODE_SECURITY_VERIFICATION_ROOT);
+      const downloadDirectory = path.join(verificationRoot, "export-downloads");
+      fs.mkdirSync(downloadDirectory);
+      if (path.dirname(fs.realpathSync(downloadDirectory)) !== verificationRoot) throw new Error("Export verification download path escaped its isolated directory.");
+      const captureExportFacts = async () => {
+        const response = await fetch("/api/knowledge-points?limit=1"), list = await response.json();
+        if (response.status !== 200 || list.page.total !== 1 || list.knowledgePoints.length !== 1) throw new Error("Packaged export requires the isolated clipping fixture.");
+        const detail = await fetch(`/api/knowledge-points/${list.knowledgePoints[0].id}`);
+        if (detail.status !== 200) throw new Error("Packaged export fixture could not be read.");
+        return JSON.stringify({ list, detail: await detail.json() });
+      };
+      const factsBefore = await mainWindow.webContents.executeJavaScript(`(${captureExportFacts.toString()})()`);
+      await mainWindow.loadURL(new URL("/learning/knowledge", url).href);
+      const exportWindowUrl = mainWindow.webContents.getURL();
+      const clickRealExport = async () => {
+        const deadline = performance.now() + 10000;
+        while (performance.now() < deadline) {
+          const section = document.querySelector('[data-knowledge-export-scope="view"]');
+          const button = section && [...section.querySelectorAll("button")].find(button => button.textContent === "导出整个检索结果");
+          if (button && !button.disabled) {
+            const history = section.querySelector('input[aria-label="包含全部历史修订"]');
+            if (!history?.checked) throw new Error("Packaged export history choice was not explicit.");
+            button.click(); return;
+          }
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        throw new Error("Packaged real export control did not become ready.");
+      };
+      const realDownload = cancel => new Promise((resolve, reject) => {
+        const session = mainWindow.webContents.session;
+        const savePath = path.join(downloadDirectory, cancel ? "cancelled.zip" : "completed.zip");
+        let currentItem;
+        const timer = setTimeout(() => { currentItem?.cancel(); cleanup(); reject(new Error("Packaged real export download did not reach its terminal event.")); }, 32000);
+        const cleanup = () => { clearTimeout(timer); session.removeListener("will-download", start); };
+        const start = (_event, item, owner) => {
+          currentItem = item;
+          const downloadUrl = item.getURL(), origin = new URL(url).origin;
+          if (owner !== mainWindow.webContents || !downloadUrl.startsWith(`blob:${origin}/`) || item.getMimeType() !== "application/zip" || !/^englishnode-knowledge-\d{8}T\d{9}Z\.zip$/.test(item.getFilename())) {
+            item.cancel(); cleanup(); reject(new Error("Packaged export download identity was not the real same-origin UI ZIP.")); return;
+          }
+          item.setSavePath(savePath);
+          item.once("done", (_done, state) => {
+            cleanup();
+            try {
+              if (state !== (cancel ? "cancelled" : "completed") || mainWindow.webContents.getURL() !== exportWindowUrl || item.getSavePath() !== savePath) throw new Error("Packaged export download state, path or window changed.");
+              const bytes = fs.existsSync(savePath) ? fs.statSync(savePath).size : 0;
+              if (cancel ? bytes !== 0 : bytes < 22 || bytes !== item.getReceivedBytes()) throw new Error("Packaged export download byte result was incomplete or a cancelled file was saved.");
+              resolve({ state, savePath, bytes, ...(cancel ? {} : { sha256: crypto.createHash("sha256").update(fs.readFileSync(savePath)).digest("hex") }) });
+            } catch (error) { reject(error); }
+          });
+          if (cancel) item.cancel();
+        };
+        session.on("will-download", start);
+        mainWindow.webContents.executeJavaScript(`(${clickRealExport.toString()})()`, true).catch(error => { currentItem?.cancel(); cleanup(); reject(error); });
+      });
+      const completed = await realDownload(false), cancelled = await realDownload(true);
+      const factsAfter = await mainWindow.webContents.executeJavaScript(`(${captureExportFacts.toString()})()`);
+      if (factsBefore !== factsAfter || mainWindow.webContents.getURL() !== exportWindowUrl) throw new Error("Packaged export changed saved records or navigated the window.");
+      exportSecurity = { completed: completed.state === "completed", cancelled: cancelled.state === "cancelled", windowUnchanged: true, businessRecordsUnchanged: true, authenticationBoundary: true, completedPath: completed.savePath, completedBytes: completed.bytes, completedSha256: completed.sha256, cancelledPath: cancelled.savePath, cancelledBytes: cancelled.bytes };
+      await mainWindow.loadURL(url);
     }
     if (runtimeVerificationEnabled) {
       writeRuntimeVerificationResult({
@@ -445,7 +511,8 @@ const createWindow = async () => {
               foreignHostRejected: true,
               foreignOriginRejected: true,
               unsafeNavigationBlocked: true,
-              clipping: clipSecurity
+              clipping: clipSecurity,
+              exportDownload: exportSecurity
             }
           : undefined
       });

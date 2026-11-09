@@ -17,6 +17,7 @@ import { RecordDateEditor, recordDateDescription } from "../../../components/Rec
 import { parseAssignedRecordDate, type AssignedRecordDate } from "../../../../lib/learning/recordDateContracts";
 import { isRecordSnapshot, readRecordJson, recordAliasesInput, recordKindLabels, recordReferenceKey, recordReferenceLabel, recordSourceInputs, recordSourceLabels, relationKindLabels, sameRecordSource, type RecordChoice, type RecordSnapshot } from "../../../components/recordDiscoveryTypes";
 import { knowledgeRecordHref, knowledgeReturnView } from "../../../components/knowledgeNavigation";
+import { KnowledgeExportControls } from "../../../components/KnowledgeExportControls";
 
 type Point = {
   id: string; title: string; body: string; kind: string; currentRevisionId: string;
@@ -151,6 +152,7 @@ function KnowledgePageContent() {
     {error && <div role="alert"><p className="text-rose-700">{error}</p><ActionButton variant="secondary" disabled={loading || busy} onClick={() => { setError(""); void load(!point).catch(cause => setError(cause instanceof Error ? cause.message : "无法读取个人记录。")); }}>重试读取记录</ActionButton></div>}
     {message && <p role="status">{message}</p>}
     {loading && <p role="status">正在读取个人记录…</p>}
+    <KnowledgeExportControls mode="record" scope={point?.id === id ? { mode: "record", pointId: point.id } : null} scopeKey={id} disabledReason={point?.id !== id || loading ? "正在读取这条已保存记录，请稍后导出。" : undefined} />
     {point && <>
       <SectionPanel aria-label="修订个人记录">
         <h2 className="text-xl">修订个人记录</h2>

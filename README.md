@@ -44,6 +44,8 @@ npm run dev:electron
 
 记录剪藏先读取公开HTML或预览本人提供的文字，选片后把正文和来源一起插入草稿，最近插入可在未继续编辑时安全撤销。过期来源可重读并明确采用新预览，正文保留供合并；最终仍通过原“确认保存”。系统读取和本人提供的来源分别标明，当前及历史来源固定保留所选原文和取得时间，不依赖原网页继续在线。规则见[ADR 0033](docs/adr/0033-explicit-record-clipping-and-source-receipts.md)，真实页面、跨路由和桌面验证进度只见当前状态文档。
 
+个人记录可从整个已应用检索结果或单条已保存记录准备可携带导出，明确选择是否包含历史修订。ZIP包含可读Markdown、原始修订与固定来源、日期和显式关系清单；不会保存编辑草稿，也不递归展开包外记录。快照、容量与下载规则见[ADR 0034](docs/adr/0034-consistent-portable-personal-knowledge-export.md)，实际实现与验证进度见[当前状态](CURRENT_PROGRESS_AND_DIFFICULTIES.md)。
+
 ## 数据与安全
 
 打包用户目录是 `%LOCALAPPDATA%\Antigravity`，开发默认 `web/.electron-user-data`。使用稳定 `englishnode-teaching-v2.db` 与同目录 `ai-settings.json`。已有安装库通过一致性备份、前向迁移、保真与外键检查升级；原文件与历史只读入口保留。新安装只从版本化空白 seed 初始化，后续启动不清空。
