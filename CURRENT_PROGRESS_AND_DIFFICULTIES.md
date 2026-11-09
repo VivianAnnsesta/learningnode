@@ -2,6 +2,22 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第五批个人记录模板已完成本批既定门禁并合并GitHub main：[PR #5](https://github.com/VivianAnnsesta/learningnode/pull/5)，合并提交 `30fd3c20d89b54a5f0b705da5d9d2e4162922a24`，已验证源HEAD `c05775d7676db4badf0b598c541148bb450bab4e`。自定义模板可创建、编辑/改名、删除和重开，内置示例可复制；两正文入口预览标题/日期/时间变量后明确插入，冻结所见时刻并保留选区、CRLF/孤立CR和emoji。安全撤销不覆盖后续编辑，原标题/类型/别名/来源/领域保持原值；只有原确认保存才创建记录或追加不可覆盖修订。
+
+该源[完整PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616634062)与[完整push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616626127)均真实全成功：118文件/1057测试，含17项模板SQLite/HTTP、2项新迁移及3项PDF生命周期；完整页面30通过/9按原配置跳过，新6条模板链全过。Typecheck、lint、encoding、Prisma、历史夹具和27→28/28→29/29→30迁移保真全过；两边Electron42.11.16打包、空白seed运行、备份后旧库升级和安全交互均成功。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616633945)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42616626173)各15文件/264测试及19页面全过。四份完整日志及哈希在 `c057-full-evidence.json`，专项在 `c057-target-evidence.json`，均位于 `web/test-results/record-templates-2026-11-09/`。
+
+本批全量回归揭示的规划fixture迟到任务/共享mock污染清理空缺、PDF加载拒绝跳过destroy已修正；原真实冷PDF、材料/意见断言和5秒/默认hook门均保留。当前PR/push真实PDF分别2.28/2.77秒完成，规划各阶段和drain正常，结构化诊断在 `c057-native-diagnostics.json`。这些成功不解释首轮4项旧失败的最初慢因；原失败、原成功和修复证据分别留存，未重跑旧失败或放宽断言。
+
+正式30空白seed来自已核验官方工件原字节，SHA256 `59eaeccdce4c21a4d1b57eec2bcca13722feb22c2a59b1dd2ca7ecf97a2586f4`、503808字节；27业务表全空、30迁移逐远端LF Git blob/checksum匹配、两配置表七字段/default版本1/无FK、aliases默认[]、FK0/integrity ok。29→30非空副本保留4旧修订、raw来源/别名、当前指针、2条原SavedView及29ledger，先备份再迁移；自定义模板更新至版本2、断开重开及重复生命周期保真。原29seed保留在ignored证据中，真实用户库/设置和旧迁移不动。
+
+发布累计39路径（19新增/20修改/0删除），590blob中86个既有受保护blob保真，原工作区index/历史未改；安全发布和完整树证明在 `web/test-results/obsidian-record-templates-publication-2026-11-09/`。本机已安装桌面包未替换；上述为隔离SQLite/页面及GitHub Windows包运行证据，不等同于真实AI教学、长期学习效果或分发发布合格。
+
+持续优化目标保持进行中，下一批进入日期回看及本人指定日期的日常记录，区分记录创建/更新时间与用户选择的归档日期，支持明确保存和过去日期补写而不制造学习事实；剪藏和导出仍待实施，不算本批交付。
+
+### 第五批过程记录
+
+以下保留对应源HEAD当时结果；最新完成事实以上方已验证c057源和合并提交为准。
+
 第五批已发布[草稿PR #5](https://github.com/VivianAnnsesta/learningnode/pull/5)，首轮源HEAD `da3e5bba93f8de9456c35a5b7b857627e919c108`。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42613332360)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42613246601)均真实15文件/264测试及19页面全过；完整[PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42613332442)真实117文件/1054测试、30页面过/9原配置跳过，以及全部迁移/桌面门禁通过。完整[push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42613246622)unit为117文件中115过/2失败、1054测试中1050过/4失败，后续迁移CLI/页面/desktop未运行，不能以另一套成功抹掉该失败。新17模板SQLite与2迁移全部过；旧sourceGroundingService真实PDF提取5秒超时、旧planning入口两例5秒超时，随后显式concern断言收到前例独有GOAL/BRIEF。旧planning门控仅成功路径resume、无afterEach drain且beforeEach直接reset共享mock，存在超时工作流继续污染后例的确定清理空缺；已补完整工作流追踪、释放与drain及阶段诊断，保留原断言/5秒时限，不以旧prompt放宽concern要求，仍待增量新头实际验收。
 
 PDF夹具为有界单页本地内容；首轮总耗时不能区分import/load/text/destroy，也不能据此断言当时Promise仍pending或归因资源。审读另发现生产extractPdfText在try外等待loadingTask.promise，加载拒绝时无法进入destroy；正将加载等待纳入原finally并加拒绝路径确定性回归。旧真实PDF测试只加完成/清理诊断和pending收束，不移除真实解析、预热代替原流程或增大原5秒门。上述修复均待新头验证，原日志保留在 `web/test-results/record-templates-2026-11-09/`。
@@ -18,7 +34,9 @@ PDF夹具为有界单页本地内容；首轮总耗时不能区分import/load/te
 
 第五批共享模板配置/渲染合同56/56纯测试及定向ESLint通过，覆盖名称/容量/Unicode/控制字符、原CRLF/缩进、完整配置、有效时区别名、同一now、公历/24小时/DST、单次变量展开及未知变量保留。首轮54/56的两处失败为复用旧日期parser时对时区空白自动trim；新模板入口已单独拒绝raw空白，旧视图合同未改，原失败JSON与修后报告保留在 `web/test-results/record-templates-2026-11-09/`。这不证明新配置CRUD、插入界面、迁移或桌面已通过。
 
-第四批收尾文档源 `a74f5f95fc17df3af6b0a8e77e351a699ec1db28` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42608658249)已真实全成功：968测试、24页面通过/9原配置跳过、29空白seed、历史/新增迁移保真及完整桌面门禁。其相对已验证8134源仅两文档不同，日志/哈希索引 `a74-main-evidence.json` 在 `web/test-results/knowledge-views-2026-11-09/`；本批第五批仍独立待验。
+### 第四批完成记录
+
+第四批收尾文档源 `a74f5f95fc17df3af6b0a8e77e351a699ec1db28` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42608658249)已真实全成功：968测试、24页面通过/9原配置跳过、29空白seed、历史/新增迁移保真及完整桌面门禁。其相对已验证8134源仅两文档不同，日志/哈希索引 `a74-main-evidence.json` 在 `web/test-results/knowledge-views-2026-11-09/`；该时点第五批仍独立待验。
 
 第四批来源/记录日期筛选、命名保存检索视图和只读显示字段已完成本批既定验证并合并GitHub main：[PR #4](https://github.com/VivianAnnsesta/learningnode/pull/4)，合并提交 `388f6390c74ac9fb987a050ef2b8128b5f8e7332`，已验证源HEAD `8134a922ff746146afd1e775193e2cf6c7828e3a`。视图保存查询规则，重新打开读取当前记录；不复制正文，不写学习、掌握或语义关系事实。日期明确为记录创建/更新日期并显示时区；草稿归属、字段/条件返回、失效条件保留、未知配置不可运行、幂等及并发CAS均有真实回归。
 
