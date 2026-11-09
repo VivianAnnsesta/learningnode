@@ -20,6 +20,8 @@
 
 同提交[全量 CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42567513361)为800/803：密集图谱逐条造数超时、其后清理 P1008，以及既有真实 PDF 提取5秒超时，后续迁移/桌面未运行。已保留原失败日志，将测试图谱数据改为批量事务、全量 Windows worker 限为2，未改节点/边规模、断言、测试超时或业务门禁；效果待下一实际 CI，不能将专项成功写成全量通过。
 
+提交 `79b103f02b2dcdab323fc7179da88cb3d218a6f2` 的[专项验证](https://github.com/VivianAnnsesta/learningnode/actions/runs/42568415623)再次通过；[全量](https://github.com/VivianAnnsesta/learningnode/actions/runs/42568415616)为801/803。Discovery10项实际15.037秒全部通过，原造数/清理超时已消除；剩余学习反馈证据与PDF提取为5秒时限失败，没有出现业务断言不符。前者失败项在时限触发后仍于7.852秒结束，PDF套件6.225秒；PDF独立本机11/11、2.11秒通过（本机旧安装依赖），不能代替 CI。依照既有隔离串行验收方式，下一全量改为单 worker 串行，仍保留全部断言、原时限和原失败日志，迁移及桌面阶段继续待实际到达。
+
 更新日期：2026-11-08
 
 本轮路线输入与显式修复的代码改动已完成，最新隔离串行全量 **766/766** 通过，0失败、0未运行；全项目 typecheck、lint、encoding 通过。[全量JSON](web/test-results/planning-evidence-final-full-2026-10-28.json)、[输出](web/test-results/planning-evidence-final-full-2026-10-28.log)、[类型](web/test-results/planning-evidence-final-typecheck-2026-10-28.log)、[规范](web/test-results/planning-evidence-final-lint-2026-10-28.log)、[编码](web/test-results/planning-evidence-final-encoding-2026-10-28.log)保留。此前中间态755/755仍有效但不覆盖后来新增的旁路修复；编码命令首次误指向不存在的check-encoding.js，原[失败输出](web/test-results/planning-evidence-encoding-2026-10-28.log)保留，改用package脚本实际指向的check-mojibake.js后通过。未修改schema、真实用户数据库或Provider默认推理模式，未重新打包。
