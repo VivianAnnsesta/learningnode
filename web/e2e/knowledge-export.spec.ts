@@ -101,11 +101,20 @@ test("固定引用只链指定的已包含修订，包外快照不扩张记录�
   expect(all.manifest.references.find(x => x.revisionId === source.revision.id)).toMatchObject({ resolution: "included_revision", outsideSelection: false });
   const insidePath = all.manifest.references.find(x => x.revisionId === source.revision.id)!.path; expect(insidePath).toMatch(/^revisions\//);
   expect(all.manifest.references.find(x => x.knowledgePointId === outside.point.id)).toMatchObject({ resolution: "stored_snapshot", path: null, outsideSelection: true });
+  expect(all.manifest.records.find(x => x.id === owner.point.id)!.revisions[0].sourcesJson).toBe(owner.revision.sourcesJson);
   expect(JSON.stringify(all.manifest)).not.toContain(outside.revision.body); expect(all.manifest.externalEndpoints).toContainEqual({ id: outside.point.id, title: outside.point.title });
   expect(all.manifest.relations.find(x => x.id === candidate.id)).toMatchObject({ status: "candidate", evidenceStrength: "weak" }); expect(all.manifest.relations.find(x => x.id === confirmed.id)).toMatchObject({ status: "confirmed", evidenceStrength: "unknown" });
   await page.getByLabel("包含全部历史修订", { exact: true }).uncheck(); const current = await downloadArchive(page, info, "fixed-reference-without-history");
   expect(current.manifest.references.find(x => x.revisionId === source.revision.id)).toMatchObject({ resolution: "stored_snapshot", path: null, outsideSelection: false });
-  expect(bodyOf(current, owner.revision.id)).toBe(owner.revision.body); expect(JSON.stringify(current.manifest)).toContain(source.revision.body.replace(/\r/g, "\\r").replace(/\n/g, "\\n")); expect(await facts()).toEqual(before);
+  expect(bodyOf(current, owner.revision.id)).toBe(owner.revision.body);
+  const currentOwner = current.manifest.records.find(x => x.id === owner.point.id)!;
+  expect(currentOwner.revisions[0].sourcesJson).toBe(owner.revision.sourcesJson);
+  expect(JSON.parse(currentOwner.revisions[0].sourcesJson)).toEqual(sources);
+  expect(current.manifest.records.find(x => x.id === source.point.id)!.revisions.map(x => x.id)).toEqual([next.id]);
+  const ownerFile = current.manifest.files.find(x => x.role === "current" && x.recordId === owner.point.id)!;
+  const readable = Buffer.from(current.entries.find(x => x.name === ownerFile.path)!.base64, "base64").toString("utf8");
+  expect(readable).toContain(source.revision.body); expect(readable).toContain("仅所存包外片段");
+  expect(await facts()).toEqual(before);
 });
 
 test("最近日期导出沿用已显示窗口，浏览器跨午夜不重算；未应用日期暂不可导出", async ({ page }, info) => {

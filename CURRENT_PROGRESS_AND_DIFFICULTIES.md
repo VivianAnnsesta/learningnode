@@ -2,6 +2,14 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第八批可携带导出已发布[草稿PR #8](https://github.com/VivianAnnsesta/learningnode/pull/8)，首轮源 `45ac5d62a0df2b73854dd6f9a21e1abcbf438e3b`。两套[完整PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42658287875)/[完整push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42658128938)均133文件1449测试全过，含20新SQLite/HTTP；页面各50通过/9原配置跳过/1失败。两套[PR专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42658288138)/[push专项](https://github.com/VivianAnnsesta/learningnode/actions/runs/42658129906)均30文件656测试全过、39页面通过/1失败，新7条中6通过及全部33旧专项通过。四轮均同一新固定引用用例第108行：测试把已JSON编码的sourcesJson再随manifest序列化，却以单层转义子串匹配CRLF。该例末尾facts断言尚未执行；两套desktop均skipped，新packaged保存/取消门尚未验证，不能套用第七批桌面结果。
+
+原四份完整LF日志、SHA与工件身份在 `web/test-results/knowledge-export-2026-11-09/45ac-{full,target}-evidence.json`。专项官方工件13691909974（28832103字节、SHA256 `a8f7e4044ab57672a2182e92fef8822bc92467afdd21ef2dc176a4b19621052b`）内两份真实下载ZIP已由Python和root独立.NET reader核验CRC、全部文件SHA和3/2份正文切片；原sourcesJson两包与夹具逐字相同，解析整个来源数组一致，所存CRLF/emoji和可读Markdown引用原文均保留，trace两次export均200。证据 `45ac-push-target-fixed-reference-failure/` 和 `root-official-failure-zip-proof.json`。现只把该测试改为完整raw字符串相等、解析来源数组全等及Markdown原文/仅当前修订身份断言，保留原facts与5秒/60秒门；无生产修改，未增加重试/跳过或执行手动rerun。修后需新HEAD四轮真实验证，不记已通过。
+
+首轮累计28路径（19新增/9修改/0删除），远端完整640blob和28授权文件原始/规范化/Gitblob hash均独立核验，612范围外blob等于base；361旧保护文件、Word、原index与31seed保持，证据 `root-45ac-publication-proof.json` 与发布目录。本机真实用户库/设置及已安装桌面包未修改；本轮目标仍进行中，实际教学质量及分发限制保持独立。
+
+### 第八批开发与首轮过程记录
+
 第八批依据[ADR0034](docs/adr/0034-consistent-portable-personal-knowledge-export.md)推进可携带导出：整个已应用检索结果/单条已保存记录、明确历史范围、同一只读事务及原始修订/来源/日期保真、Markdown+清单ZIP与真实下载。目标/当前差异：词汇/公共决策与共享合同已先落盘，48项合同测试及定向lint通过，服务、两入口和真实浏览器/packaged下载正在实施/待验；不以第七批或整库备份替代。首跑47/48的唯一失败在夹具用Headers构造非ByteString中文文件名，尚未执行parser；已改为真实HTTP可表示的RFC5987编码文件名后48/48，原JSON与修后JSON在 `web/test-results/knowledge-export-2026-11-09/`，业务拒绝门未改。读取范围与页面日期窗口绑定，完整成功或超限失败，不截断成一页。原index、31seed、真实用户库/设置和旧迁移不动。
 
 本批服务和两入口已接通，root独立实际执行共享合同/单活动生命周期/下载读取三文件63项全过（含取消或30秒超时后后台未settle仍占slot）；报告 `root-control-ui-pure.json`。UI六文件type/lint/encoding通过，四组合成API浏览器验证实际下载四个合成ZIP并由Python zipfile独立读取，覆盖整个视图、历史开关、空范围、详情草稿；异常响应、取消、换范围不下载。root独立目视详情截图，mock及首harness编码/多匹配问题保留在 `ui-preview/`，临时服务已关闭。它们不是正式SQLite或packaged验收。新增七条真实E2E已定向TypeScript/ESLint通过，覆盖305条全结果、原raw/历史/current指针、固定/包外引用、日期窗口及下载失败/取消；本机按已知AppControl不执行native，等待CI，不记为页面已通过。
