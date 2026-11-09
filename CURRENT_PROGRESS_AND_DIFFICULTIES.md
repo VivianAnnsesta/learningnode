@@ -2,6 +2,30 @@
 
 ## Obsidian 借鉴能力连续优化（2026-11-08）
 
+第四批增量1源HEAD `efc0edba5de02ec6d4b44a2a7c1e77b6b00d4e79` 已含官方29seed，仍为草稿PR4。两套专项均178测试/13页面全过；两套完整unit均113文件/968测试全过，失效主题旧用例已通过。完整[PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42603376393)页面23过/9原配置跳过/1失败，[push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42603361417)22过/9跳过/2失败，desktop均未执行。root新增页面`finished()`等待耗尽60秒，不能记作生产功能失败或跳过：官方PR工件13666234185真实trace显示页面200但receive未完成，而两个对应会话API均200、JSON已完整返回且id同POST，最终截图已进入正确学习表单。正改为点击前注册精确POST和对应会话API、200及完整JSON身份校验后再原5秒URL断言，保留原60秒总门和全部业务断言；不再等待页面流结束。push另有保存视图冲突恢复后5秒内缺保存提示，正取其官方工件13666648687由UI支独立核因，不推定为同一个问题。原失败日志/trace保留，当前不合并。
+
+push官方工件13666648687已按head/run/digest核验后取trace：恢复后的PATCH在原5秒提示断言期间仍pending，页面busy且基础v2，无成功/错误提示；服务日志显示同一PATCH在5359ms后200，晚于约5022ms的提示采样。没有收到成功后被界面覆盖的证据；也不能以未落入trace的响应体证明版本3，或推定延迟底层原因。回归先核对应viewId/expectedVersion2的PATCH成功及完整JSON版本3/名称/来源条件，再执行原5秒成功提示和全部后续删除CAS/事实不变断言；保留60秒整例，生产UI/服务不改。两个页面文件独立TypeScript、定向ESLint及全项目encoding通过，backend/UI独立审读同步与原断言保留通过；此同步与探索JSON同步均待增量2真实CI，不把原失败改写为通过。
+
+第四批已发布[草稿PR #4](https://github.com/VivianAnnsesta/learningnode/pull/4)，首轮源HEAD `3b9dd8dada5f21b6edfa2788e9c489ada64ef364`。两套[专项PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42600823733)/[专项push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42600769136)均11文件/178测试及13页面通过；两套完整unit均113文件/968测试通过，含新13项SQLite/HTTP及2项迁移。完整[push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42600769078)页面23过/9原配置跳过/1失败，[PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42600823938)22过/9跳过/2失败，desktop均未执行，当前不合并。旧分页用例删除主题后仍期待静默清空条件，与ADR0030冲突，正改为验证失效条件保留/空结果、用户明确清除后再执行原分页与数据不变断言；PR另有探索入口URL原5秒断言失败，正读取真实trace核因，不放宽门禁或重跑旧失败。
+
+官方29空白seed已从push专项工件13666285106取回：ZIP SHA256 `d8c9e3c9cf85220eb1cff84a5557b3b8529852d53a8c9c3c399d95b264e58bcb`等于工件digest，绑定上述run/head；seed SHA256 `0ade6591a708733d12adc28a9136968ed5c9f817f69651edc42b2799e1d107c9`、495616字节等于官方报告。26业务表全空，29个迁移checksum与远端LF Git blob逐项相符，SavedKnowledgeView七字段/版本默认1/无外键、aliases默认[]、FK0/integrity ok；root另用内存SQLite独立核验。原28 seed保留在ignored后已复制官方29原字节到源码，尚待增量发布；真实用户库/原index/旧迁移未变。失败日志及哈希索引在 `web/test-results/knowledge-views-2026-11-09/`，官方工件和独立核验在 `web/test-results/saved-views-migration-2026-11-09/official-seed-42600769136/`。
+
+PR浏览器官方工件13665439670已核验ZIP digest后读取：真实探索POST成功并携带正确记录/修订/问题/returnTo，目标页面GET为200；URL断言最后采样仍是记录页，紧接失败后的frame已是该POST创建的会话URL。trace支持导航/冷编译与5秒采样重叠，未完成的会话API请求不算失败响应，也不据此声称无限期正常。回归补充点击前注册精确创建回应及对应会话页面回应、校验200并等待页面响应结束，再执行原5秒URL断言；保留60秒总门、来源修订/返回和删除关系数据断言，生产代码不变。两个页面文件独立TypeScript、full-product定向ESLint及全项目encoding通过；此修复与失效主题回归尚待新头实际CI。
+
+### 第四批过程记录
+
+以下保留对应提交当时状态；最新失败、seed与待验以上方源HEAD记录为准。
+
+第四批依据[ADR 0030](docs/adr/0030-saved-knowledge-views-and-date-filters.md)实现来源/日期筛选、命名保存检索视图和只读显示字段。目标/当前差异：公共合同、配置模型/CAS、界面及回归已接通，尚未完成本批真实SQLite、迁移、页面或桌面验收；日期指记录创建/更新时间，视图不复制内容或改变学习事实。真实用户库、原index和旧迁移不动；旧27→28回归固定历史边界，新28→29保真及官方29 seed仍待CI，不复用上一批成功覆盖本批未验证状态。
+
+本批全项目typecheck/lint/encoding、Prisma schema validate及脚本/YAML静态检查通过；6个纯文件136/136通过，含58公共配置/日期和33导航规则，新增4条页面文件独立TypeScript通过。UI六组合成API交互及两张已目视检查截图在 `web/test-results/obsidian-views-2026-11-09/ui-preview/`，覆盖点击时配置快照、迟到打开保护、双CAS、草稿领域、跨日重置和菜单错误隔离；另有外部删除404后主动刷新列表的独立交互及第三张截图通过，pageerror为0。root/协作审读新增页面测试后补了删除冲突前的菜单就绪等待，保持原断言/时限；这些仍不是真实数据库/E2E证据。
+
+数据支4项原生用例本机唯一尝试在首次query被Application Control阻止加载query-engine DLL，0业务expect；未反复重试或绕过。SQL-only副本完成新表形状/default、raw别名/来源/指针/旧ledger及配置version2重开、固定27→28投影检查，明确不是Prisma或正式seed成功。证据在 `web/test-results/saved-views-migration-2026-11-09/`；正式source seed28仍为原官方 `1d3e3089…ea37`，待成功CI产出29工件、核验远端LF/哈希后更新。损坏持久化配置新增完整规范形状guard，不能缺省补为全库；仅URL/新输入允许公共默认值。
+
+第四批共享配置/URL/日期合同58/58纯测试已通过，含标题-only字段、六类来源、旧来源独立、无效配置/重复参数拒绝、闰年、时区别名和数值偏移拒绝、DST跳时/重复小时、请求跨日now固定及原时间字段选择。新模型/client与数据代码已接通，原生SQL/配置CRUD、迁移和页面仍待实际结果；不能把纯规则通过替代这些门禁。
+
+第三批收尾文档源 `0bacf71a687ab1e07d4c2686f38674b153df2b1d` 的[main CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42592447109)已真实全成功：884测试、20页面通过/9原配置跳过、28空白seed、保真和完整桌面门禁。它相对已验证f213仅两文档不同；当前第四批仍须独立完成验证，旧成功不覆盖新代码。
+
 第三批别名与未引用提及已通过本轮既定门禁并合并 GitHub main：[PR #3](https://github.com/VivianAnnsesta/learningnode/pull/3)，合并提交 `efa7911b3204f42621f72c92f5a8ced1680d362e`，已验证源 HEAD `f213a799c2c1ab93ee4cd1942a736ad781491e82`。别名随不可覆盖修订保存，省略保留、显式清空和历史各自保留；列表、Ctrl+K和引用选择器共用字面Unicode检索并显示别名命中。未引用提及只扫其他当前正文，准确计数分页并展示原文段落，打开来源后由用户选取引用并明确保存，不自动建立语义关系或学习事实。
 
 本批[完整 PR CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42590218707)与[完整 push CI](https://github.com/VivianAnnsesta/learningnode/actions/runs/42590208820)均真实成功：110文件/884测试（含11项别名/提及SQLite/HTTP及2项新迁移回归），完整页面20通过/9按原配置跳过；Prisma、归档旧schema夹具、迁移保真及FK0；Electron42.11.16打包、空白seed运行、旧库升级和安全交互均通过。[专项 PR](https://github.com/VivianAnnsesta/learningnode/actions/runs/42590218436)与[专项 push](https://github.com/VivianAnnsesta/learningnode/actions/runs/42590208587)均94/94及9/9页面通过，覆盖三个别名入口、清空/历史、候选转引用、读取重试及409草稿恢复。完整日志与哈希索引 `f213-full-ci-evidence.json` 在 `web/test-results/record-names-2026-11-09/`，原夹具失败保留且未重跑。
@@ -725,3 +749,9 @@ Course Design Direction 与完整 Stage 骨架合并审查并在同一地图事�
 本轮于独立审读011 stop、012保留失败后安全关闭，临时设置删除=true、TEMP不存在、原三文件指纹不变、凭据匹配0、FK0。Stage确认、完整真实教学/活动/反馈、原条件专项全文、个人网络/修订/引用、独立探索/返回、跨域、主题、结束/完成及重启均未到达，保持pending。当前目标/当前差异仍是全产品未完成；不会把未到达步骤记通过。
 
 证据：[本轮报告](web/test-results/final-core-blank-2026-10-10-1791623160555/REPORT.md)、[完整轨迹](web/test-results/final-core-blank-2026-10-10-1791623160555/TRACE.html)、[数据链](web/test-results/final-core-blank-2026-10-10-1791623160555/AUDIT-DATA-CHAIN.md)、[011实质审读](web/test-results/final-core-blank-2026-10-10-1791623160555/AUDIT-STAGE-011.md)。仅追加本轮实证状态，旧失败/raw/报告不重写。
+
+第四批数据支按ADR0030/0005先明确独立迁移边界：归档正式28版schema，旧27→28回归只使用该schema与截至28的迁移投影；另验含非空原别名/多段来源/指针的28→29备份保真、新视图配置断连与重复生命周期持久化。当前source seed仍为上批正式28字节，新29空白seed必须由CI正式生成/核验工件再取回更新；本机原生阻断与SQL-only证据继续分开记录，尚未记本批通过。
+
+第四批数据支已接通并保留独立边界：归档28版schema的Git blob为 `0e53e7467f8bb18eb5d3bd9f158a99281e87f459`，SHA-256为 `5c45ab6b06b304c85de0f6719e250a23b992be4083f14209c10f22f79d2d50c8`；27→28回归使用固定archive及28项迁移投影。新增28→29验证含4旧修订的非空raw别名/多段来源/当前指针、全部旧字段和28ledger、精确备份、新配置表空白、Prisma保存/版本递增、断连和重复生命周期配置保真。client generate与schema validate、全typecheck/lint/encoding及脚本语法/YAML检查通过。
+
+本轮4项原生迁移/空白seed测试的唯一一次本机执行均在首个query被Windows Application Control阻止query-engine DLL，0业务expect执行，不记迁移通过。Python标准sqlite3只在ignored副本验证真实29号DDL、26表/默认值/无FK、旧raw aliases等字段与28ledger保留、备份、配置版本重开和27→28投影形状；手工新增的测试ledger行不属于Prisma或正式seed证据。日志/报告在 `web/test-results/saved-views-migration-2026-11-09/`（`data-branch-result.json`、`native-migration-tests.log/json`、`python-sql-only-validation.json`）。正式source seed仍为上批28版 `1d3e30896aa46a13bf5e1f59f1a9a5aced2e6d23610fca7eface32bac30bea37`；真实29版生成、SQLite/页面/桌面门禁仍待CI，真实用户库、原index及旧迁移未改。

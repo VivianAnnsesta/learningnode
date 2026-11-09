@@ -5,6 +5,9 @@ export interface EmptySeedValidation {
   migrationCount: number;
   checksumsMatch: boolean;
   aliasesDefault: string;
+  savedViewSchemaVersionDefault: number;
+  savedViewVersionDefault: number;
+  savedViewColumns: string[];
   foreignKeyViolations: number;
   integrity: string;
 }

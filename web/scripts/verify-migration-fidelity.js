@@ -4,6 +4,7 @@ const path = require("path");
 const { PrismaClient } = require("@prisma/client");
 const { runUserDatabaseLifecycle, databaseUrl } = require("./database-lifecycle");
 const { verifyRevisionAliasesUpgrade } = require("./revision-aliases-fidelity");
+const { verifySavedKnowledgeViewsUpgrade } = require("./saved-knowledge-views-fidelity");
 
 const webRoot = path.resolve(__dirname, "..");
 const sourceDatabasePath = path.resolve(
@@ -250,6 +251,7 @@ const main = async () => {
     }
 
     const revisionAliasesUpgrade = await verifyRevisionAliasesUpgrade({ webRoot, PrismaClient });
+    const savedKnowledgeViewsUpgrade = await verifySavedKnowledgeViewsUpgrade({ webRoot, PrismaClient });
     const client = new PrismaClient({
       datasources: { db: { url: databaseUrl(isolatedDatabasePath) } }
     });
@@ -302,6 +304,7 @@ const main = async () => {
             foreignKeyViolations: 0,
             taskBriefConfirmationBackfill,
             revisionAliasesUpgrade,
+            savedKnowledgeViewsUpgrade,
             beforeCounts,
             afterCounts
           },

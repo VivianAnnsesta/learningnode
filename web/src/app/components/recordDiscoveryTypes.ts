@@ -38,7 +38,8 @@ export const relationKindLabels: Record<string, string> = {
 };
 
 export const recordSourceLabels: Record<string, string> = {
-  user: "本人记录", accepted_ai: "本人接受的 AI 内容", excerpt: "来源摘录", legacy_unknown: "历史来源未注明"
+  user: "本人记录", accepted_ai: "本人接受的 AI 内容", excerpt: "来源摘录", legacy_unknown: "历史来源未注明",
+  legacy_user: "历史本人记录", legacy_ai_or_unknown: "历史 AI 或来源未明"
 };
 
 export function isRecordSnapshot(value: unknown): value is RecordSnapshot {
