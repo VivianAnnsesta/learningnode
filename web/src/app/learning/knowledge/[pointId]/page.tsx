@@ -9,6 +9,8 @@ import { RecordNeighborhood } from "../../../components/RecordNeighborhood";
 import { RecordReferencePicker } from "../../../components/RecordReferencePicker";
 import { RecordReferencePreview } from "../../../components/RecordReferencePreview";
 import { RecordMentionsPanel } from "../../../components/RecordMentionsPanel";
+import { RecordTemplatePicker } from "../../../components/RecordTemplatePicker";
+import { useRecordTemplateInsertion } from "../../../components/useRecordTemplateInsertion";
 import { isRecordSnapshot, readRecordJson, recordAliasesInput, recordKindLabels, recordReferenceKey, recordReferenceLabel, recordSourceInputs, recordSourceLabels, relationKindLabels, sameRecordSource, type RecordChoice, type RecordSnapshot } from "../../../components/recordDiscoveryTypes";
 import { knowledgeRecordHref, knowledgeReturnView } from "../../../components/knowledgeNavigation";
 
@@ -63,13 +65,16 @@ function KnowledgePageContent() {
   const activeRequest = useRef<AbortController | null>(null);
   const currentId = useRef(id);
   currentId.current = id;
+  const templateEditor = useRecordTemplateInsertion({ body, title, baseKey: `${id}:${draftRevisionId}`, onBodyChange: setBody });
+  const resetTemplateInsertion = templateEditor.reset;
 
-  const hydrateDraft = (record: Point) => {
+  const hydrateDraft = useCallback((record: Point) => {
+    resetTemplateInsertion();
     setTitle(record.title); setBody(record.body); setKind(record.kind);
     setAliasesText((record.aliases || []).join("\n"));
     setDraftRevisionId(record.currentRevisionId); setDraftSources(record.sources);
     setSavedSources(record.sources); setSourcesChanged(false);
-  };
+  }, [resetTemplateInsertion]);
   const load = useCallback(async (hydrate = false) => {
     const request = ++generation.current.value;
     activeRequest.current?.abort();
@@ -91,7 +96,7 @@ function KnowledgePageContent() {
     } catch (cause) {
       if (request === generation.current.value && !controller.signal.aborted) throw cause;
     } finally { if (request === generation.current.value) setLoading(false); }
-  }, [id]);
+  }, [id, hydrateDraft]);
 
   useEffect(() => {
     const counter = generation.current;
@@ -142,7 +147,8 @@ function KnowledgePageContent() {
         <input aria-label="记录标题" className="workshop-input w-full" disabled={unavailable} value={title} onChange={event => setTitle(event.target.value)} />
         <label className="block">别名（每行一个，可选）<textarea aria-label="记录别名" className="workshop-input mt-2 min-h-20 w-full" rows={3} disabled={unavailable} value={aliasesText} onChange={event => setAliasesText(event.target.value)} placeholder={"例如：conditional probability\nCP"} /></label>
         <p className="text-sm">最多20个别名，每个最多80个字符。修改后需要确认保存；清空后保存会移除当前别名，旧修订仍保留。</p>
-        <textarea aria-label="修订记录内容" className="workshop-input min-h-40 w-full" disabled={unavailable} value={body} onChange={event => setBody(event.target.value)} />
+        <textarea aria-label="修订记录内容" ref={templateEditor.textareaRef} onSelect={templateEditor.rememberPosition} onBlur={templateEditor.rememberPosition} className="workshop-input min-h-40 w-full" disabled={unavailable} value={body} onChange={event => templateEditor.editBody(event.target.value)} />
+        <RecordTemplatePicker key={`templates-${id}`} editor={templateEditor} disabled={unavailable} />
         <select aria-label="记录类型" className="workshop-input" disabled={unavailable} value={kind} onChange={event => setKind(event.target.value)}>{Object.entries(recordKindLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         <details onToggle={event => setPickerOpen(event.currentTarget.open)}><summary>添加记录引用</summary>{pickerOpen && <RecordReferencePicker key={id} pointId={id} selected={draftRecords} disabled={unavailable} onAdd={addSource} onPendingChange={setPickerHashing} />}</details>
         <div aria-label="当前编辑草稿的记录引用" className="space-y-2">{draftRecords.map(source => {
@@ -169,7 +175,7 @@ function KnowledgePageContent() {
               if (newlyAdded && !sources.some(saved => sameRecordSource(saved, source))) sources.push(source);
             }
             if (sources.length > 30) { setError("合并后来源超过30个，请先取消不需要的新增引用。"); return; }
-            setDraftRevisionId(point.currentRevisionId); setDraftSources(sources); setSavedSources(point.sources); setSourcesChanged(true);
+            resetTemplateInsertion(); setDraftRevisionId(point.currentRevisionId); setDraftSources(sources); setSavedSources(point.sources); setSourcesChanged(true);
             setMessage("正文、别名草稿和新增引用已保留，已有来源采用最新修订。请检查后保存。");
           }}>已合并，使用最新修订作为保存基础</ActionButton>
         </div>}

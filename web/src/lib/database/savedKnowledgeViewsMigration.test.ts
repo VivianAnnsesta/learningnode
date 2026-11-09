@@ -26,9 +26,11 @@ describe("saved knowledge view configuration migration", () => {
     fs.copyFileSync(path.resolve("prisma", "seed.db"), databasePath);
     try {
       const result = await validateEmptySeedDatabase({ databasePath, migrationsDirectory: path.resolve("prisma", "migrations"), PrismaClient });
-      expect(result.migrationCount).toBe(29);
+      const currentMigrationCount = fs.readdirSync(path.resolve("prisma", "migrations"), { withFileTypes: true })
+        .filter(entry => entry.isDirectory() && fs.existsSync(path.resolve("prisma", "migrations", entry.name, "migration.sql"))).length;
+      expect(result.migrationCount).toBe(currentMigrationCount);
       expect(result.checksumsMatch).toBe(true);
-      expect(Object.keys(result.businessCounts)).toHaveLength(26);
+      expect(Object.keys(result.businessCounts)).toHaveLength(27);
       expect(result.businessCounts.SavedKnowledgeView).toBe(0);
       expect(Object.values(result.businessCounts).every(count => count === 0)).toBe(true);
       expect(result.savedViewColumns).toEqual(["id", "title", "schemaVersion", "configJson", "version", "createdAt", "updatedAt"]);

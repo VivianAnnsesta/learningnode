@@ -8,6 +8,9 @@ export interface EmptySeedValidation {
   savedViewSchemaVersionDefault: number;
   savedViewVersionDefault: number;
   savedViewColumns: string[];
+  recordTemplateSchemaVersionDefault: number;
+  recordTemplateVersionDefault: number;
+  recordTemplateColumns: string[];
   foreignKeyViolations: number;
   integrity: string;
 }

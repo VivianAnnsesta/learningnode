@@ -1,9 +1,29 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   extractPdfText,
   groundCourseSource,
   groundCourseSources
 } from "./sourceGroundingService";
+
+let pendingPdfExtraction: ReturnType<typeof extractPdfText> | null = null;
+let pdfObservation: { startedAt: number; settled: boolean; outcome: string } | null = null;
+const observePdf = (phase: string, details: Record<string, unknown> = {}) => {
+  if (!pdfObservation) return;
+  console.info("PDF extractor lifecycle", JSON.stringify({ phase, elapsedMs: Number((performance.now() - pdfObservation.startedAt).toFixed(3)), settled: pdfObservation.settled, outcome: pdfObservation.outcome, ...details }));
+};
+
+afterEach(async () => {
+  const pending = pendingPdfExtraction;
+  if (!pending) return;
+  const startedAt = performance.now();
+  observePdf("afterEach_drain_start");
+  try {
+    await pending;
+  } finally {
+    observePdf("afterEach_drain_end", { drainMs: Number((performance.now() - startedAt).toFixed(3)) });
+    if (pendingPdfExtraction === pending) pendingPdfExtraction = null;
+  }
+});
 
 const buildMinimalPdf = (text: string) => {
   const stream = `BT /F1 12 Tf 72 720 Td (${text}) Tj ET`;
@@ -43,12 +63,21 @@ const htmlResponse = (html: string, status = 200) => ({
 
 describe("groundCourseSource", () => {
   it("parses text from a bounded PDF buffer with the production extractor", async () => {
-    const result = await extractPdfText(
+    pdfObservation = { startedAt: performance.now(), settled: false, outcome: "pending" };
+    observePdf("extract_start");
+    pendingPdfExtraction = extractPdfText(
       buildMinimalPdf("Exam syllabus calculus limits derivatives"),
       1200
-    );
+    ).then(result => {
+      pdfObservation!.settled = true; pdfObservation!.outcome = "fulfilled"; observePdf("extract_settle"); return result;
+    }, error => {
+      pdfObservation!.settled = true; pdfObservation!.outcome = "rejected"; observePdf("extract_settle", { error: error instanceof Error ? error.message : String(error) }); throw error;
+    });
+    const result = await pendingPdfExtraction;
 
+    observePdf("assert_start");
     expect(result.excerpt).toContain("Exam syllabus calculus limits derivatives");
+    observePdf("assert_end");
   });
 
   it("rejects non-HTTPS urls before any fetch", async () => {

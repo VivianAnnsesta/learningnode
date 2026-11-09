@@ -5,6 +5,7 @@ const { PrismaClient } = require("@prisma/client");
 const { runUserDatabaseLifecycle, databaseUrl } = require("./database-lifecycle");
 const { verifyRevisionAliasesUpgrade } = require("./revision-aliases-fidelity");
 const { verifySavedKnowledgeViewsUpgrade } = require("./saved-knowledge-views-fidelity");
+const { verifyRecordTemplatesUpgrade } = require("./record-templates-fidelity");
 
 const webRoot = path.resolve(__dirname, "..");
 const sourceDatabasePath = path.resolve(
@@ -252,6 +253,7 @@ const main = async () => {
 
     const revisionAliasesUpgrade = await verifyRevisionAliasesUpgrade({ webRoot, PrismaClient });
     const savedKnowledgeViewsUpgrade = await verifySavedKnowledgeViewsUpgrade({ webRoot, PrismaClient });
+    const recordTemplatesUpgrade = await verifyRecordTemplatesUpgrade({ webRoot, PrismaClient });
     const client = new PrismaClient({
       datasources: { db: { url: databaseUrl(isolatedDatabasePath) } }
     });
@@ -305,6 +307,7 @@ const main = async () => {
             taskBriefConfirmationBackfill,
             revisionAliasesUpgrade,
             savedKnowledgeViewsUpgrade,
+            recordTemplatesUpgrade,
             beforeCounts,
             afterCounts
           },
